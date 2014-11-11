@@ -15,15 +15,18 @@
 
 package org.smap.smapTask.android.activities;
 
-import android.app.Activity;
+import android.content.Context;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
 
+import com.mapbox.mapboxsdk.geometry.LatLng;
 
-import org.smap.smapTask.android.fragments.MapFragment;
 import org.smap.smapTask.android.R;
+import org.smap.smapTask.android.fragments.MapFragment;
 
 /**
  * Responsible for displaying maps of tasks.
@@ -32,20 +35,52 @@ import org.smap.smapTask.android.R;
  */
 public class MapsActivity extends FragmentActivity  {
 
+    private LocationManager locationManager;
+    private LocationListener locationListener;
+    private MapFragment map = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
-
         // Insert the fragment by replacing any existing fragment
-        Fragment fragment = new MapFragment();
         FragmentManager fm = getSupportFragmentManager();
         if (fm.findFragmentById(R.id.map_content_frame) == null) {
-            MapFragment map = new MapFragment();
+            map = new MapFragment();
             fm.beginTransaction().add(android.R.id.content, map).commit();
         }
+
+        /*
+		 * Add a location listener
+		 */
+        locationManager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
+        locationListener = new LocationListener() {
+
+            @Override
+            public void onLocationChanged(Location location) {
+
+                // TODO check for accuracy, save previous location
+                LatLng point = new LatLng(location.getLatitude(), location.getLongitude());
+                map.setUserLocation(point);
+            }
+
+            @Override
+            public void onProviderDisabled(String arg0) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status,
+                                        Bundle extras) {
+
+            }
+
+        };
 
     }
 

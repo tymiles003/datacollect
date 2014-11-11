@@ -13,6 +13,7 @@
 /Users/neilpenman/git/android/fieldTask3/fieldTask/build/intermediates/pre-dexed/debug/internal_impl-21.0.0-c6c46caea97d40846ba81df7bf5fa54883d74116.jar
 /Users/neilpenman/git/android/fieldTask3/fieldTask/build/intermediates/pre-dexed/debug/javarosa-libraries-2014-04-29-1eb47213f380f25e0aea8f2b59e9e51708424c29.jar
 /Users/neilpenman/git/android/fieldTask3/fieldTask/build/intermediates/pre-dexed/debug/joda-time-2.0-28b6430c00a0328ccd44c7424080706ca5f0fd20.jar
+/Users/neilpenman/git/android/fieldTask3/fieldTask/build/intermediates/pre-dexed/debug/kxml3-c1825e96225ff13f699ef148ed28cc1ae8cdb009.jar
 /Users/neilpenman/git/android/fieldTask3/fieldTask/build/intermediates/pre-dexed/debug/library-2.4.0-d6f3e1ffbd70e7e67fe2bc1d3aa922ec281cab46.jar
 /Users/neilpenman/git/android/fieldTask3/fieldTask/build/intermediates/pre-dexed/debug/okhttp-2.0.0-8c811c76122923dd58e1ea51a8f591c9592655e0.jar
 /Users/neilpenman/git/android/fieldTask3/fieldTask/build/intermediates/pre-dexed/debug/okhttp-urlconnection-2.0.0-8fcf8f8c46d9259531a540d36e5ab327704fe853.jar

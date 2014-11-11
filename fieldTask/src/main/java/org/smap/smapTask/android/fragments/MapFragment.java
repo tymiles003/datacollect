@@ -8,6 +8,8 @@ import android.graphics.Paint;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,6 +20,7 @@ import com.mapbox.mapboxsdk.api.ILatLng;
 import com.mapbox.mapboxsdk.geometry.BoundingBox;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.overlay.Icon;
+import com.mapbox.mapboxsdk.overlay.ItemizedIconOverlay;
 import com.mapbox.mapboxsdk.overlay.Marker;
 import com.mapbox.mapboxsdk.overlay.PathOverlay;
 import com.mapbox.mapboxsdk.overlay.UserLocationOverlay;
@@ -31,45 +34,50 @@ import com.mapbox.mapboxsdk.views.util.TilesLoadedListener;
 
 import org.smap.smapTask.android.R;
 
-public class MapFragment extends Fragment {
-    private LatLng startingPoint = new LatLng(51f, 0f);
+import java.util.ArrayList;
+import java.util.List;
+
+import loaders.SmapTaskLoader;
+import loaders.TaskEntry;
+
+public class MapFragment extends Fragment implements LoaderManager.LoaderCallbacks<List<TaskEntry>> {
+
+    ItemizedIconOverlay markerOverlay = null;
+    ArrayList<Marker> markers = null;
+    private double tasksNorth;
+    private double tasksSouth;
+    private double tasksEast;
+    private double tasksWest;
+    private LatLng userLocation = null;
+
     private MapView mv;
     private String satellite = "brunosan.map_fragment-cyglrrfu";
     private String street = "examples.map_fragment-i87786ca";
     private final String mbTile = "test.MBTiles";
     private String currentLayer = "";
+    private static final int MAP_LOADER_ID = 2;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
     {
+
         View view = inflater.inflate(R.layout.map_fragment, container, false);
 
         mv = (MapView) view.findViewById(R.id.mapview);
         // Set Default Map Type
         replaceMapView("mapquest");
         currentLayer = "terrain";
+
         mv.setUserLocationEnabled(true)
             .setUserLocationTrackingMode(UserLocationOverlay.TrackingMode.FOLLOW);
+
+        getLoaderManager().initLoader(MAP_LOADER_ID, null, this);       // Get the task locations
+
         /*
         // Original GeoJSON Test that caus es crash when Hardware Acceleration when enabled in TestApp
         mv.loadFromGeoJSONURL("https://gist.githubusercontent.com/tmcw/4a6f5fa40ab9a6b2f163/raw/b1ee1e445225fc0a397e2605feda7da74c36161b/map_fragment.geojson");
         */
         // Smaller GeoJSON Test
-        mv.loadFromGeoJSONURL("https://gist.githubusercontent.com/bleege/133920f60eb7a334430f/raw/5392bad4e09015d3995d6153db21869b02f34d27/map_fragment.geojson");
-        Marker m = new Marker(mv, "Edinburgh", "Scotland", new LatLng(55.94629, -3.20777));
-        m.setIcon(new Icon(getActivity(), Icon.Size.SMALL, "marker-stroked", "FF0000"));
-        mv.addMarker(m);
-
-        m = new Marker(mv, "Stockholm", "Sweden", new LatLng(59.32995, 18.06461));
-        m.setIcon(new Icon(getActivity(), Icon.Size.MEDIUM, "city", "FFFF00"));
-        mv.addMarker(m);
-
-        m = new Marker(mv, "Prague", "Czech Republic", new LatLng(50.08734, 14.42112));
-        m.setIcon(new Icon(getActivity(), Icon.Size.LARGE, "land-use", "00FFFF"));
-        mv.addMarker(m);
-
-        m = new Marker(mv, "Athens", "Greece", new LatLng(37.97885, 23.71399));
-        mv.addMarker(m);
 
         mv.setOnTilesLoadedListener(new TilesLoadedListener() {
             @Override
@@ -85,12 +93,24 @@ public class MapFragment extends Fragment {
         });
         mv.setVisibility(View.VISIBLE);
 
-        PathOverlay equator = new PathOverlay();
-        equator.addPoint(0, -89);
-        equator.addPoint(0, 89);
-        mv.getOverlays().add(equator);
-
         return view;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<List<TaskEntry>> loader, List<TaskEntry> data) {
+        Log.i("MapFragment", "============ onLoadFinished");
+        showTasks(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<List<TaskEntry>> loader) {
+        Log.i("MapFragment", "============ onLoaderReset");
+        clearTasks();
+    }
+
+    @Override
+    public Loader<List<TaskEntry>> onCreateLoader(int id, Bundle args) {
+        return new SmapTaskLoader(getActivity());
     }
 
     final String[] availableLayers = {
@@ -159,7 +179,6 @@ public class MapFragment extends Fragment {
 
         PathOverlay po = new PathOverlay().setPaint(linePaint);
 
-        po.addPoint(startingPoint);
         po.addPoint(new LatLng(51.7, 0.3));
         po.addPoint(new LatLng(51.2, 0));
 
@@ -212,4 +231,132 @@ public class MapFragment extends Fragment {
         // Showing Alert Message
         alertDialog.show();
     }
+
+    private void showTasks(List<TaskEntry> data) {
+
+        tasksNorth = -90.0;
+        tasksSouth = 90.0;
+        tasksEast = -180.0;
+        tasksWest = 180.0;
+
+        markers = new ArrayList<Marker> ();
+
+        for(TaskEntry t : data) {
+            Log.i("showTasks--- ", t.name + " :: " + t.status + " :: " + t.lon + " :: " + t.lat);
+            if(t.lon == 0.0 && t.lat == 0.0) {
+                continue;                   // Assume this is not a valid location !!
+            }
+
+            if(t.lat > tasksNorth) {
+                tasksNorth = t.lat;
+            }
+            if(t.lat < tasksSouth) {
+                tasksSouth = t.lat;
+            }
+            if(t.lon > tasksEast) {
+                tasksEast = t.lon;
+            }
+            if(t.lat < tasksWest) {
+                tasksWest = t.lon;
+            }
+
+            LatLng ll = new LatLng(t.lat, t.lon);
+            Marker m = new Marker(mv, t.name, t.taskAddress, ll);
+            m.setIcon(new Icon(getActivity(), Icon.Size.LARGE, "marker-stroked", getIconColour(t.status)));
+            m.setMarker(mv.getDefaultPinDrawable());
+            markers.add(m);
+        }
+        // Add the markers overlay
+        if(markers.size() > 0) {
+
+            Log.i("showTasks--- ", "size:: " + markers.size());
+            zoomToData();
+            Log.i("showTasks--- ", "zoomed ");
+            if (markerOverlay == null) {
+                markerOverlay = new ItemizedIconOverlay(getActivity(), markers, onItemGestureListener);
+                Log.i("showTasks--- ", "created overlay ");
+                mv.getOverlays().add(markerOverlay);
+                Log.i("showTasks--- ", "added overlay ");
+            } else {
+                markerOverlay.addItems(markers);
+            }
+        }
+    }
+
+    private void clearTasks() {
+
+
+    }
+
+    public void setUserLocation(LatLng location) {
+
+    }
+
+    private void zoomToData() {
+
+        // Todo Add current location
+        // Todo Add Trace
+
+        double north = tasksNorth;
+        double south = tasksSouth;
+        double east = tasksEast;
+        double west = tasksWest;
+        BoundingBox bb = new BoundingBox(north, east, south, west);
+
+        mv.zoomToBoundingBox(bb, true, true, true);
+    }
+
+    /*
+     * Get the colour to represent the passed in task status
+     */
+    private String getIconColour(String status) {
+
+        if(status.equals("rejected")) {
+            return "FF0000";
+        } else if(status.equals("accepted")) {
+            return "00FF00";
+        } else if(status.equals("complete")) {
+            return "0000FF";
+        } else if(status.equals("submitted")) {
+            return "FF00FF";
+        } else {
+            return "FFFFFF";
+        }
+    }
+
+    /*
+ * Get the colour to represent the passed in task status
+ */
+    private String getMakiIcon(String status) {
+
+        if(status.equals("rejected")) {
+            return "marker-stroked";
+        } else if(status.equals("accepted")) {
+            return "marker-stroked";
+        } else if(status.equals("complete")) {
+            return "marker-stroked";
+        } else if(status.equals("submitted")) {
+            return "marker-stroked";
+        } else {
+            return "marker-stroked";
+        }
+    }
+
+
+    ItemizedIconOverlay.OnItemGestureListener<Marker> onItemGestureListener
+            = new ItemizedIconOverlay.OnItemGestureListener<Marker>(){
+
+        @Override
+        public boolean onItemLongPress(int arg0, Marker arg1) {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public boolean onItemSingleTapUp(int index, Marker item) {
+
+            return true;
+        }
+
+    };
 }

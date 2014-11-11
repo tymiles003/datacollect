@@ -19,24 +19,20 @@
  */
 package loaders;
 
-import java.text.DateFormat;
-import java.util.ArrayList;
-import java.util.List;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.database.Cursor;
+import android.support.v4.content.AsyncTaskLoader;
+import android.util.Log;
 
 import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.database.FileDbAdapter;
-import org.odk.collect.android.preferences.PreferencesActivity;
 import org.odk.collect.android.provider.FormsProviderAPI.FormsColumns;
-import org.odk.collect.android.utilities.STFileUtils;
 import org.smap.smapTask.android.utilities.Utilities;
 
-import android.content.ContentResolver;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.preference.PreferenceManager;
-import android.support.v4.content.AsyncTaskLoader;
-import android.util.Log;
+import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An implementation of AsyncTaskLoader which loads a {@code List<TaskEntry>}
@@ -142,6 +138,10 @@ public class SmapTaskLoader extends AsyncTaskLoader<List<TaskEntry>> {
 						.getColumnIndex(FileDbAdapter.KEY_T_INSTANCE));
 				entry.id = mTaskListCursor.getLong(mTaskListCursor
 						.getColumnIndex(FileDbAdapter.KEY_T_ID));
+                entry.lon = mTaskListCursor.getDouble(mTaskListCursor
+                        .getColumnIndex(FileDbAdapter.KEY_T_LON));
+                entry.lat = mTaskListCursor.getDouble(mTaskListCursor
+                        .getColumnIndex(FileDbAdapter.KEY_T_LAT));
 				
 				entries.add(entry);
 				mTaskListCursor.moveToNext();
