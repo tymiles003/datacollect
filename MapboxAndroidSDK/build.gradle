@@ -85,10 +85,10 @@ android.libraryVariants.all { variant ->
     }
 }
 
-checkstyle {
-    configFile project.file('../checks.xml')
-    showViolations true
-}
+//checkstyle {
+//    configFile project.file('../checks.xml')
+//    showViolations true
+//}
 
 android.libraryVariants.all { variant ->
     def name = variant.buildType.name

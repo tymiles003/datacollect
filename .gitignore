@@ -1,6 +1,11 @@
 bin/
 gen/
 build/
+local.properties
+import-summary.txt
+
+gradlew
+gradlew.bat
 
 
 .DS_Store
