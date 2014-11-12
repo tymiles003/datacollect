@@ -18,14 +18,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d553839e-9771-4dea-a109-0c6d87f5cf77" name="Default" comment="Removed check style from mapbox sdk">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/fieldTask/src/main/res/drawable/ic_launcher.png" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/fieldTask/src/main/res/drawable/ic_userlocation.png" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/fieldTask/src/main/res/drawable-hdpi/ic_userlocation.png" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/fieldTask/src/main/res/drawable-mdpi/ic_userlocation.png" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/fieldTask/src/main/res/drawable-xhdpi/ic_userlocation.png" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/fieldTask/src/main/res/drawable-xxhdpi/ic_userlocation.png" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/fieldTask/src/main/res/drawable/task_unknown.png" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MapboxAndroidSDK/build.gradle" afterPath="$PROJECT_DIR$/MapboxAndroidSDK/build.gradle" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/fieldTask/build.gradle" afterPath="$PROJECT_DIR$/fieldTask/build.gradle" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="fieldTask.iws" />
@@ -87,11 +80,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="build.gradle" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="build.gradle" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/fieldTask/build.gradle">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="735">
-              <caret line="4" column="23" selection-start-line="4" selection-start-column="23" selection-end-line="4" selection-end-column="29" />
+            <state vertical-scroll-proportion="1.4423077" vertical-offset="225" max-vertical-offset="795">
+              <caret line="30" column="8" selection-start-line="30" selection-start-column="8" selection-end-line="30" selection-end-column="8" />
               <folding />
             </state>
           </provider>
@@ -107,10 +100,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="build.gradle" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="build.gradle" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/MapboxAndroidSDK/build.gradle">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.34504792" vertical-offset="1317" max-vertical-offset="3735">
+            <state vertical-scroll-proportion="-4.1538463" vertical-offset="1317" max-vertical-offset="3735">
               <caret line="95" column="16" selection-start-line="95" selection-start-column="6" selection-end-line="95" selection-end-column="16" />
               <folding />
             </state>
@@ -1946,7 +1939,7 @@
     </option>
     <option name="modificationStamps">
       <map>
-        <entry key="$PROJECT_DIR$" value="8493594752000" />
+        <entry key="$PROJECT_DIR$" value="8493772910000" />
         <entry key="$USER_HOME$/svnAndroid/OpenStreetMapViewer" value="1415231440000" />
       </map>
     </option>
@@ -2538,7 +2531,6 @@
         <option value="$PROJECT_DIR$/fieldTask/src/main/java/org/smap/smapTask/android/activities/MainTabsActivity.java" />
         <option value="$PROJECT_DIR$/fieldTask/src/main/AndroidManifest.xml" />
         <option value="$PROJECT_DIR$/fieldTask/src/main/java/org/smap/smapTask/android/activities/MainListActivity.java" />
-        <option value="$PROJECT_DIR$/fieldTask/build.gradle" />
         <option value="$PROJECT_DIR$/fieldTask/src/main/res/layout/map.xml" />
         <option value="$PROJECT_DIR$/fieldTask/src/main/java/org/smap/smapTask/android/adapters/TaskMapArrayAdapter.java" />
         <option value="$PROJECT_DIR$/oDK14_lib/build.gradle" />
@@ -2550,6 +2542,7 @@
         <option value="$PROJECT_DIR$/fieldTask/src/main/java/org/smap/smapTask/android/fragments/MapFragment.java" />
         <option value="$PROJECT_DIR$/fieldTask/src/main/res/layout/map_fragment.xml" />
         <option value="$PROJECT_DIR$/MapboxAndroidSDK/build.gradle" />
+        <option value="$PROJECT_DIR$/fieldTask/build.gradle" />
       </list>
     </option>
   </component>
@@ -2669,7 +2662,7 @@
     <property name="ExportApk.ApkPath" value="$PROJECT_DIR$/fieldTask" />
     <property name="ExportApk.Flavors" value="" />
     <property name="ExportApk.BuildType" value="release" />
-    <property name="ANDROID_EXTENDED_DEVICE_CHOOSER_SERIALS" value="emulator-5554" />
+    <property name="ANDROID_EXTENDED_DEVICE_CHOOSER_SERIALS" value="" />
     <property name="ANDROID_EXTENDED_DEVICE_CHOOSER_AVD" value="Nexus_5_API_19" />
     <property name="SearchEverywhereHistoryKey" value="mapview&#9;FILE&#9;jar:///Users/neilpenman/git/android/fieldTask3/playservices/libs/google-play-services.jar!/com/google/android/gms/maps/MapView.class&#10;MapView&#9;PSI&#9;JAVA://com.google.android.gms.maps.MapView&#10;MapsActivity&#9;ACTION&#9;template.create.GoogleGoogle Maps Activity" />
     <property name="FullScreen" value="false" />
@@ -2890,7 +2883,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="22" width="1280" height="719" extended-state="6" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -2898,15 +2891,15 @@
       <window_info id="Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.27625203" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.39137647" sideWeight="0.34248787" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39137647" sideWeight="0.34248787" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.5927835" sideWeight="0.6211632" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.16583748" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3283582" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Gradle Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.39137647" sideWeight="0.6575121" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Gradle Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.694859" sideWeight="0.60743135" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Build Variants" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.13266999" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Android" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.26533997" sideWeight="0.66235864" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Android" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.694859" sideWeight="0.39256865" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24958949" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -3096,13 +3089,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/playservices/build/generated/source/r/test/debug/com/google/android/gms/R.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-0.5175097" vertical-offset="178" max-vertical-offset="1710">
-          <caret line="8" column="0" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/MapboxAndroidSDK/src/main/java/com/mapbox/mapboxsdk/overlay/Marker.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="-5.6538463" vertical-offset="5838" max-vertical-offset="6555">
@@ -3279,14 +3265,6 @@
         <state />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/fieldTask/build.gradle">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="735">
-          <caret line="4" column="23" selection-start-line="4" selection-start-column="23" selection-end-line="4" selection-end-column="29" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/local.properties">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="377">
@@ -3303,6 +3281,14 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/MapboxAndroidSDK/build.gradle">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-4.1538463" vertical-offset="1317" max-vertical-offset="3735">
+          <caret line="95" column="16" selection-start-line="95" selection-start-column="6" selection-end-line="95" selection-end-column="16" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/.travis.yml">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="377">
@@ -3311,10 +3297,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/MapboxAndroidSDK/build.gradle">
+    <entry file="file://$PROJECT_DIR$/fieldTask/build.gradle">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.34504792" vertical-offset="1317" max-vertical-offset="3735">
-          <caret line="95" column="16" selection-start-line="95" selection-start-column="6" selection-end-line="95" selection-end-column="16" />
+        <state vertical-scroll-proportion="1.4423077" vertical-offset="225" max-vertical-offset="795">
+          <caret line="30" column="8" selection-start-line="30" selection-start-column="8" selection-end-line="30" selection-end-column="8" />
           <folding />
         </state>
       </provider>
