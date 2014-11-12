@@ -6,8 +6,10 @@ import-summary.txt
 
 gradlew
 gradlew.bat
-.gradle
 
+# Android Studio
+.gradle
+.idea
 
 .DS_Store
 .AppleDouble
