@@ -1,5 +1,6 @@
 [Smap fieldTask](http://www.smap.com.au) 
 ======
+[![Build Status](https://travis-ci.org/nap2000/fieldTask2.svg)](https://travis-ci.org/nap2000/fieldTask2)
 
 This repository contains the latest version of fieldTask ported to Android Studio
 
