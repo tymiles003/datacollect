@@ -5,14 +5,14 @@
         jar="/Users/neilpenman/git/android/fieldTask3/fieldTask/build/intermediates/exploded-aar/fieldTask3/oDK14_lib/unspecified/classes.jar"
         jumboMode="false"
         revision="21.0.2"
-        sha1="25690cd88f98404283233c1e013a83500d56989b">
+        sha1="b0f9f2a3cdb7e448c462f487fe63817ac9dd9baa">
         <dex dex="/Users/neilpenman/git/android/fieldTask3/fieldTask/build/intermediates/pre-dexed/debug/classes-719e0703fd8d8d8100ba3b36b3da3db4ac579090.jar" />
     </item>
     <item
         jar="/Users/neilpenman/git/android/fieldTask3/fieldTask/build/intermediates/exploded-aar/com.mapbox.mapboxsdk/MapboxAndroidSDK/0.5.0-SNAPSHOT/classes.jar"
         jumboMode="false"
         revision="21.0.2"
-        sha1="5d216563a518087eb9f98397c4bdcc0724ecf025">
+        sha1="e8433507666d0c553930969ea26946f0744ba7b7">
         <dex dex="/Users/neilpenman/git/android/fieldTask3/fieldTask/build/intermediates/pre-dexed/debug/classes-bcbe7475f985365afb694fef346e27e64ed2a075.jar" />
     </item>
     <item
@@ -131,7 +131,7 @@
         jar="/Users/neilpenman/git/android/fieldTask3/fieldTask/build/intermediates/exploded-aar/fieldTask3/playservices/unspecified/classes.jar"
         jumboMode="false"
         revision="21.0.2"
-        sha1="38a7942c6a6a111a3321e069a465c558ed921e56">
+        sha1="b8a95d5dbcce101d7cd1e0ba103854a5b6812feb">
         <dex dex="/Users/neilpenman/git/android/fieldTask3/fieldTask/build/intermediates/pre-dexed/debug/classes-77df9b2b77389a914b4f4e769658544fb5d0a7fe.jar" />
     </item>
     <item

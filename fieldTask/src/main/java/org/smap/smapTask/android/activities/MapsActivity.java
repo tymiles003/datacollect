@@ -87,11 +87,15 @@ public class MapsActivity extends FragmentActivity  {
     @Override
     protected void onPause() {
         super.onPause();
+        locationManager.removeUpdates(locationListener);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        if ( locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 30000, (float) 10.0, locationListener);
+        }
 
 
     }

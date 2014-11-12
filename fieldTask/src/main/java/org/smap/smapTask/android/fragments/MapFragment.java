@@ -3,8 +3,10 @@ package org.smap.smapTask.android.fragments;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.Fragment;
@@ -23,7 +25,6 @@ import com.mapbox.mapboxsdk.overlay.Icon;
 import com.mapbox.mapboxsdk.overlay.ItemizedIconOverlay;
 import com.mapbox.mapboxsdk.overlay.Marker;
 import com.mapbox.mapboxsdk.overlay.PathOverlay;
-import com.mapbox.mapboxsdk.overlay.UserLocationOverlay;
 import com.mapbox.mapboxsdk.tileprovider.tilesource.ITileLayer;
 import com.mapbox.mapboxsdk.tileprovider.tilesource.MBTilesLayer;
 import com.mapbox.mapboxsdk.tileprovider.tilesource.MapboxTileLayer;
@@ -40,6 +41,8 @@ import java.util.List;
 import loaders.SmapTaskLoader;
 import loaders.TaskEntry;
 
+import static org.smap.smapTask.android.R.drawable;
+
 public class MapFragment extends Fragment implements LoaderManager.LoaderCallbacks<List<TaskEntry>> {
 
     ItemizedIconOverlay markerOverlay = null;
@@ -48,7 +51,14 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     private double tasksSouth;
     private double tasksEast;
     private double tasksWest;
-    private LatLng userLocation = null;
+
+    Marker userLocationMarker = null;
+    Icon userLocationIcon = null;
+    Icon accepted = null;
+    Icon rejected = null;
+    Icon complete = null;
+    Icon submitted = null;
+    Icon unknown_task_status = null;
 
     private MapView mv;
     private String satellite = "brunosan.map_fragment-cyglrrfu";
@@ -62,22 +72,22 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     {
 
         View view = inflater.inflate(R.layout.map_fragment, container, false);
-
         mv = (MapView) view.findViewById(R.id.mapview);
+
+        // Create icons
+        userLocationIcon = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_userlocation)));
+        accepted = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.task_open)));
+        rejected = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.task_reject)));
+        complete = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.task_done)));
+        submitted = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.task_submitted)));
+        unknown_task_status = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.task_unknown)));
+
         // Set Default Map Type
         replaceMapView("mapquest");
         currentLayer = "terrain";
 
-        mv.setUserLocationEnabled(true)
-            .setUserLocationTrackingMode(UserLocationOverlay.TrackingMode.FOLLOW);
-
         getLoaderManager().initLoader(MAP_LOADER_ID, null, this);       // Get the task locations
 
-        /*
-        // Original GeoJSON Test that caus es crash when Hardware Acceleration when enabled in TestApp
-        mv.loadFromGeoJSONURL("https://gist.githubusercontent.com/tmcw/4a6f5fa40ab9a6b2f163/raw/b1ee1e445225fc0a397e2605feda7da74c36161b/map_fragment.geojson");
-        */
-        // Smaller GeoJSON Test
 
         mv.setOnTilesLoadedListener(new TilesLoadedListener() {
             @Override
@@ -98,13 +108,11 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
     @Override
     public void onLoadFinished(Loader<List<TaskEntry>> loader, List<TaskEntry> data) {
-        Log.i("MapFragment", "============ onLoadFinished");
         showTasks(data);
     }
 
     @Override
     public void onLoaderReset(Loader<List<TaskEntry>> loader) {
-        Log.i("MapFragment", "============ onLoaderReset");
         clearTasks();
     }
 
@@ -241,6 +249,11 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
         markers = new ArrayList<Marker> ();
 
+        // Add the user location
+        if(userLocationMarker != null) {
+            markers.add(userLocationMarker);
+        }
+
         for(TaskEntry t : data) {
             Log.i("showTasks--- ", t.name + " :: " + t.status + " :: " + t.lon + " :: " + t.lat);
             if(t.lon == 0.0 && t.lat == 0.0) {
@@ -262,65 +275,116 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
             LatLng ll = new LatLng(t.lat, t.lon);
             Marker m = new Marker(mv, t.name, t.taskAddress, ll);
-            m.setIcon(new Icon(getActivity(), Icon.Size.LARGE, "marker-stroked", getIconColour(t.status)));
-            m.setMarker(mv.getDefaultPinDrawable());
+            m.setIcon(getIcon(t.status));
             markers.add(m);
         }
-        // Add the markers overlay
-        if(markers.size() > 0) {
 
-            Log.i("showTasks--- ", "size:: " + markers.size());
-            zoomToData();
-            Log.i("showTasks--- ", "zoomed ");
+        // Remove any existing markers
+        if(markerOverlay != null) {
+            markerOverlay.removeAllItems();
+        }
+
+        // Add the task markers
+        if(markers.size() > 0) {
             if (markerOverlay == null) {
                 markerOverlay = new ItemizedIconOverlay(getActivity(), markers, onItemGestureListener);
-                Log.i("showTasks--- ", "created overlay ");
                 mv.getOverlays().add(markerOverlay);
-                Log.i("showTasks--- ", "added overlay ");
             } else {
                 markerOverlay.addItems(markers);
             }
         }
+
+
+
+        zoomToData();
     }
 
+
     private void clearTasks() {
-
-
+        markerOverlay.removeAllItems();
     }
 
     public void setUserLocation(LatLng location) {
+        Log.i("MapFragment", "setUserLocation()");
 
+        if(userLocationMarker == null) {
+            userLocationMarker = new Marker(mv, "", "", location);
+            userLocationMarker.setIcon(userLocationIcon);
+
+            if (markerOverlay == null) {
+                markers.add(userLocationMarker);
+                markerOverlay = new ItemizedIconOverlay(getActivity(), markers, onItemGestureListener);
+                mv.getOverlays().add(markerOverlay);
+            } else {
+                markerOverlay.addItem(userLocationMarker);
+            }
+        } else {
+            userLocationMarker.setPoint(location);
+            userLocationMarker.updateDrawingPosition();
+            userLocationMarker.setIcon(userLocationIcon);
+        }
+        zoomToData();
     }
 
     private void zoomToData() {
 
-        // Todo Add current location
         // Todo Add Trace
 
-        double north = tasksNorth;
+        double north = tasksNorth;    // Add Margin
         double south = tasksSouth;
         double east = tasksEast;
         double west = tasksWest;
-        BoundingBox bb = new BoundingBox(north, east, south, west);
 
-        mv.zoomToBoundingBox(bb, true, true, true);
+        // Add current location to bounding box
+        if(userLocationMarker != null) {
+            double lat = userLocationMarker.getPoint().getLatitude();
+            double lon = userLocationMarker.getPoint().getLongitude();
+            if(lat > north) {
+                north = lat;
+            }
+            if(lat < south) {
+                south = lat;
+            }
+            if(lon > east) {
+                east = lon;
+            }
+            if(lon < west) {
+                west = lon;
+            }
+        }
+
+        // Make sure bounding box is not a point
+        if(north == south) {
+            north += 0.01;
+            south -= 0.01;
+        }
+        if(east == west) {
+            east += 0.01;
+            west -= 0.01;
+        }
+
+        if(north > south && east > west) {
+            BoundingBox bb = new BoundingBox(north, east, south, west);
+            mv.zoomToBoundingBox(bb, true, true, true, true);
+        }
     }
 
     /*
      * Get the colour to represent the passed in task status
      */
-    private String getIconColour(String status) {
+    private Icon getIcon(String status) {
 
         if(status.equals("rejected")) {
-            return "FF0000";
+            return rejected;
         } else if(status.equals("accepted")) {
-            return "00FF00";
-        } else if(status.equals("complete")) {
-            return "0000FF";
+            return accepted;
+        } else if(status.equals("done")) {
+            return complete;
         } else if(status.equals("submitted")) {
-            return "FF00FF";
+            return submitted;
         } else {
-            return "FFFFFF";
+            Log.i("MapFragment", "Unknown task status: " + status);
+            return unknown_task_status;
         }
     }
 

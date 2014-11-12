@@ -19,13 +19,6 @@
  */
 package org.smap.smapTask.android.adapters;
 
-import java.util.List;
-
-import loaders.TaskEntry;
-
-import org.smap.smapTask.android.R;
-import org.smap.smapTask.android.utilities.KeyValueJsonFns;
-
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,6 +26,13 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import org.smap.smapTask.android.R;
+import org.smap.smapTask.android.utilities.KeyValueJsonFns;
+
+import java.util.List;
+
+import loaders.TaskEntry;
 
 public class TaskListArrayAdapter extends ArrayAdapter<TaskEntry> {
     
@@ -68,12 +68,8 @@ public class TaskListArrayAdapter extends ArrayAdapter<TaskEntry> {
     			icon.setImageResource(R.drawable.task_done);
     		} else if(item.status.equals("rejected") || item.status.equals("missed") || item.status.equals("cancelled")) {
     			icon.setImageResource(R.drawable.task_reject);
-    		} else if(item.status.equals("new") || item.status.equals("pending") || item.status.equals("failed")) {
-    			icon.setImageResource(R.drawable.task_new);
     		} else if(item.status.equals("submitted")) {
     			icon.setImageResource(R.drawable.task_submitted);
-    		} else if(item.status.equals("missed")) {
-    			icon.setImageResource(R.drawable.task_missed);
     		}
     	}
     	
