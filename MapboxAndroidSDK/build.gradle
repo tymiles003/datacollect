@@ -90,17 +90,17 @@ android.libraryVariants.all { variant ->
 //    showViolations true
 //}
 
-android.libraryVariants.all { variant ->
-    def name = variant.buildType.name
-    def checkstyle = project.tasks.create "checkstyle${name.capitalize()}", Checkstyle
-    checkstyle.dependsOn variant.javaCompile
-    checkstyle.source variant.javaCompile.source
-    checkstyle.classpath = project.fileTree(variant.javaCompile.destinationDir)
-    checkstyle.exclude('**/BuildConfig.java')
-    checkstyle.exclude('**/R.java')
-    checkstyle.exclude('**/uk/co/senab/bitmapcache/*')
-    project.tasks.getByName("check").dependsOn checkstyle
-}
+//android.libraryVariants.all { variant ->
+//    def name = variant.buildType.name
+//    def checkstyle = project.tasks.create "checkstyle${name.capitalize()}", Checkstyle
+//    checkstyle.dependsOn variant.javaCompile
+//    checkstyle.source variant.javaCompile.source
+//    checkstyle.classpath = project.fileTree(variant.javaCompile.destinationDir)
+//    checkstyle.exclude('**/BuildConfig.java')
+//    checkstyle.exclude('**/R.java')
+//    checkstyle.exclude('**/uk/co/senab/bitmapcache/*')
+//    project.tasks.getByName("check").dependsOn checkstyle
+//}
 
 // From https://raw.github.com/mcxiaoke/gradle-mvn-push/master/jar.gradle
 android.libraryVariants.all { variant ->
