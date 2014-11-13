@@ -26,11 +26,9 @@ import android.support.v4.content.AsyncTaskLoader;
 import android.util.Log;
 
 import org.odk.collect.android.application.Collect;
-import org.odk.collect.android.database.FileDbAdapter;
 import org.odk.collect.android.provider.FormsProviderAPI.FormsColumns;
 import org.smap.smapTask.android.utilities.Utilities;
 
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +38,6 @@ import java.util.List;
  */
 public class SmapTaskLoader extends AsyncTaskLoader<List<TaskEntry>> {
 
-	private Cursor mTaskListCursor = null;
 	private Cursor mFormListCursor = null;
 	private List<TaskEntry> mTasks = null;
 	private SmapTaskObserver mSmapTaskObserver;	// Monitor changes to task data
@@ -59,7 +56,7 @@ public class SmapTaskLoader extends AsyncTaskLoader<List<TaskEntry>> {
 		// Create corresponding array of entries and load their labels.
 		ArrayList<TaskEntry> entries = new ArrayList<TaskEntry>(10);
 		getForms(entries);
-		getTasks(entries);
+        Utilities.getTasks(entries);
 
 		return entries;
 	}
@@ -87,7 +84,7 @@ public class SmapTaskLoader extends AsyncTaskLoader<List<TaskEntry>> {
 			mFormListCursor.moveToFirst();
 			while (!mFormListCursor.isAfterLast()) {
         		 
-        		 TaskEntry entry = new TaskEntry(this);
+        		 TaskEntry entry = new TaskEntry();
 	            
         		 entry.type = "form";
         		 entry.ident = mFormListCursor.getString(mFormListCursor.getColumnIndex(FormsColumns.JR_FORM_ID));
@@ -101,54 +98,7 @@ public class SmapTaskLoader extends AsyncTaskLoader<List<TaskEntry>> {
         	 }
     	}
 	}
-	
-	private void getTasks(ArrayList<TaskEntry> entries) {
-		// Get cursor
-		if(mTaskListCursor == null || mTaskListCursor.isClosed()) {
-			FileDbAdapter fda = new FileDbAdapter();
-			fda.open();
-			try {
-				mTaskListCursor = fda.fetchTasksForSource(Utilities.getSource(), true);
-			} catch (Exception e) {
-				e.printStackTrace();
-			} finally {
-				fda.close();
-			}
-		}
-		
-		if(mTaskListCursor != null && !mTaskListCursor.isClosed()) {
-			mTaskListCursor.moveToFirst();
-			DateFormat dFormat = DateFormat.getDateTimeInstance();
-			while (!mTaskListCursor.isAfterLast()) {
-	
-				TaskEntry entry = new TaskEntry(this);
-				entry.type = "task";
-				entry.name = mTaskListCursor.getString(mTaskListCursor
-						.getColumnIndex(FileDbAdapter.KEY_T_TITLE));
-				entry.status = mTaskListCursor.getString(mTaskListCursor
-						.getColumnIndex(FileDbAdapter.KEY_T_STATUS));
-				entry.taskStart = dFormat
-						.format(mTaskListCursor.getLong(mTaskListCursor
-								.getColumnIndex(FileDbAdapter.KEY_T_SCHEDULED_START)));
-				entry.taskAddress = mTaskListCursor.getString(mTaskListCursor
-						.getColumnIndex(FileDbAdapter.KEY_T_ADDRESS));
-				entry.taskForm = mTaskListCursor.getString(mTaskListCursor
-						.getColumnIndex(FileDbAdapter.KEY_T_TASKFORM));
-				entry.instancePath = mTaskListCursor.getString(mTaskListCursor
-						.getColumnIndex(FileDbAdapter.KEY_T_INSTANCE));
-				entry.id = mTaskListCursor.getLong(mTaskListCursor
-						.getColumnIndex(FileDbAdapter.KEY_T_ID));
-                entry.lon = mTaskListCursor.getDouble(mTaskListCursor
-                        .getColumnIndex(FileDbAdapter.KEY_T_LON));
-                entry.lat = mTaskListCursor.getDouble(mTaskListCursor
-                        .getColumnIndex(FileDbAdapter.KEY_T_LAT));
-				
-				entries.add(entry);
-				mTaskListCursor.moveToNext();
-			}
-		}
-	}
-	
+
 	/**
 	 * Called when there is new data to deliver to the client. The superclass
 	 * will deliver it to the registered listener (i.e. the LoaderManager),
@@ -257,10 +207,6 @@ public class SmapTaskLoader extends AsyncTaskLoader<List<TaskEntry>> {
 	 * actively loaded data set.
 	 */
 	private void releaseResources(List<TaskEntry> tasks) {
-		if(mTaskListCursor != null && !mTaskListCursor.isClosed()) {
-			mTaskListCursor.close();
-			mTaskListCursor = null;
-		}
 		if(mFormListCursor != null && !mFormListCursor.isClosed()) {
 			mFormListCursor.close();
 			mFormListCursor = null;

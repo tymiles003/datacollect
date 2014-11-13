@@ -28,7 +28,6 @@ import java.util.Map;
 
 import org.odk.collect.android.R;
 import org.odk.collect.android.application.Collect;
-import org.odk.collect.android.database.FileDbAdapter;
 import org.odk.collect.android.listeners.InstanceUploaderListener;
 import org.odk.collect.android.logic.PropertyManager;
 import org.odk.collect.android.preferences.PreferencesActivity;
@@ -38,7 +37,6 @@ import org.odk.collect.android.utilities.WebUtils;
 import org.opendatakit.httpclientandroidlib.Header;
 import org.opendatakit.httpclientandroidlib.HttpResponse;
 import org.opendatakit.httpclientandroidlib.HttpStatus;
-import org.opendatakit.httpclientandroidlib.client.AuthCache;
 import org.opendatakit.httpclientandroidlib.client.ClientProtocolException;
 import org.opendatakit.httpclientandroidlib.client.HttpClient;
 import org.opendatakit.httpclientandroidlib.client.methods.HttpHead;
@@ -490,14 +488,8 @@ public class InstanceUploaderTask extends AsyncTask<Long, Integer, InstanceUploa
         // if it got here, it must have worked
         outcome.mResults.put(id, Collect.getInstance().getString(R.string.success));
         cv.put(InstanceColumns.STATUS, InstanceProviderAPI.STATUS_SUBMITTED);
+        cv.put(InstanceColumns.T_ASS_STATUS, InstanceProviderAPI.STATUS_SUBMITTED);     // smap
         Collect.getInstance().getContentResolver().update(toUpdate, cv, null, null);
-        // Start Smap
-        // Update the task status
-        FileDbAdapter fda = new FileDbAdapter();
-        fda.open();
-        fda.updateTaskStatus(instanceFilePath, fda.STATUS_T_SUBMITTED);
-        fda.close();
-        // End Smap
         return true;
     }
 

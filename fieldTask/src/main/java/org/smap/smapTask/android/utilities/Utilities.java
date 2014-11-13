@@ -14,22 +14,13 @@
 
 package org.smap.smapTask.android.utilities;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
+import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
 
 import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.preferences.PreferencesActivity;
-import org.odk.collect.android.provider.InstanceProviderAPI;
-import org.odk.collect.android.provider.FormsProviderAPI.FormsColumns;
 import org.odk.collect.android.provider.InstanceProviderAPI.InstanceColumns;
-import org.odk.collect.android.tasks.DownloadFormsTask;
-import org.odk.collect.android.tasks.DownloadFormsTask.FileResult;
-import org.odk.collect.android.utilities.FileUtils;
 import org.odk.collect.android.utilities.STFileUtils;
-import org.smap.smapTask.android.taskModel.FormLocator;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -37,9 +28,22 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.preference.PreferenceManager;
-import android.util.Log;
+
+import loaders.TaskEntry;
 
 public class Utilities {
+
+    public static final String STATUS_T_NEW = "new";
+    public static final String STATUS_T_PENDING = "pending";
+    public static final String STATUS_T_ACCEPTED = "accepted";
+    public static final String STATUS_T_REJECTED = "rejected";
+    public static final String STATUS_T_DONE = "done";
+    public static final String STATUS_T_SUBMITTED = "submitted";
+    public static final String STATUS_T_MISSED = "missed";
+    public static final String STATUS_T_CANCELLED = "cancelled";
+    public static final String STATUS_T_DELETED = "deleted";
+    public static final String STATUS_SYNC_YES = "synchronized";
+    public static final String STATUS_SYNC_NO = "not synchronized";
 	
 	// Get the task source
 	public static String getSource() {
@@ -54,4 +58,260 @@ public class Utilities {
 
 		return source;
 	}
+
+    public static TaskEntry getTaskForTaskId(long id) {
+
+        TaskEntry entry = null;
+
+        // Get cursor
+        String [] proj = {
+                InstanceColumns._ID,
+                InstanceColumns.T_TITLE,
+                InstanceColumns.T_ASS_STATUS,
+                InstanceColumns.T_SCHED_START,
+                InstanceColumns.T_ADDRESS,
+                InstanceColumns.FORM_PATH,
+                InstanceColumns.INSTANCE_FILE_PATH,
+                InstanceColumns.SCHED_LON,
+                InstanceColumns.SCHED_LAT,
+                InstanceColumns.ACT_LON,
+                InstanceColumns.ACT_LAT,
+                InstanceColumns.T_IS_SYNC,
+                InstanceColumns.T_ASS_ID
+
+        };
+
+        String selectClause = InstanceColumns._ID + " = " + id;
+
+
+        final ContentResolver resolver = Collect.getInstance().getContentResolver();
+        Cursor c = resolver.query(InstanceColumns.CONTENT_URI, proj, selectClause, null, null);
+
+        try {
+            c.moveToFirst();
+            DateFormat dFormat = DateFormat.getDateTimeInstance();
+
+
+            entry = new TaskEntry();
+
+            entry.type = "task";
+            entry.name = c.getString(c.getColumnIndex(InstanceColumns.T_TITLE));
+            entry.taskStatus = c.getString(c.getColumnIndex(InstanceColumns.T_ASS_STATUS));
+            entry.taskStart = dFormat.format(c.getLong(c.getColumnIndex(InstanceColumns.T_SCHED_START)));
+            entry.taskAddress = c.getString(c.getColumnIndex(InstanceColumns.T_ADDRESS));
+            entry.taskForm = c.getString(c.getColumnIndex(InstanceColumns.FORM_PATH));
+            entry.instancePath = c.getString(c.getColumnIndex(InstanceColumns.INSTANCE_FILE_PATH));
+            entry.id = c.getLong(c.getColumnIndex(InstanceColumns._ID));
+            entry.schedLon = c.getDouble(c.getColumnIndex(InstanceColumns.SCHED_LON));
+            entry.schedLat = c.getDouble(c.getColumnIndex(InstanceColumns.SCHED_LAT));
+            entry.actLon = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LON));
+            entry.actLat = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LAT));
+            entry.isSynced = c.getString(c.getColumnIndex(InstanceColumns.T_IS_SYNC));
+            entry.assignmentId = c.getLong(c.getColumnIndex(InstanceColumns.T_ASS_ID));
+
+        } catch(Exception e) {
+            e.printStackTrace();
+        } finally {
+            if(c != null) {
+                try {
+                    c.close();
+                } catch (Exception e) {
+                }
+            }
+        }
+
+        return entry;
+    }
+
+    public static void getTasks(ArrayList<TaskEntry> tasks) {
+
+        // Get cursor
+        String [] proj = {
+                InstanceColumns._ID,
+                InstanceColumns.T_TITLE,
+                InstanceColumns.T_ASS_STATUS,
+                InstanceColumns.T_SCHED_START,
+                InstanceColumns.T_ADDRESS,
+                InstanceColumns.FORM_PATH,
+                InstanceColumns.INSTANCE_FILE_PATH,
+                InstanceColumns.SCHED_LON,
+                InstanceColumns.SCHED_LAT,
+                InstanceColumns.ACT_LON,
+                InstanceColumns.ACT_LAT,
+                InstanceColumns.T_IS_SYNC,
+                InstanceColumns.T_ASS_ID
+
+        };
+
+        String selectClause = InstanceColumns.SOURCE + "='" + Utilities.getSource() +
+                "' or " + InstanceColumns.SOURCE + "='local'";
+        String sortOrder = InstanceColumns.T_SCHED_START + " DESC";
+
+
+        final ContentResolver resolver = Collect.getInstance().getContentResolver();
+        Cursor c = resolver.query(InstanceColumns.CONTENT_URI, proj, selectClause, null, sortOrder);
+
+        try {
+            c.moveToFirst();
+            DateFormat dFormat = DateFormat.getDateTimeInstance();
+            while (!c.isAfterLast()) {
+
+                TaskEntry entry = new TaskEntry();
+
+                entry.type = "task";
+                entry.name = c.getString(c.getColumnIndex(InstanceColumns.T_TITLE));
+                entry.taskStatus = c.getString(c.getColumnIndex(InstanceColumns.T_ASS_STATUS));
+                entry.taskStart = dFormat.format(c.getLong(c.getColumnIndex(InstanceColumns.T_SCHED_START)));
+                entry.taskAddress = c.getString(c.getColumnIndex(InstanceColumns.T_ADDRESS));
+                entry.taskForm = c.getString(c.getColumnIndex(InstanceColumns.FORM_PATH));
+                entry.instancePath = c.getString(c.getColumnIndex(InstanceColumns.INSTANCE_FILE_PATH));
+                entry.id = c.getLong(c.getColumnIndex(InstanceColumns._ID));
+                entry.schedLon = c.getDouble(c.getColumnIndex(InstanceColumns.SCHED_LON));
+                entry.schedLat = c.getDouble(c.getColumnIndex(InstanceColumns.SCHED_LAT));
+                entry.actLon = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LON));
+                entry.actLat = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LAT));
+                entry.isSynced = c.getString(c.getColumnIndex(InstanceColumns.T_IS_SYNC));
+                entry.assignmentId = c.getLong(c.getColumnIndex(InstanceColumns.T_ASS_ID));
+
+                tasks.add(entry);
+                c.moveToNext();
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        } finally {
+            if(c != null) {
+                try {
+                    c.close();
+                } catch (Exception e) {
+                }
+            }
+        }
+
+    }
+
+    /*
+     * Delete the task
+     */
+    public static void deleteTask(Long id) {
+
+        Uri taskUri =  Uri.withAppendedPath(InstanceColumns.CONTENT_URI, id.toString());
+        final ContentResolver cr = Collect.getInstance().getContentResolver();
+        cr.delete(taskUri, null, null);
+
+    }
+
+    /*
+ * Delete the task
+ */
+    public static void closeTasksWithStatus(String status) {
+
+        Uri dbUri =  InstanceColumns.CONTENT_URI;
+
+        ContentValues values = new ContentValues();
+        values.put(InstanceColumns.T_ASS_STATUS, "closed");
+
+        String selectClause = InstanceColumns.T_ASS_STATUS + " = ? and "
+                + InstanceColumns.SOURCE + "= ? ";
+
+        String [] selectArgs = {"",""};
+        selectArgs[0] = status;
+        selectArgs[1] = Utilities.getSource();
+
+       // Todo check if option is to delete on close
+        final ContentResolver cr = Collect.getInstance().getContentResolver();
+        cr.update(dbUri, values, selectClause, selectArgs);
+
+    }
+
+    /*
+     * Mark the task as synchronised
+     */
+    public static void setTaskSynchronized(Long id) {
+
+        Uri taskUri =  Uri.withAppendedPath(InstanceColumns.CONTENT_URI, id.toString());
+
+        ContentValues values = new ContentValues();
+        values.put(InstanceColumns.T_IS_SYNC, STATUS_SYNC_YES);
+
+
+        final ContentResolver cr = Collect.getInstance().getContentResolver();
+        cr.update(taskUri, values, null, null);
+
+    }
+
+    /*
+     * Mark the task as synchronised
+     */
+    public static void setStatusForTask(Long id, String status) {
+
+        Uri taskUri =  Uri.withAppendedPath(InstanceColumns.CONTENT_URI, id.toString());
+
+        ContentValues values = new ContentValues();
+        values.put(InstanceColumns.T_ASS_STATUS, status);
+
+
+        final ContentResolver cr = Collect.getInstance().getContentResolver();
+        cr.update(taskUri, values, null, null);
+
+    }
+
+    /*
+     * Set the task assignment
+     */
+    public static void setStatusForAssignment(long assignmentId, String status) {
+
+        Uri dbUri =  InstanceColumns.CONTENT_URI;
+
+        String selectClause = InstanceColumns.T_ASS_ID + " = " + assignmentId + " and "
+                + InstanceColumns.SOURCE + "= ? ";
+
+        String [] selectArgs = {""};
+        selectArgs[0] = Utilities.getSource();
+
+        ContentValues values = new ContentValues();
+        values.put(InstanceColumns.STATUS, status);
+
+        final ContentResolver cr = Collect.getInstance().getContentResolver();
+        cr.update(dbUri, values, selectClause, selectArgs);
+
+    }
+
+    /*
+     * Return true if the current task status allows it to be rejected
+     */
+    public static boolean canReject(String currentStatus) {
+        boolean valid = false;
+        if(currentStatus.equals(STATUS_T_PENDING) ||
+                currentStatus.equals(STATUS_T_NEW) ||
+                currentStatus.equals(STATUS_T_ACCEPTED)) {
+            valid = true;
+        }
+        return valid;
+    }
+
+    /*
+     * Return true if the current task status allows it to be completed
+     */
+    public static boolean canComplete(String currentStatus) {
+        boolean valid = false;
+        if(currentStatus.equals(STATUS_T_ACCEPTED)) {
+            valid = true;
+        }
+
+        return valid;
+    }
+
+    /*
+     * Return true if the current task status allows it to be completed
+     */
+    public static boolean canAccept(String currentStatus) {
+        boolean valid = false;
+        if(currentStatus.equals(STATUS_T_PENDING) ||
+                currentStatus.equals(STATUS_T_NEW) ||
+                currentStatus.equals(STATUS_T_REJECTED)) {
+            valid = true;
+        }
+
+        return valid;
+    }
 }

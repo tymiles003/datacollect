@@ -27,6 +27,8 @@ import org.odk.collect.android.provider.InstanceProviderAPI.InstanceColumns;
 import org.odk.collect.android.tasks.DownloadFormsTask;
 import org.odk.collect.android.tasks.DownloadFormsTask.FileResult;
 import org.odk.collect.android.utilities.FileUtils;
+import org.odk.collect.android.database.TaskAssignment;
+import org.odk.collect.android.utilities.STFileUtils;
 import org.smap.smapTask.android.taskModel.FormLocator;
 
 import android.content.ContentResolver;
@@ -294,8 +296,12 @@ public class ManageForm {
 	 *   			Not stored
 	 *    
 	 */
-    public ManageFormResponse insertInstance(String formId, int formVersion, String formURL, String initialDataURL, String taskId) {
-     
+    public ManageFormResponse insertInstance(TaskAssignment ta, long assignmentId) {
+
+        String formId = ta.task.form_id;
+        int formVersion = ta.task.form_version;
+        String initialDataURL = ta.task.initial_data;
+
         String instancePath = null;
         String formVersionString = String.valueOf(formVersion);	
         
@@ -306,7 +312,7 @@ public class ManageForm {
     	if(fd.exists) {
          
 	  		 // Get the instance path
-	         instancePath = getInstancePath(fd.formPath, taskId);
+	         instancePath = getInstancePath(fd.formPath, assignmentId);
 	         if(instancePath != null && initialDataURL != null) {
 	        	 File f = null;
 	
@@ -321,11 +327,15 @@ public class ManageForm {
 	         		 return mfResponse;
 	             }
 	         }
-	
+
+            if(ta.task.title == null) {
+                ta.task.title = "local: " + STFileUtils.getName(fd.formPath);
+            }
 			    
 	         // Write the new instance entry into the instance content provider
 	         try {
-	        	 mfResponse.mUri = writeInstanceDatabase(formId, formVersionString, fd.formName, fd.submissionUri, instancePath);
+	        	 mfResponse.mUri = writeInstanceDatabase(formId, formVersionString, fd.formName, fd.submissionUri,
+                         instancePath, ta, fd.formPath);
 	         } catch (Throwable e) {
 	        	 e.printStackTrace();
 	       		 mfResponse.isError = true;
@@ -334,8 +344,6 @@ public class ManageForm {
 	         }
     	} else {
             mfResponse.isError = true;
-            mfResponse.formPath = fd.formPath;
-            mfResponse.instancePath = instancePath;
     	}
          
          mfResponse.isError = false;
@@ -345,7 +353,7 @@ public class ManageForm {
     }
     
     private Uri writeInstanceDatabase(String jrformid, String jrVersion, String formName, 
-			String submissionUri, String instancePath) throws Throwable {
+			String submissionUri, String instancePath, TaskAssignment ta, String formPath) throws Throwable {
     
     	ContentValues values = new ContentValues();
 	 
@@ -356,7 +364,40 @@ public class ManageForm {
     	values.put(InstanceColumns.INSTANCE_FILE_PATH, instancePath);
     	values.put(InstanceColumns.DISPLAY_NAME, formName);
     	values.put(InstanceColumns.STATUS, InstanceProviderAPI.STATUS_INCOMPLETE);
-    	//values.put(InstanceColumns.CAN_EDIT_WHEN_COMPLETE, Boolean.toString(false));
+
+        values.put(InstanceColumns.ACT_LON, 0.0);
+        values.put(InstanceColumns.ACT_LAT, 0.0);
+        values.put(InstanceColumns.T_TITLE, ta.task.title);
+        values.put(InstanceColumns.T_TASK_ID, ta.task.id);
+        values.put(InstanceColumns.T_ASS_ID, ta.assignment.assignment_id);
+        values.put(InstanceColumns.T_ASS_STATUS, ta.assignment.assignment_status);
+        if(ta.task.scheduled_at != null) {
+            values.put(InstanceColumns.T_SCHED_START, ta.task.scheduled_at.getTime());
+        }
+        values.put(InstanceColumns.FORM_PATH, formPath);
+        values.put(InstanceColumns.T_ADDRESS, ta.task.address);
+        values.put(InstanceColumns.T_IS_SYNC, InstanceProviderAPI.STATUS_SYNC_YES);
+
+        // Add target location
+        if (ta.location != null && ta.location.geometry != null && ta.location.geometry.coordinates != null && ta.location.geometry.coordinates.length >= 1) {
+            // Set the location of the task to the first coordinate pair
+            String firstCoord = ta.location.geometry.coordinates[0];
+            String [] fc = firstCoord.split(" ");
+            if(fc.length > 1) {
+                values.put(InstanceColumns.SCHED_LON, fc[0]);
+                values.put(InstanceColumns.SCHED_LAT, fc[1]);
+            }
+            StringBuilder builder = new StringBuilder();
+            for(String coord : ta.location.geometry.coordinates) {
+                builder.append(coord);
+                builder.append(",");
+            }
+            values.put(InstanceColumns.T_GEOM, builder.toString());
+            values.put(InstanceColumns.T_GEOM_TYPE, ta.location.geometry.type);
+        }
+
+
+        //values.put(InstanceColumns.CAN_EDIT_WHEN_COMPLETE, Boolean.toString(false));
 	
     	return Collect.getInstance().getContentResolver()
     			.insert(InstanceColumns.CONTENT_URI, values);
@@ -368,7 +409,7 @@ public class ManageForm {
      *  formPath:   Used to obtain the filename
      *  taskId:	    Used to guarantee uniqueness when multiple tasks for the same form are assigned
      */
-    private String getInstancePath(String formPath, String taskId) {
+    private String getInstancePath(String formPath, long assignmentId) {
         String instancePath = null;
         
         if(formPath != null) {
@@ -376,7 +417,7 @@ public class ManageForm {
 	                        .format(Calendar.getInstance().getTime());
             String file =
                 formPath.substring(formPath.lastIndexOf('/') + 1, formPath.lastIndexOf('.'));
-            String path = Collect.INSTANCES_PATH + "/" + file + "_" + time + "_" + taskId;
+            String path = Collect.INSTANCES_PATH + "/" + file + "_" + time + "_" + assignmentId;
             if (FileUtils.createFolder(path)) {
                 instancePath = path + "/" + file + "_" + time + ".xml";
             }

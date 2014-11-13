@@ -42,7 +42,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.database.Assignment;
-import org.odk.collect.android.database.FileDbAdapter;
 import org.odk.collect.android.database.TaskAssignment;
 import org.odk.collect.android.listeners.FormDownloaderListener;
 import org.odk.collect.android.listeners.InstanceUploaderListener;
@@ -68,6 +67,8 @@ import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import loaders.TaskEntry;
+
 /**
  * Background task for downloading tasks 
  * 
@@ -77,8 +78,6 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
     
 	private TaskDownloaderListener mStateListener;
 	HashMap<String, String> results = null;
-    FileDbAdapter fda = new FileDbAdapter();
-	Cursor taskListCursor = null;
 	
 	/*
 	 * class used to store status of existing tasks in the database and their database id
@@ -106,12 +105,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	 */
 	@Override
 	protected void onCancelled() {
-    	if(fda != null) {
-          	fda.close();
-    	}
-    	if(taskListCursor != null) {
-    		taskListCursor.close();
-    	}
+
 	}
 	
 	@Override
@@ -119,20 +113,20 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	
 		results = new HashMap<String,String>();		
 
-        fda.open();
+        //fda.open();
         
         /*
          * Always remove local tasks that are no longer current
          */
-        try {   	
-            fda.deleteTasksFromSource("local", FileDbAdapter.STATUS_T_REJECTED);
-            fda.deleteTasksFromSource("local", FileDbAdapter.STATUS_T_SUBMITTED);
-        	
-        } catch (Exception e) {		
-    		e.printStackTrace();
-        } finally {
-        	fda.close();
-        }
+        //try {
+        //    fda.deleteTasksFromSource("local", FileDbAdapter.STATUS_T_REJECTED);
+        //    fda.deleteTasksFromSource("local", FileDbAdapter.STATUS_T_SUBMITTED);
+        //
+        //} catch (Exception e) {
+    	//	e.printStackTrace();
+        //} finally {
+        //	fda.close();
+        //}
         
         
         // Check that the user has enabled task synchronisation
@@ -187,8 +181,8 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
     	
     	String taskURL = null;
     	
-        fda.open();
-        fda.beginTransaction();					// Start Transaction
+        //fda.open();
+        //fda.beginTransaction();					// Start Transaction
     	
         // Get the source (that is the location of the server that has tasks and forms)
         SharedPreferences settings =
@@ -211,8 +205,11 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         
         if(source != null) {
 	        try {
+
+                ArrayList<TaskEntry> tasks = new ArrayList<TaskEntry>();
+                Utilities.getTasks(tasks);
 	        	
-	        	cleanupTasks(fda, source);
+	        	cleanupTasks(tasks);
 	          	
 	        	/*
 	        	 * If tasks are enabled
@@ -227,22 +224,17 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	        	TaskResponse tr = null;
 	        	int statusCode;
 	        	if(tasksEnabled) {
-		            HashMap<String, TaskStatus> taskMap = new HashMap<String, TaskStatus>();
-		            taskListCursor = fda.fetchTasksForSource(source, false);
-		            taskListCursor.moveToFirst();
-		            while(!taskListCursor.isAfterLast()) {
+		            HashMap<Long, TaskStatus> taskMap = new HashMap<Long, TaskStatus>();
+
+                    for(TaskEntry t : tasks) {
 		            	
 			            if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
-			            
-		            	String status = taskListCursor.getString(taskListCursor.getColumnIndex(FileDbAdapter.KEY_T_STATUS));
-		          	  	String aid = taskListCursor.getString(taskListCursor.getColumnIndex(FileDbAdapter.KEY_T_ASSIGNMENTID));
-		          	  	long tid = taskListCursor.getLong(taskListCursor.getColumnIndex(FileDbAdapter.KEY_T_ID));
-		          	  	TaskStatus t = new TaskStatus(tid, status);
-		          	  	taskMap.put(aid, t);
-		          	  	Log.i(getClass().getSimpleName(), "Current task:" + aid + " status:" + status);
-		         		taskListCursor.moveToNext();
+
+
+                        TaskStatus ts = new TaskStatus(t.id, t.taskStatus);
+		          	  	taskMap.put(t.assignmentId, ts);
+
 		            }
-		            taskListCursor.close();
 		             
 		            // Get the tasks for this source from the server
 		            client = new DefaultHttpClient();
@@ -283,53 +275,28 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	                	results.put(key.formName, outcome.get(key));
 	                }
 		            // Apply task changes
-	            	count += addAndUpdateEntries(tr, fda, taskMap, username, source);
+	            	count += addAndUpdateEntries(tr, taskMap, username, source);
 	        	}
 	  
 	            
             	/*
             	 * Notify the server of the phone state
-            	 *  (1) Update on the server all tasls that have a status of "accepted", "rejected" or "submitted" or "cancelled" or "completed"
+            	 *  (1) Update on the server all tasks that have a status of "accepted", "rejected" or "submitted" or "cancelled" or "completed"
             	 *      Note in the case of "cancelled" the client is merely acknowledging that it received the cancellation notice
             	 *  (2) Pass the list of forms and versions that have been applied back to the server
             	 */
 	            if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
 	            
 	        	if(tasksEnabled) {
-		            updateTaskStatusToServer(fda, source, username, password, serverUrl, tr);
+		            updateTaskStatusToServer(tasks, username, password, serverUrl, tr);
 	        	}
-	        	            	
-	            /*
-	             * Delete all orphaned tasks (The instance has been deleted)
-	             */
-	        	taskListCursor = fda.fetchAllTasks();
-	            taskListCursor.moveToFirst();
-	            while(!taskListCursor.isAfterLast()) {
-	            	
-		            if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
-		            
-	          	  	String instancePath = taskListCursor.getString(taskListCursor.getColumnIndex(FileDbAdapter.KEY_T_INSTANCE));
-	          	  	long tid = taskListCursor.getLong(taskListCursor.getColumnIndex(FileDbAdapter.KEY_T_ID));
-	          	  	Log.i(getClass().getSimpleName(), "Instance:" + instancePath);
-	          	  	
-	          	  	// Delete the task if the instance has been deleted
-          	  		if(instancePath == null || !instanceExists(instancePath)) {
-          	  			fda.deleteTask(tid);
-          	  		}
-          	  		
-          	  		taskListCursor.moveToNext();
-	            }
-	            taskListCursor.close();
-	            
-	   
+
             	/*
             	 * Delete all entries in the database that are "Submitted" or "Rejected"
             	 * The user set these status values, no need to keep the tasks
             	 */
-	            fda.deleteTasksFromSource(source, FileDbAdapter.STATUS_T_REJECTED);
-	            fda.deleteTasksFromSource(source, FileDbAdapter.STATUS_T_SUBMITTED);
-	            
-	            fda.setTransactionSuccessful();	// Commit the transaction
+	            Utilities.closeTasksWithStatus(Utilities.STATUS_T_REJECTED);
+	            Utilities.closeTasksWithStatus(Utilities.STATUS_T_SUBMITTED);
 	            
 	        } catch(JsonSyntaxException e) {
 	        	
@@ -350,14 +317,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	        	results.put("Error:", e.getMessage());
 	
 	        } finally {
-	        	if(fda != null) {
-	        		fda.endTransaction();
-		          	fda.close();
-	        	}
-	        	if(taskListCursor != null) {
-	        		taskListCursor.close();
-	        		taskListCursor = null;
-	        	}
+
 	        }
         }
         
@@ -426,24 +386,17 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	 * These would have had their status set by the server the last time the user synchronised.  
 	 * The user has seen their new status so time to remove.
 	 */
-    private void cleanupTasks(FileDbAdapter fda, String source) throws Exception {
+    private void cleanupTasks(ArrayList<TaskEntry> tasks) throws Exception {
 
-    	Cursor taskListCursor = fda.fetchTasksForSource(source, false);
-        taskListCursor.moveToFirst();
-    	while(!taskListCursor.isAfterLast()) {
+        for(TaskEntry t : tasks) {
     		
     		if(isCancelled()) { return; };		// Return if the user cancels
-    		
-        	String status = taskListCursor.getString(taskListCursor.getColumnIndex(FileDbAdapter.KEY_T_STATUS));
-      	    long id = taskListCursor.getLong(taskListCursor.getColumnIndex(FileDbAdapter.KEY_T_ID));
-	      	Log.i("cleanupTasks", "taskid:" + id + " -- status:" + status);          	    
-        	if (status.equals(FileDbAdapter.STATUS_T_MISSED) || 
-        			status.equals(FileDbAdapter.STATUS_T_CANCELLED)) {
-        		fda.deleteTask(id);
+
+        	if (t.taskStatus.equals(Utilities.STATUS_T_MISSED) ||
+        			t.taskStatus.equals(Utilities.STATUS_T_CANCELLED)) {
+                Utilities.deleteTask(t.id);
         	}
-    		taskListCursor.moveToNext();
     	}
-    	taskListCursor.close();
 		
 	}
 
@@ -451,12 +404,9 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	 * Loop through the entries in the database
 	 *  (1) Update on the server all that have a status of "accepted", "rejected" or "submitted"
 	 */
-	private void updateTaskStatusToServer(FileDbAdapter fda, String source, String username, String password,
+	private void updateTaskStatusToServer(ArrayList<TaskEntry> tasks, String username, String password,
 			String serverUrl, TaskResponse tr) throws Exception {
-    	
-		Log.i("updateTaskStatusToServer", "Enter");
-		Cursor taskListCursor = fda.fetchTasksForSource(source, false);
-        taskListCursor.moveToFirst();
+
         DefaultHttpClient client = new DefaultHttpClient();
         HttpResponse getResponse = null;
         
@@ -472,31 +422,22 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 				.getSingularProperty(PropertyManager.DEVICE_ID_PROPERTY);
         
         tr.taskAssignments = new ArrayList<TaskAssignment> ();		// Reset the passed in taskAssignments, this wil now contain the resposne
-        
-        while(!taskListCursor.isAfterLast()) {
+
+        for(TaskEntry t : tasks) {
         	
     		if(isCancelled()) { return; };		// Return if the user cancels
-    		
-        	String newStatus = taskListCursor.getString(taskListCursor.getColumnIndex(FileDbAdapter.KEY_T_STATUS));
-        	String syncStatus = taskListCursor.getString(taskListCursor.getColumnIndex(FileDbAdapter.KEY_T_IS_SYNC));
-      	  	long aid = taskListCursor.getLong(taskListCursor.getColumnIndex(FileDbAdapter.KEY_T_ASSIGNMENTID));
-      	  	long tid = taskListCursor.getLong(taskListCursor.getColumnIndex(FileDbAdapter.KEY_T_ID));
-      	  	
-    		Log.i("updateTaskStatusToServer", "aId:" + aid + " -- status:" + newStatus + " -- syncStatus:" + syncStatus);
+
   	  		// Call the update service
-  	  		if(newStatus != null && syncStatus.equals(FileDbAdapter.STATUS_SYNC_NO)) {
-  	  			Log.i(getClass().getSimpleName(), "Updating server with status of " + aid + " to " + newStatus);
+  	  		if(t.taskStatus != null && t.isSynced.equals(Utilities.STATUS_SYNC_NO)) {
   	  			TaskAssignment ta = new TaskAssignment();
   	  			ta.assignment = new Assignment();
-  	  			ta.assignment.assignment_id = (int) aid;
-  	  			ta.assignment.task_id = (int) tid;
-  	  			ta.assignment.assignment_status = newStatus;
+  	  			ta.assignment.assignment_id = (int) t.assignmentId;
+  	  			ta.assignment.task_id = (int) t.id;
+  	  			ta.assignment.assignment_status = t.taskStatus;
 
 	            tr.taskAssignments.add(ta);
   	  		}
-      	  		
-      	  	
-     		taskListCursor.moveToNext();
+
         }
         
         // Call the service
@@ -519,12 +460,10 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
     	} else {
     		Log.w("updateTaskStatusToServer", "Status updated");
     		for(TaskAssignment ta : tr.taskAssignments) {
-    			fda.setTaskSynchronized(ta.assignment.task_id);		// Mark the task status as synchronised
+    			Utilities.setTaskSynchronized((long) ta.assignment.task_id);		// Mark the task status as synchronised
     		}
         	
     	}
-    	
-        taskListCursor.close();
 		
 	}
 	
@@ -533,7 +472,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
      *   (1) Add entries that have a status of "new", "pending" or "accepted" and are not already on the phone
      *   (2) Update the status of database entries where the source status is set to "Missed" or "Cancelled"
      */
-	private int addAndUpdateEntries(TaskResponse tr, FileDbAdapter fda, HashMap<String, TaskStatus> taskMap, String username, String source) throws Exception {
+	private int addAndUpdateEntries(TaskResponse tr, HashMap<Long, TaskStatus> taskMap, String username, String source) throws Exception {
     	int count = 0; 
     	if(tr.taskAssignments != null) {
         	for(TaskAssignment ta : tr.taskAssignments) {
@@ -549,22 +488,15 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
     						" Form: " + ta.task.form_id + " version: " + ta.task.form_version + 
     						" Type: " + ta.task.type + "Assignee: " + assignment.assignee + "Username: " + username);
             		
-        			/*
-        			 * The key for a task is actually the tasks assignment id
-        			 * The same task could be assigned multiple times to a single user
-        			 *  each time it will have a new assignment id
-        			 */
-        			// 
-        			String uid = String.valueOf(assignment.assignment_id);	// Unique identifier for task from this source
-	          	  	
+
             		// Find out if this task is already on the phone
-	          	  	TaskStatus ts = taskMap.get(uid);
+	          	  	TaskStatus ts = taskMap.get(Long.valueOf((long) assignment.assignment_id));
 	          	  	if(ts == null) {
-	          	  		Log.i(getClass().getSimpleName(), "New task: " + uid);
+	          	  		Log.i(getClass().getSimpleName(), "New task: " + assignment.assignment_id);
 	          	  		// New task
-	          	  		if(assignment.assignment_status.equals(FileDbAdapter.STATUS_T_NEW) ||
-          	  						assignment.assignment_status.equals(FileDbAdapter.STATUS_T_PENDING) ||
-          	  						assignment.assignment_status.equals(FileDbAdapter.STATUS_T_ACCEPTED)) {
+	          	  		if(assignment.assignment_status.equals(Utilities.STATUS_T_NEW) ||
+          	  						assignment.assignment_status.equals(Utilities.STATUS_T_PENDING) ||
+          	  						assignment.assignment_status.equals(Utilities.STATUS_T_ACCEPTED)) {
 
 	          	  			// Ensure the form and instance data are available on the phone
 	          	  			// First make sure the initial_data url is sensible (ie null or a URL)
@@ -576,28 +508,22 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	                		
 	          	  			// Add instance data
 	          	  			ManageForm mf = new ManageForm();
-	          	  			ManageFormResponse mfr = mf.insertInstance(ta.task.form_id, ta.task.form_version, 
-	          	  					ta.task.url, ta.task.initial_data, uid);
+	          	  			ManageFormResponse mfr = mf.insertInstance(ta, assignment.assignment_id);
 	          	  			if(!mfr.isError) {
-	          	  				// Create the task entry
-	          	  				fda.createTask(-1, source, ta, mfr.formPath, mfr.instancePath);
-	          	  				results.put(uid + ":" + ta.task.title, "Created");
-	          	  				count++;
+	          	  				results.put(ta.task.title, "Created");
 	          	  			} else {
-	          	  				results.put(uid + ":" + ta.task.title, "Creation failed: " + mfr.statusMsg );
-	          	  				count++;
+	          	  				results.put(ta.task.title, "Creation failed: " + mfr.statusMsg );
 	          	  			}
+                            count++;
 	          	  		}
 	          	  	} else {
-	          	  		Log.i(getClass().getSimpleName(), "Existing Task: " + uid);
+	          	  		Log.i(getClass().getSimpleName(), "Existing Task: " + assignment.assignment_id);
 	          	  		// Existing task
-	          	  		if(assignment.assignment_status.equals(FileDbAdapter.STATUS_T_MISSED)	|| 
-          	  				assignment.assignment_status.equals(FileDbAdapter.STATUS_T_CANCELLED)) {
-	          	  			fda.updateTaskStatusForAssignment(Long.parseLong(uid), assignment.assignment_status, source);
-	          	  			results.put(uid + ":" + ta.task.title, assignment.assignment_status);
+	          	  		if(assignment.assignment_status.equals(Utilities.STATUS_T_MISSED)	||
+          	  				assignment.assignment_status.equals(Utilities.STATUS_T_CANCELLED)) {
+                            Utilities.setStatusForAssignment(assignment.assignment_id, assignment.assignment_status);
+	          	  			results.put(ta.task.title, assignment.assignment_status);
           	  				count++;
-	          	  		} else { // check and update other details
-	          	  			fda.updateTask(ta);
 	          	  		}
 	          	  	}
 

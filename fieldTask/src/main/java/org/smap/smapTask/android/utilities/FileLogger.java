@@ -5,9 +5,7 @@ import java.io.FileOutputStream;
 
 import org.odk.collect.android.utilities.FileUtils;
 import org.odk.collect.android.utilities.STFileUtils;
-import org.odk.collect.android.database.FileDbAdapter;
 
-import android.database.Cursor;
 import android.text.format.Time;
 
 public final class FileLogger {
@@ -55,11 +53,9 @@ public final class FileLogger {
 	 * Write the status of a task to the metrics file after an event
 	 */
 	public synchronized static final void metric(String event, long taskId)  {
-		FileDbAdapter tda = new FileDbAdapter();
-        tda.open();
-        Cursor c = null;
         
 		try {
+            /*
 			c = tda.fetchTaskForId(taskId);
 	        c.moveToFirst();
 	
@@ -70,13 +66,10 @@ public final class FileLogger {
 	        String status = c.getString(c.getColumnIndex(FileDbAdapter.KEY_T_STATUS));
 	
 	      	m(event, name, source, scheduledStart, taskForm, status);	
-	      	
+	      	*/
+
 		} catch (Exception e) {
 			e.printStackTrace();
-		} finally {
-			if(c != null) {
-				c.close();
-			}
 		}
 	}
 }

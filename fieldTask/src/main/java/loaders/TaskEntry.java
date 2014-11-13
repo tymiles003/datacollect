@@ -4,9 +4,8 @@ package loaders;
  * This class holds the per-item data in the {@link SmapTaskLoader}.
  */
 public class TaskEntry {
-    private final SmapTaskLoader mLoader;
     public String type;    // form or task
-    public String status;
+    public String taskStatus;
     public String name;
     public String project;
     public String ident;
@@ -16,17 +15,18 @@ public class TaskEntry {
     public String instancePath;
     public int formVersion;
     public long id;
-    public double lon = 0.0;
-    public double lat = 0.0;
+    public double schedLon = 0.0;
+    public double schedLat = 0.0;
+    public double actLon = 0.0;
+    public double actLat = 0.0;
+    public String isSynced;
+    public long assignmentId;
 
-    public TaskEntry(SmapTaskLoader loader) {
-        mLoader = loader;
-    }
 
 
     @Override
     public String toString() {
-        return status;
+        return taskStatus;
     }
 
 }

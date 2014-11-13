@@ -16,7 +16,6 @@ package org.odk.collect.android.tasks;
 import org.odk.collect.android.R;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -26,10 +25,6 @@ import org.javarosa.core.model.FormDef;
 import org.javarosa.core.services.transport.payload.ByteArrayPayload;
 import org.javarosa.form.api.FormEntryController;
 import org.odk.collect.android.application.Collect;
-import org.odk.collect.android.database.Assignment;
-import org.odk.collect.android.database.FileDbAdapter;
-import org.odk.collect.android.database.Task;
-import org.odk.collect.android.database.TaskAssignment;
 import org.odk.collect.android.exception.EncryptionException;
 import org.odk.collect.android.listeners.FormSavedListener;
 import org.odk.collect.android.logic.FormController;
@@ -43,6 +38,7 @@ import org.odk.collect.android.utilities.FileUtils;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
+import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v4.content.LocalBroadcastManager;
@@ -169,6 +165,33 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
         } else {
             values.put(InstanceColumns.STATUS, InstanceProviderAPI.STATUS_COMPLETE);
         }
+
+        // Smap Start
+        if(mMarkCompleted) {
+            values.put(InstanceColumns.T_ASS_STATUS, "done");
+        } else {
+            values.put(InstanceColumns.T_ASS_STATUS, "accepted");
+        }
+
+        // Add actual location
+        Location location = Collect.getInstance().getLocation();
+        double lon = 0.0;
+        double lat = 0.0;
+        if(location != null) {
+            Log.i("saveToDiskTask", "Setting location");
+            lon = location.getLongitude();
+            lat = location.getLatitude();
+        } else {
+            Log.i("saveToDiskTask", "Location is null");
+        }
+        values.put(InstanceColumns.ACT_LON, lon);
+        values.put(InstanceColumns.ACT_LAT, lat);
+
+        Date theDate = new Date();
+        values.put(InstanceColumns.T_ACT_FINISH, theDate.getTime());
+        values.put(InstanceColumns.T_IS_SYNC, InstanceProviderAPI.STATUS_SYNC_NO);
+        // Smap End
+
         // update this whether or not the status is complete...
         values.put(InstanceColumns.CAN_EDIT_WHEN_COMPLETE, Boolean.toString(canEditAfterCompleted));
 
@@ -227,8 +250,14 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
 	                    values.put(InstanceColumns.DISPLAY_NAME, formname);
 	                }
 	                values.put(InstanceColumns.JR_FORM_ID, jrformid);
-	                values.put(InstanceColumns.SOURCE, source);			// smap
 	                values.put(InstanceColumns.JR_VERSION, jrversion);
+
+                    // Smap Start
+                    values.put(InstanceColumns.SOURCE, source);
+                    values.put(InstanceColumns.T_TITLE, mInstanceName);
+
+                    // Smap End
+
                 } finally {
                     if ( c != null ) {
                         c.close();
@@ -238,40 +267,43 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
                 			.insert(InstanceColumns.CONTENT_URI, values);
             }
         }
-        updateSmapTaskStatus(source);	// SMAP
+
+        Intent intent = new Intent("refresh");      // Smap
+        LocalBroadcastManager.getInstance(Collect.getInstance()).sendBroadcast(intent); // Smap
+        //updateSmapTaskStatus(source);	// SMAP
     }
 
     // ----------- SMAP start
-    private void updateSmapTaskStatus(String source) {
-        FileDbAdapter fda = new FileDbAdapter();
-        FormController formController = Collect.getInstance().getFormController();
-        try {
-            fda.open();
+    //private void updateSmapTaskStatus(String source) {
+    //    FileDbAdapter fda = new FileDbAdapter();
+    //    FormController formController = Collect.getInstance().getFormController();
+    //    try {
+    //        fda.open();
             
-        	if(mTaskId == -1) {
+    //    	if(mTaskId == -1) {
         		// Create new local task
-                TaskAssignment ta = new TaskAssignment();
-                ta.task = new Task();
-                ta.assignment = new Assignment();
-                ta.task.title = source + " : " + mInstanceName;
-                ta.task.scheduled_at = new Date();
-                if(mMarkCompleted) {
-                	ta.assignment.assignment_status = "completed";
-                } else {
-                	ta.assignment.assignment_status = "accepted";
-                }
-                mTaskId = fda.createTask(-1, source, ta, mFormPath, formController.getInstancePath().getAbsolutePath());       	 
-        	}
-        	fda.updateTask(mTaskId, formController.getInstancePath().getAbsolutePath(), mMarkCompleted);	// Update task store with instance path and status
+                //TaskAssignment ta = new TaskAssignment();
+                //ta.task = new Task();
+                //ta.assignment = new Assignment();
+                //ta.task.title = source + " : " + mInstanceName;
+                //ta.task.scheduled_at = new Date();
+                //if(mMarkCompleted) {
+                //	ta.assignment.assignment_status = "completed";
+                //} else {
+                //	ta.assignment.assignment_status = "accepted";
+                //}
+               // mTaskId = fda.createTask(-1, source, ta, mFormPath, formController.getInstancePath().getAbsolutePath());
+        	//}
+        	//fda.updateTask(mTaskId, formController.getInstancePath().getAbsolutePath(), mMarkCompleted);	// Update task store with instance path and status
         	
-        } catch (Exception e) {
-        	e.printStackTrace();	// TODO handle exception
-        } finally {
-            fda.close();
-        }
-		Intent intent = new Intent("refresh");
-	    LocalBroadcastManager.getInstance(Collect.getInstance()).sendBroadcast(intent);
-    }
+        //} catch (Exception e) {
+       // 	e.printStackTrace();	// TODO handle exception
+        //} finally {
+        //    fda.close();
+        //}
+		//Intent intent = new Intent("refresh");
+	    //LocalBroadcastManager.getInstance(Collect.getInstance()).sendBroadcast(intent);
+    //}
     // ----------- SMAP end
     
     /**

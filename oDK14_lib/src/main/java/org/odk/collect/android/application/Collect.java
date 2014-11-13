@@ -18,6 +18,7 @@ import android.app.Application;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.location.Location;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 
@@ -65,6 +66,8 @@ public class Collect extends Application {
     private ActivityLogger mActivityLogger;
     private FormController mFormController = null;
     private ExternalDataManager externalDataManager;
+
+    private Location location = null;   // smap
 
     private static Collect singleton = null;
 
@@ -225,5 +228,17 @@ public class Collect extends Application {
         mActivityLogger = new ActivityLogger(
                 mgr.getSingularProperty(PropertyManager.DEVICE_ID_PROPERTY));
     }
+
+    // Begin Smap
+    // start, set and get location
+    public void setLocation(Location l) {
+        location = l;
+    }
+
+    // Smap start, set and get location
+    public Location getLocation() {
+        return location;
+    }
+    // End Smap
 
 }

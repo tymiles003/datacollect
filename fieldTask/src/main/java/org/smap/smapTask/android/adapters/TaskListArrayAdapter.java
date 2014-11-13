@@ -61,14 +61,14 @@ public class TaskListArrayAdapter extends ArrayAdapter<TaskEntry> {
     	ImageView icon = (ImageView) view.findViewById(R.id.icon);
     	if(item.type.equals("form")) {
     		icon.setImageResource(R.drawable.form);
-    	} else if (item.status != null) {
-    		if(item.status.equals("accepted")) {
+    	} else if (item.taskStatus != null) {
+    		if(item.taskStatus.equals("accepted")) {
     			icon.setImageResource(R.drawable.task_open);
-    		} else if(item.status.equals("done")) {
+    		} else if(item.taskStatus.equals("done")) {
     			icon.setImageResource(R.drawable.task_done);
-    		} else if(item.status.equals("rejected") || item.status.equals("missed") || item.status.equals("cancelled")) {
+    		} else if(item.taskStatus.equals("rejected") || item.taskStatus.equals("missed") || item.taskStatus.equals("cancelled")) {
     			icon.setImageResource(R.drawable.task_reject);
-    		} else if(item.status.equals("submitted")) {
+    		} else if(item.taskStatus.equals("submitted")) {
     			icon.setImageResource(R.drawable.task_submitted);
     		}
     	}

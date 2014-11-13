@@ -254,29 +254,16 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
             markers.add(userLocationMarker);
         }
 
+        // Add the tasks to the marker array
         for(TaskEntry t : data) {
-            Log.i("showTasks--- ", t.name + " :: " + t.status + " :: " + t.lon + " :: " + t.lat);
-            if(t.lon == 0.0 && t.lat == 0.0) {
-                continue;                   // Assume this is not a valid location !!
+            if(t.type.equals("task")) {
+                LatLng ll = getTaskCoords(t);
+                if (ll != null) {
+                    Marker m = new Marker(mv, t.name, t.taskAddress, ll);
+                    m.setIcon(getIcon(t.taskStatus));
+                    markers.add(m);
+                }
             }
-
-            if(t.lat > tasksNorth) {
-                tasksNorth = t.lat;
-            }
-            if(t.lat < tasksSouth) {
-                tasksSouth = t.lat;
-            }
-            if(t.lon > tasksEast) {
-                tasksEast = t.lon;
-            }
-            if(t.lat < tasksWest) {
-                tasksWest = t.lon;
-            }
-
-            LatLng ll = new LatLng(t.lat, t.lon);
-            Marker m = new Marker(mv, t.name, t.taskAddress, ll);
-            m.setIcon(getIcon(t.status));
-            markers.add(m);
         }
 
         // Remove any existing markers
@@ -284,7 +271,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
             markerOverlay.removeAllItems();
         }
 
-        // Add the task markers
+        // Add the marker layer
         if(markers.size() > 0) {
             if (markerOverlay == null) {
                 markerOverlay = new ItemizedIconOverlay(getActivity(), markers, onItemGestureListener);
@@ -293,8 +280,6 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
                 markerOverlay.addItems(markers);
             }
         }
-
-
 
         zoomToData();
     }
@@ -389,21 +374,43 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     }
 
     /*
- * Get the colour to represent the passed in task status
- */
-    private String getMakiIcon(String status) {
+     * Get the coordinates of the task and update the bounding box
+     */
+    private LatLng getTaskCoords(TaskEntry t) {
 
-        if(status.equals("rejected")) {
-            return "marker-stroked";
-        } else if(status.equals("accepted")) {
-            return "marker-stroked";
-        } else if(status.equals("complete")) {
-            return "marker-stroked";
-        } else if(status.equals("submitted")) {
-            return "marker-stroked";
-        } else {
-            return "marker-stroked";
+        double lat = 0.0;
+        double lon = 0.0;
+        LatLng locn = null;
+
+        if(t.taskStatus.equals("done") || t.taskStatus.equals("submitted")) {
+            lat = t.actLat;         // Actual coordinates of task
+            lon = t.actLon;
+        } else  {
+            lat = t.schedLat;       // Scheduled coordinates of task
+            lon = t.schedLon;
         }
+
+        if(lat != 0.0 && lon != 0.0) {
+            // Update bounding box
+            if(lat > tasksNorth) {
+                tasksNorth = lat;
+            }
+            if(lat < tasksSouth) {
+                tasksSouth = lat;
+            }
+            if(lon > tasksEast) {
+                tasksEast = lon;
+            }
+            if(lat < tasksWest) {
+                tasksWest = lon;
+            }
+
+            // Create Point
+            locn = new LatLng(lat, lon);
+        }
+
+
+        return locn;
     }
 
 

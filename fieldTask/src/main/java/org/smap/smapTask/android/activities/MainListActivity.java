@@ -20,7 +20,6 @@ import loaders.SmapTaskLoader;
 import loaders.TaskEntry;
 
 import org.smap.smapTask.android.adapters.TaskListArrayAdapter;
-import org.odk.collect.android.database.FileDbAdapter;
 import org.odk.collect.android.provider.FormsProviderAPI.FormsColumns;
 import org.odk.collect.android.provider.InstanceProviderAPI.InstanceColumns;
 import org.odk.collect.android.activities.FormEntryActivity;
@@ -28,10 +27,8 @@ import org.odk.collect.android.application.Collect;
 
 import android.app.AlertDialog;
 import android.content.ContentUris;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -49,6 +46,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import org.smap.smapTask.android.R;
+import org.smap.smapTask.android.utilities.Utilities;
 
 /**
  * Responsible for displaying buttons to launch the major activities. Launches some activities based
@@ -135,7 +133,6 @@ public class MainListActivity extends FragmentActivity  {
 		private static final int TASK_LOADER_ID = 1;
 		
 		private TaskListArrayAdapter mAdapter;
-	  	private FileDbAdapter fda = null;
 	  	private MainListActivity mActivity;
 		  	
 
@@ -235,7 +232,7 @@ public class MainListActivity extends FragmentActivity  {
 	    	
 	    	if(entry.type.equals("task")) {
 	    		String formPath = Collect.FORMS_PATH + entry.taskForm;
-	    		completeTask(entry.instancePath, formPath, entry.id, entry.status);
+	    		completeTask(entry.instancePath, formPath, entry.id, entry.taskStatus);
 	    	} else {
 	    		Uri formUri = ContentUris.withAppendedId(FormsColumns.CONTENT_URI, entry.id);
 	    		startActivity(new Intent(Intent.ACTION_EDIT, formUri));
@@ -251,22 +248,9 @@ public class MainListActivity extends FragmentActivity  {
 			// set the adhoc location
 			boolean canComplete = false;
 			try {
-				fda = new FileDbAdapter();
-		        fda.open();	        
-				canComplete = fda.canComplete(status);
-				
-				//if(canComplete) {
-				//	if(mActivity != null && mActivity.userLocation != null) {
-				//		fda.updateAdhocLocation(taskId, String.valueOf(mActivity.userLocation.getLon()),
-				//				String.valueOf(mActivity.userLocation.getLat()));
-				//	}
-				//}
+				canComplete = Utilities.canComplete(status);
 			} catch (Exception e) {
 				e.printStackTrace();
-			} finally {
-				if(fda != null) {
-	    			fda.close();
-	    		}
 			}
 			
 			// Return if the user is not allowed to update this task
