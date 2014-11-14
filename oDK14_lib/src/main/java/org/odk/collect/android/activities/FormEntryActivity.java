@@ -2465,7 +2465,7 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 	 * Called by SavetoDiskTask if everything saves correctly.
 	 */
 	@Override
-	public void savingComplete(SaveResult saveResult, long taskId) {		// smap added taskId
+	public void savingComplete(SaveResult saveResult, long taskId) {		// smap added assignment_id
 		dismissDialog(SAVING_DIALOG);
 
 		mTaskId = taskId;				// smap

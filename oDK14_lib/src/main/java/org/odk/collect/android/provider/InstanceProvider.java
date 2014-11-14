@@ -91,8 +91,7 @@ public class InstanceProvider extends ContentProvider {
                + InstanceColumns.T_GEOM_TYPE + " text, "		// smap
                + InstanceColumns.T_IS_SYNC + " text, "		// smap
                + InstanceColumns.T_TASK_ID + " long, "		// smap
-               + InstanceColumns.T_ASS_ID + " long, "		// smap
-               + InstanceColumns.T_ASS_STATUS + " text, "		// smap
+               + InstanceColumns.T_TASK_STATUS + " text, "		// smap
                + InstanceColumns.STATUS + " text not null, "
                + InstanceColumns.LAST_STATUS_CHANGE_DATE + " date not null, "
                + InstanceColumns.DISPLAY_SUBTEXT + " text not null );");
@@ -150,9 +149,7 @@ public class InstanceProvider extends ContentProvider {
                 db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
                         InstanceColumns.T_TASK_ID + " long;");
                 db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
-                        InstanceColumns.T_ASS_ID + " long;");
-                db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
-                        InstanceColumns.T_ASS_STATUS + " text;");
+                        InstanceColumns.T_TASK_STATUS + " text;");
             }
             // Smap End
             Log.w(t, "Successfully upgraded database from version " + initialVersion + " to " + newVersion
@@ -475,8 +472,7 @@ public class InstanceProvider extends ContentProvider {
         sInstancesProjectionMap.put(InstanceColumns.T_GEOM_TYPE, InstanceColumns.T_GEOM_TYPE);  // smap
         sInstancesProjectionMap.put(InstanceColumns.T_IS_SYNC, InstanceColumns.T_IS_SYNC);  // smap
         sInstancesProjectionMap.put(InstanceColumns.T_TASK_ID, InstanceColumns.T_TASK_ID);  // smap
-        sInstancesProjectionMap.put(InstanceColumns.T_ASS_ID, InstanceColumns.T_ASS_ID);  // smap
-        sInstancesProjectionMap.put(InstanceColumns.T_ASS_STATUS, InstanceColumns.T_ASS_STATUS);  // smap
+        sInstancesProjectionMap.put(InstanceColumns.T_TASK_STATUS, InstanceColumns.T_TASK_STATUS);  // smap
 
     }
 

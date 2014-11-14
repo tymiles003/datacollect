@@ -368,9 +368,8 @@ public class ManageForm {
         values.put(InstanceColumns.ACT_LON, 0.0);
         values.put(InstanceColumns.ACT_LAT, 0.0);
         values.put(InstanceColumns.T_TITLE, ta.task.title);
-        values.put(InstanceColumns.T_TASK_ID, ta.task.id);
-        values.put(InstanceColumns.T_ASS_ID, ta.assignment.assignment_id);
-        values.put(InstanceColumns.T_ASS_STATUS, ta.assignment.assignment_status);
+        values.put(InstanceColumns.T_TASK_ID, ta.assignment.assignment_id);
+        values.put(InstanceColumns.T_TASK_STATUS, ta.assignment.assignment_status);
         if(ta.task.scheduled_at != null) {
             values.put(InstanceColumns.T_SCHED_START, ta.task.scheduled_at.getTime());
         }
@@ -407,7 +406,7 @@ public class ManageForm {
      * Instance path is based on basepath, filename, timestamp and the task id
      * Paramters
      *  formPath:   Used to obtain the filename
-     *  taskId:	    Used to guarantee uniqueness when multiple tasks for the same form are assigned
+     *  assignment_id:	    Used to guarantee uniqueness when multiple tasks for the same form are assigned
      */
     private String getInstancePath(String formPath, long assignmentId) {
         String instancePath = null;

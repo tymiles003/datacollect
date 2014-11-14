@@ -38,7 +38,6 @@ import java.util.List;
  */
 public class SmapTaskLoader extends AsyncTaskLoader<List<TaskEntry>> {
 
-	private Cursor mFormListCursor = null;
 	private List<TaskEntry> mTasks = null;
 	private SmapTaskObserver mSmapTaskObserver;	// Monitor changes to task data
 
@@ -62,41 +61,43 @@ public class SmapTaskLoader extends AsyncTaskLoader<List<TaskEntry>> {
 	}
 
 	private void getForms(ArrayList<TaskEntry> entries) {
-		
-		if(mFormListCursor == null || mFormListCursor.isClosed()) {
-			String [] proj = {FormsColumns._ID, 
-					FormsColumns.JR_FORM_ID, 
-					FormsColumns.JR_VERSION, 
-					FormsColumns.PROJECT,
-					FormsColumns.DISPLAY_NAME}; 
-    	
-			String sortOrder = FormsColumns.DISPLAY_NAME + " ASC, " + FormsColumns.JR_VERSION + " DESC";
-			String selectClause = FormsColumns.SOURCE + "='" + Utilities.getSource() + "' or " + 
-					FormsColumns.SOURCE + " is null";
-	    	
-			
-			final ContentResolver resolver = Collect.getInstance().getContentResolver();
-			mFormListCursor = resolver.query(FormsColumns.CONTENT_URI, proj, selectClause, null, sortOrder);
-		}
 
-		if(mFormListCursor != null  &&  !mFormListCursor.isClosed()) {
+        String [] proj = {FormsColumns._ID,
+                FormsColumns.JR_FORM_ID,
+                FormsColumns.JR_VERSION,
+                FormsColumns.PROJECT,
+                FormsColumns.DISPLAY_NAME};
+
+        String sortOrder = FormsColumns.DISPLAY_NAME + " ASC, " + FormsColumns.JR_VERSION + " DESC";
+        String selectClause = FormsColumns.SOURCE + "='" + Utilities.getSource() + "' or " +
+                FormsColumns.SOURCE + " is null";
+
+
+        final ContentResolver resolver = Collect.getInstance().getContentResolver();
+        Cursor formListCursor = resolver.query(FormsColumns.CONTENT_URI, proj, selectClause, null, sortOrder);
+
+
+		if(formListCursor != null) {
     		 
-			mFormListCursor.moveToFirst();
-			while (!mFormListCursor.isAfterLast()) {
+			formListCursor.moveToFirst();
+			while (!formListCursor.isAfterLast()) {
         		 
         		 TaskEntry entry = new TaskEntry();
 	            
         		 entry.type = "form";
-        		 entry.ident = mFormListCursor.getString(mFormListCursor.getColumnIndex(FormsColumns.JR_FORM_ID));
-	             entry.formVersion = mFormListCursor.getInt(mFormListCursor.getColumnIndex(FormsColumns.JR_VERSION));
-	             entry.name = mFormListCursor.getString(mFormListCursor.getColumnIndex(FormsColumns.DISPLAY_NAME));  
-	             entry.project = mFormListCursor.getString(mFormListCursor.getColumnIndex(FormsColumns.PROJECT));   
-	             entry.id = mFormListCursor.getLong(mFormListCursor.getColumnIndex(FormsColumns._ID));
+        		 entry.ident = formListCursor.getString(formListCursor.getColumnIndex(FormsColumns.JR_FORM_ID));
+	             entry.formVersion = formListCursor.getInt(formListCursor.getColumnIndex(FormsColumns.JR_VERSION));
+	             entry.name = formListCursor.getString(formListCursor.getColumnIndex(FormsColumns.DISPLAY_NAME));
+	             entry.project = formListCursor.getString(formListCursor.getColumnIndex(FormsColumns.PROJECT));
+	             entry.id = formListCursor.getLong(formListCursor.getColumnIndex(FormsColumns._ID));
 	             
 	             entries.add(entry);
-	             mFormListCursor.moveToNext();
+	             formListCursor.moveToNext();
         	 }
     	}
+        if(formListCursor != null) {
+            formListCursor.close();
+        }
 	}
 
 	/**
@@ -207,10 +208,7 @@ public class SmapTaskLoader extends AsyncTaskLoader<List<TaskEntry>> {
 	 * actively loaded data set.
 	 */
 	private void releaseResources(List<TaskEntry> tasks) {
-		if(mFormListCursor != null && !mFormListCursor.isClosed()) {
-			mFormListCursor.close();
-			mFormListCursor = null;
-		}
+
 	}
 
 }

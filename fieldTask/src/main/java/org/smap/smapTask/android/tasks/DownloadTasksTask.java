@@ -53,7 +53,6 @@ import org.odk.collect.android.provider.InstanceProviderAPI.InstanceColumns;
 import org.odk.collect.android.tasks.DownloadFormsTask;
 import org.odk.collect.android.tasks.InstanceUploaderTask;
 import org.odk.collect.android.tasks.InstanceUploaderTask.Outcome;
-import org.odk.collect.android.utilities.STFileUtils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -78,6 +77,21 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
     
 	private TaskDownloaderListener mStateListener;
 	HashMap<String, String> results = null;
+    SharedPreferences settings = null;
+    ArrayList<TaskEntry> tasks = new ArrayList<TaskEntry>();
+    HashMap<Long, TaskStatus> taskMap = new HashMap<Long, TaskStatus>();
+    HttpResponse getResponse = null;
+    DefaultHttpClient client = null;
+    Gson gson = null;
+    TaskResponse tr = null;                         // Data returned from the server
+    int statusCode;
+    String serverUrl = null;                        // Current server
+    String source = null;                           // Server name
+    String taskURL = null;                          // Url to get tasks
+    int count;                                      // Record number of deletes
+
+    String username = null;
+    String password = null;
 	
 	/*
 	 * class used to store status of existing tasks in the database and their database id
@@ -98,46 +112,33 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 			keep = false;
 		}
 	}
-	
-   
-	/*
-	 * Clean up after cancel
-	 */
-	@Override
-	protected void onCancelled() {
 
-	}
 	
 	@Override
     protected HashMap<String, String> doInBackground(Void... values) {
 	
-		results = new HashMap<String,String>();		
+		results = new HashMap<String,String>();
+        settings = PreferenceManager.getDefaultSharedPreferences(Collect.getInstance().getBaseContext());
+        source = Utilities.getSource();
+        serverUrl = settings.getString(PreferencesActivity.KEY_SERVER_URL, null);
+        taskURL = serverUrl + "/surveyKPI/myassignments";
 
-        //fda.open();
-        
+        // Get the username and password
+        username = settings.getString(PreferencesActivity.KEY_USERNAME, null);
+        password = settings.getString(PreferencesActivity.KEY_PASSWORD, null);
+
         /*
-         * Always remove local tasks that are no longer current
+         * Get an array of the existing tasks on the phone and create a hashmap indexed on the task id
          */
-        //try {
-        //    fda.deleteTasksFromSource("local", FileDbAdapter.STATUS_T_REJECTED);
-        //    fda.deleteTasksFromSource("local", FileDbAdapter.STATUS_T_SUBMITTED);
-        //
-        //} catch (Exception e) {
-    	//	e.printStackTrace();
-        //} finally {
-        //	fda.close();
-        //}
-        
-        
-        // Check that the user has enabled task synchronisation
-        SharedPreferences settings =
-                PreferenceManager.getDefaultSharedPreferences(Collect.getInstance().getBaseContext());
-        boolean tasksEnabled = settings.getBoolean("enable_tasks", false);
-        Log.i("diag", "Tasks are enabled?" + tasksEnabled);
-        synchronise(tasksEnabled);  
-        
-		
-		return results;       
+        Utilities.getTasks(tasks);
+        for(TaskEntry t : tasks) {
+            TaskStatus ts = new TaskStatus(t.id, t.taskStatus);
+            taskMap.put(t.taskId, ts);
+        }
+
+        synchronise();      // Synchronise the phone with the server
+
+        return results;
     }
 
     @Override
@@ -147,6 +148,14 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                 mStateListener.taskDownloadingComplete(value);
             }
         }
+    }
+
+    /*
+     * Clean up after cancel
+     */
+    @Override
+    protected void onCancelled() {
+
     }
 
     @Override
@@ -168,136 +177,109 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
   
     /*
      * Synchronise the tasks stored on the phone with those on the server
-     *  There is an implicit assumption in some of the code that there can be multiple task management
-     *  servers (or sources).  However the current implementation takes some shortcuts and assumes
-     *  that there is a single remote source that is identified by the URL of the server that host the 
-     *  surveys.
-     *  
-	 *  All database updates are within the scope of a transaction which is rolled back on an exception        
      */
-    private void synchronise(boolean tasksEnabled) {
-    	Log.i("diag", "Synchronise()");
-    	int count = 0;
-    	
-    	String taskURL = null;
-    	
-        //fda.open();
-        //fda.beginTransaction();					// Start Transaction
-    	
-        // Get the source (that is the location of the server that has tasks and forms)
-        SharedPreferences settings =
-                PreferenceManager.getDefaultSharedPreferences(Collect.getInstance().getBaseContext());
-        String serverUrl = settings.getString(PreferencesActivity.KEY_SERVER_URL, null);
-        
-        String source = STFileUtils.getSource(serverUrl);
-        // Remove the protocol
-        if(serverUrl.startsWith("http")) {
-        	int idx = serverUrl.indexOf("//");
-        	if(idx > 0) {
-        		source = serverUrl.substring(idx + 2);
-        	} else {
-        		source = serverUrl;
-        	}
-        }
-        String username = settings.getString(PreferencesActivity.KEY_USERNAME, null);
-        String password = settings.getString(PreferencesActivity.KEY_PASSWORD, null);
-        Log.i("diag", "Source:" + source);
+    private void synchronise() {
+
+    	Log.i("DownloadTasksTask", "Synchronise()");
         
         if(source != null) {
 	        try {
 
-                ArrayList<TaskEntry> tasks = new ArrayList<TaskEntry>();
-                Utilities.getTasks(tasks);
-	        	
-	        	cleanupTasks(tasks);
-	          	
-	        	/*
-	        	 * If tasks are enabled
-	        	 * Get tasks for this source, that have already been downloaded. from the local database
-	        	 * Add to a hashmap indexed on the source's task id
-	        	 */
+                /*
+                 * Delete tasks which were cancelled on the server and then updated on
+                 * the phone during the last refresh
+                 */
+                count = Utilities.deleteTasksWithStatus(Utilities.STATUS_T_CANCELLED);
+                if(count > 0) {
+                    results.put("Cancelled Tasks", count + " deleted");
+                }
+
+                /*
+                 * Mark closed any surveys that were submitted last time and not deleted
+                 */
+                Utilities.closeTasksWithStatus(Utilities.STATUS_T_SUBMITTED);
+
 	            if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
-	            
-	        	HttpResponse getResponse = null;  
-	        	DefaultHttpClient client = null;
-	        	Gson gson = null;
-	        	TaskResponse tr = null;
-	        	int statusCode;
-	        	if(tasksEnabled) {
-		            HashMap<Long, TaskStatus> taskMap = new HashMap<Long, TaskStatus>();
 
-                    for(TaskEntry t : tasks) {
-		            	
-			            if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
+                /*
+	        	 * Get tasks from the server
+	        	 */
+                client = new DefaultHttpClient();
+                if(username != null && password != null) {
+                    client.getCredentialsProvider().setCredentials(
+                            new AuthScope(null, -1, null),
+                            new UsernamePasswordCredentials(username, password));
+                }
 
+                // Call the service
+                InputStream is = null;
+                HttpGet getRequest = new HttpGet(taskURL);
+                getResponse = client.execute(getRequest);
+                statusCode = getResponse.getStatusLine().getStatusCode();
+                if(statusCode != HttpStatus.SC_OK) {
+                    Log.w(getClass().getSimpleName(), "Error:" + statusCode + " for URL " + taskURL);
+                    results.put("Get Assignments", getResponse.getStatusLine().getReasonPhrase());
+                    throw new Exception(getResponse.getStatusLine().getReasonPhrase());
+                } else {
+                    HttpEntity getResponseEntity = getResponse.getEntity();
+                    is = getResponseEntity.getContent();
+                }
 
-                        TaskStatus ts = new TaskStatus(t.id, t.taskStatus);
-		          	  	taskMap.put(t.assignmentId, ts);
+                // De-serialise
+                gson = new GsonBuilder().setDateFormat("dd/MM/yyyy hh:mm").create();
+                Reader isReader = new InputStreamReader(is);
+                tr = gson.fromJson(isReader, TaskResponse.class);
+                Log.i(getClass().getSimpleName(), "Message:" + tr.message);
 
-		            }
-		             
-		            // Get the tasks for this source from the server
-		            client = new DefaultHttpClient();
-		            
-		            // Add credentials
-		            if(username != null && password != null) {
-		    	        client.getCredentialsProvider().setCredentials(
-		    	                new AuthScope(null, -1, null),
-		    	                new UsernamePasswordCredentials(username, password));
-		            }
-		            
-		            if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
-		            
-		            // Call the service
-		            taskURL = serverUrl + "/surveyKPI/myassignments";
-		            InputStream is = null;
-		            HttpGet getRequest = new HttpGet(taskURL);
-	            	getResponse = client.execute(getRequest);
-	            	statusCode = getResponse.getStatusLine().getStatusCode();
-	            	if(statusCode != HttpStatus.SC_OK) {
-	            		Log.w(getClass().getSimpleName(), "Error:" + statusCode + " for URL " + taskURL);
-	            		results.put("Get Assignments", getResponse.getStatusLine().getReasonPhrase());
-	            		throw new Exception(getResponse.getStatusLine().getReasonPhrase());
-	            	} else {
-	            		HttpEntity getResponseEntity = getResponse.getEntity();
-	            		is = getResponseEntity.getContent();
-	            	}
-	     
-	            	// De-serialise
-	            	gson = new GsonBuilder().setDateFormat("dd/MM/yyyy hh:mm").create();
-	            	Reader isReader = new InputStreamReader(is);
-	            	tr = gson.fromJson(isReader, TaskResponse.class);
-	            	Log.i(getClass().getSimpleName(), "Message:" + tr.message);
-	            	
-	            	// Synchronise forms	            	
-	            	HashMap<FormDetails, String> outcome = synchroniseForms(tr.forms, serverUrl);
-	            	for (FormDetails key : outcome.keySet()) {
-	                	results.put(key.formName, outcome.get(key));
-	                }
-		            // Apply task changes
-	            	count += addAndUpdateEntries(tr, taskMap, username, source);
-	        	}
-	  
-	            
+                if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
+
+                /*
+                 * Synchronise forms
+                 *  Get any forms the user does not currently have
+                 *  Delete any forms that are no longer accessible to the user
+                 */
+                HashMap<FormDetails, String> outcome = synchroniseForms(tr.forms);
+                for (FormDetails key : outcome.keySet()) {
+                    results.put(key.formName, outcome.get(key));
+                }
+
+                if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
+
+                /*
+                 * Apply task changes
+                 *  Add new tasks
+                 *  Update the status of tasks that have been cancelled on the server
+                 */
+                addAndUpdateEntries();
+
             	/*
             	 * Notify the server of the phone state
             	 *  (1) Update on the server all tasks that have a status of "accepted", "rejected" or "submitted" or "cancelled" or "completed"
             	 *      Note in the case of "cancelled" the client is merely acknowledging that it received the cancellation notice
             	 *  (2) Pass the list of forms and versions that have been applied back to the server
             	 */
-	            if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
-	            
-	        	if(tasksEnabled) {
-		            updateTaskStatusToServer(tasks, username, password, serverUrl, tr);
-	        	}
+		        updateTaskStatusToServer(tasks, username, password, serverUrl, tr);
+
+                if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
 
             	/*
-            	 * Delete all entries in the database that are "Submitted" or "Rejected"
-            	 * The user set these status values, no need to keep the tasks
+            	 * Delete all entries in the database that we are finished with
             	 */
-	            Utilities.closeTasksWithStatus(Utilities.STATUS_T_REJECTED);
-	            Utilities.closeTasksWithStatus(Utilities.STATUS_T_SUBMITTED);
-	            
+                count = Utilities.deleteTasksWithStatus(Utilities.STATUS_T_REJECTED);
+                if(count > 0) {
+                    results.put("Rejected Tasks", count + " deleted");
+                }
+                if(tr.settings.ft_delete_submitted) {
+                    count = Utilities.deleteTasksWithStatus(Utilities.STATUS_T_SUBMITTED);
+                    if(count > 0) {
+                        results.put("Submitted Tasks", count + " deleted");
+                    }
+                    count = Utilities.deleteTasksWithStatus(Utilities.STATUS_T_CLOSED);
+                    if(count > 0) {
+                        results.put(" Tasks", count + " deleted");
+                    }
+                }
+
 	        } catch(JsonSyntaxException e) {
 	        	
 	        	Log.e(getClass().getSimpleName(), "JSON Syntax Error:" + " for URL " + taskURL);
@@ -316,8 +298,6 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	        	publishProgress(e.getMessage());
 	        	results.put("Error:", e.getMessage());
 	
-	        } finally {
-
 	        }
         }
         
@@ -382,23 +362,23 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         
     }
     /*
-	 * Delete all entries in the database that are "Missed" or "Cancelled
-	 * These would have had their status set by the server the last time the user synchronised.  
-	 * The user has seen their new status so time to remove.
-	 */
-    private void cleanupTasks(ArrayList<TaskEntry> tasks) throws Exception {
+	 * Delete all entries in the database that have one of the provided task status values
+	 *
+    private void deleteTasks(ArrayList<String> statusValues) throws Exception {
 
+        Log.i("DownloadTasksTask", "deleteTasks");
         for(TaskEntry t : tasks) {
-    		
-    		if(isCancelled()) { return; };		// Return if the user cancels
-
-        	if (t.taskStatus.equals(Utilities.STATUS_T_MISSED) ||
-        			t.taskStatus.equals(Utilities.STATUS_T_CANCELLED)) {
-                Utilities.deleteTask(t.id);
-        	}
+            for(String status : statusValues) {
+                if (t.taskStatus.equals(status)) {
+                    Utilities.deleteTask(t.id);
+                    tasks.remove(t);
+                    break;
+                }
+            }
     	}
 		
 	}
+	*/
 
     /*
 	 * Loop through the entries in the database
@@ -431,8 +411,8 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
   	  		if(t.taskStatus != null && t.isSynced.equals(Utilities.STATUS_SYNC_NO)) {
   	  			TaskAssignment ta = new TaskAssignment();
   	  			ta.assignment = new Assignment();
-  	  			ta.assignment.assignment_id = (int) t.assignmentId;
-  	  			ta.assignment.task_id = (int) t.id;
+  	  			ta.assignment.assignment_id = (int) t.taskId;
+  	  			ta.assignment.dbId = (int) t.id;
   	  			ta.assignment.assignment_status = t.taskStatus;
 
 	            tr.taskAssignments.add(ta);
@@ -460,7 +440,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
     	} else {
     		Log.w("updateTaskStatusToServer", "Status updated");
     		for(TaskAssignment ta : tr.taskAssignments) {
-    			Utilities.setTaskSynchronized((long) ta.assignment.task_id);		// Mark the task status as synchronised
+    			Utilities.setTaskSynchronized((long) ta.assignment.dbId);		// Mark the task status as synchronised
     		}
         	
     	}
@@ -470,20 +450,20 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	/*
      * Loop through the entries from the source
      *   (1) Add entries that have a status of "new", "pending" or "accepted" and are not already on the phone
-     *   (2) Update the status of database entries where the source status is set to "Missed" or "Cancelled"
+     *   (2) Update the status of database entries where the source status is set to "cancelled"
      */
-	private int addAndUpdateEntries(TaskResponse tr, HashMap<Long, TaskStatus> taskMap, String username, String source) throws Exception {
-    	int count = 0; 
+	private void addAndUpdateEntries() throws Exception {
+
     	if(tr.taskAssignments != null) {
         	for(TaskAssignment ta : tr.taskAssignments) {
-	            
-        		if(isCancelled()) { return count; };		// Return if the user cancels
+
+                if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
 	            
         		if(ta.task.type.equals("xform")) {
         			Assignment assignment = ta.assignment;
         			
-    				Log.i(getClass().getSimpleName(), "Task: " + assignment.assignment_id + " Status:" + 
-    						assignment.assignment_status + " Mode:" + ta.task.assignment_mode + 
+    				Log.i(getClass().getSimpleName(), "Task: " + assignment.assignment_id + " Status:" +
+    						assignment.assignment_status + " Mode:" + ta.task.assignment_mode +
     						" Address: " + ta.task.address + 
     						" Form: " + ta.task.form_id + " version: " + ta.task.form_version + 
     						" Type: " + ta.task.type + "Assignee: " + assignment.assignee + "Username: " + username);
@@ -495,7 +475,6 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	          	  		Log.i(getClass().getSimpleName(), "New task: " + assignment.assignment_id);
 	          	  		// New task
 	          	  		if(assignment.assignment_status.equals(Utilities.STATUS_T_NEW) ||
-          	  						assignment.assignment_status.equals(Utilities.STATUS_T_PENDING) ||
           	  						assignment.assignment_status.equals(Utilities.STATUS_T_ACCEPTED)) {
 
 	          	  			// Ensure the form and instance data are available on the phone
@@ -503,8 +482,6 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	          	  			if(ta.task.initial_data != null && !ta.task.initial_data.startsWith("http")) {
 	          	  				ta.task.initial_data = null;	
 	          	  			}
-	          	  			
-	                		if(isCancelled()) { return count; };		// Return if the user cancels
 	                		
 	          	  			// Add instance data
 	          	  			ManageForm mf = new ManageForm();
@@ -514,16 +491,14 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	          	  			} else {
 	          	  				results.put(ta.task.title, "Creation failed: " + mfr.statusMsg );
 	          	  			}
-                            count++;
+
 	          	  		}
-	          	  	} else {
-	          	  		Log.i(getClass().getSimpleName(), "Existing Task: " + assignment.assignment_id);
-	          	  		// Existing task
-	          	  		if(assignment.assignment_status.equals(Utilities.STATUS_T_MISSED)	||
-          	  				assignment.assignment_status.equals(Utilities.STATUS_T_CANCELLED)) {
-                            Utilities.setStatusForAssignment(assignment.assignment_id, assignment.assignment_status);
-	          	  			results.put(ta.task.title, assignment.assignment_status);
-          	  				count++;
+	          	  	} else {        	// Existing task
+	          	  		Log.i(getClass().getSimpleName(), "Existing Task: " + assignment.assignment_id + " : " + assignment.assignment_status);
+
+	          	  		if(assignment.assignment_status.equals(Utilities.STATUS_T_CANCELLED) && !ts.status.equals(Utilities.STATUS_T_CANCELLED)) {
+                            Utilities.setStatusForTask(assignment.assignment_id, assignment.assignment_status);
+                            results.put(ta.task.title, assignment.assignment_status);
 	          	  		}
 	          	  	}
 
@@ -532,7 +507,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         	}// end tasks loop
     	}
     	
-    	return count;
+    	return;
 	}
 	
 	/*
@@ -541,7 +516,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
      *   (2) Delete forms not on the server or older versions of forms
      *       unless there is an uncompleted data instance using that form
      */
-	private HashMap<FormDetails, String> synchroniseForms(List<FormLocator> forms, String serverUrl) throws Exception {
+	private HashMap<FormDetails, String> synchroniseForms(List<FormLocator> forms) throws Exception {
     	
 
 		HashMap<FormDetails, String> dfResults = null;
@@ -578,7 +553,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 
             Log.i(getClass().getSimpleName(), "Downloading " + toDownload.size() + " forms");
             downloadFormsTask.setDownloaderListener((FormDownloaderListener) mStateListener);
-            dfResults = downloadFormsTask.doInBackground(toDownload);
+            dfResults = downloadFormsTask.doInBackground(toDownload);   // Not in background as called directly
         		
           	// Delete any forms no longer required
         	mf.deleteForms(formMap, results);

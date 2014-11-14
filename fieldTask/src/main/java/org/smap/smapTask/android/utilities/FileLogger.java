@@ -56,7 +56,7 @@ public final class FileLogger {
         
 		try {
             /*
-			c = tda.fetchTaskForId(taskId);
+			c = tda.fetchTaskForId(assignment_id);
 	        c.moveToFirst();
 	
 	        String name = c.getString(c.getColumnIndex(FileDbAdapter.KEY_T_TITLE));

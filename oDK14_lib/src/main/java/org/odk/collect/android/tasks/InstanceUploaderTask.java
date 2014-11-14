@@ -488,7 +488,7 @@ public class InstanceUploaderTask extends AsyncTask<Long, Integer, InstanceUploa
         // if it got here, it must have worked
         outcome.mResults.put(id, Collect.getInstance().getString(R.string.success));
         cv.put(InstanceColumns.STATUS, InstanceProviderAPI.STATUS_SUBMITTED);
-        cv.put(InstanceColumns.T_ASS_STATUS, InstanceProviderAPI.STATUS_SUBMITTED);     // smap
+        cv.put(InstanceColumns.T_TASK_STATUS, InstanceProviderAPI.STATUS_SUBMITTED);     // smap
         Collect.getInstance().getContentResolver().update(toUpdate, cv, null, null);
         return true;
     }

@@ -8,7 +8,8 @@
 		License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 		CONDITIONS OF ANY KIND, either express or implied. See the License for
 		the specific language governing permissions and limitations under the
-		License.
+		License.
+
 		This file contains strings that are specific to the fieldTask
 -->
 <resources
@@ -23,8 +24,6 @@
     <string name="smap_complete_task"> المهام كاملة</string>
     <string name="smap_destination_not_found"> ​​لم يتم تعيين جهة لل مسار</string>
     <string name="smap_done"> : القيام به. </string>
-    <string name="smap_enable_tasks">تمكين المهام</string>
-    <string name="smap_enable_tasks_summary">سيتم تحديث المهام من الخادم</string>
     <string name="smap_finding_route">اكتشف</string>
     <string name="smap_found_route">وقد وجد الطريق إلى الوجهة!</string>
     <string name="smap_get_tasks">تحديث قائمة المهام</string>

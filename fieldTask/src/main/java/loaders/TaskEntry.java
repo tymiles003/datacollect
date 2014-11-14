@@ -20,7 +20,7 @@ public class TaskEntry {
     public double actLon = 0.0;
     public double actLat = 0.0;
     public String isSynced;
-    public long assignmentId;
+    public long taskId;
 
 
 

@@ -69,7 +69,7 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
 
 
     public SaveToDiskTask(Uri uri, Boolean saveAndExit, Boolean markCompleted, String updatedName,
-    		long taskId, String formPath) {		// SMAP added taskId, formPath
+    		long taskId, String formPath) {		// SMAP added assignment_id, formPath
         mUri = uri;
         mSave = saveAndExit;
         mMarkCompleted = markCompleted;
@@ -168,9 +168,9 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
 
         // Smap Start
         if(mMarkCompleted) {
-            values.put(InstanceColumns.T_ASS_STATUS, "done");
+            values.put(InstanceColumns.T_TASK_STATUS, "done");
         } else {
-            values.put(InstanceColumns.T_ASS_STATUS, "accepted");
+            values.put(InstanceColumns.T_TASK_STATUS, "accepted");
         }
 
         // Add actual location

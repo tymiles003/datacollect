@@ -39,9 +39,8 @@ public class Utilities {
     public static final String STATUS_T_REJECTED = "rejected";
     public static final String STATUS_T_DONE = "done";
     public static final String STATUS_T_SUBMITTED = "submitted";
-    public static final String STATUS_T_MISSED = "missed";
     public static final String STATUS_T_CANCELLED = "cancelled";
-    public static final String STATUS_T_DELETED = "deleted";
+    public static final String STATUS_T_CLOSED = "closed";
     public static final String STATUS_SYNC_YES = "synchronized";
     public static final String STATUS_SYNC_NO = "not synchronized";
 	
@@ -67,7 +66,7 @@ public class Utilities {
         String [] proj = {
                 InstanceColumns._ID,
                 InstanceColumns.T_TITLE,
-                InstanceColumns.T_ASS_STATUS,
+                InstanceColumns.T_TASK_STATUS,
                 InstanceColumns.T_SCHED_START,
                 InstanceColumns.T_ADDRESS,
                 InstanceColumns.FORM_PATH,
@@ -77,7 +76,7 @@ public class Utilities {
                 InstanceColumns.ACT_LON,
                 InstanceColumns.ACT_LAT,
                 InstanceColumns.T_IS_SYNC,
-                InstanceColumns.T_ASS_ID
+                InstanceColumns.T_TASK_ID
 
         };
 
@@ -96,7 +95,7 @@ public class Utilities {
 
             entry.type = "task";
             entry.name = c.getString(c.getColumnIndex(InstanceColumns.T_TITLE));
-            entry.taskStatus = c.getString(c.getColumnIndex(InstanceColumns.T_ASS_STATUS));
+            entry.taskStatus = c.getString(c.getColumnIndex(InstanceColumns.T_TASK_STATUS));
             entry.taskStart = dFormat.format(c.getLong(c.getColumnIndex(InstanceColumns.T_SCHED_START)));
             entry.taskAddress = c.getString(c.getColumnIndex(InstanceColumns.T_ADDRESS));
             entry.taskForm = c.getString(c.getColumnIndex(InstanceColumns.FORM_PATH));
@@ -107,7 +106,7 @@ public class Utilities {
             entry.actLon = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LON));
             entry.actLat = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LAT));
             entry.isSynced = c.getString(c.getColumnIndex(InstanceColumns.T_IS_SYNC));
-            entry.assignmentId = c.getLong(c.getColumnIndex(InstanceColumns.T_ASS_ID));
+            entry.taskId = c.getLong(c.getColumnIndex(InstanceColumns.T_TASK_ID));
 
         } catch(Exception e) {
             e.printStackTrace();
@@ -129,7 +128,7 @@ public class Utilities {
         String [] proj = {
                 InstanceColumns._ID,
                 InstanceColumns.T_TITLE,
-                InstanceColumns.T_ASS_STATUS,
+                InstanceColumns.T_TASK_STATUS,
                 InstanceColumns.T_SCHED_START,
                 InstanceColumns.T_ADDRESS,
                 InstanceColumns.FORM_PATH,
@@ -139,17 +138,21 @@ public class Utilities {
                 InstanceColumns.ACT_LON,
                 InstanceColumns.ACT_LAT,
                 InstanceColumns.T_IS_SYNC,
-                InstanceColumns.T_ASS_ID
+                InstanceColumns.T_TASK_ID
 
         };
 
-        String selectClause = InstanceColumns.SOURCE + "='" + Utilities.getSource() +
-                "' or " + InstanceColumns.SOURCE + "='local'";
+        String selectClause = "(" + InstanceColumns.SOURCE + " = ?" +
+                " or " + InstanceColumns.SOURCE + " = 'local')" +
+                " and " + InstanceColumns.T_TASK_STATUS + " != ? ";
+
+        String [] selectArgs = {"",""};
+        selectArgs[0] = Utilities.getSource();
+        selectArgs[1] = Utilities.STATUS_T_CLOSED;
+
         String sortOrder = InstanceColumns.T_SCHED_START + " DESC";
 
-
-        final ContentResolver resolver = Collect.getInstance().getContentResolver();
-        Cursor c = resolver.query(InstanceColumns.CONTENT_URI, proj, selectClause, null, sortOrder);
+        Cursor c = Collect.getInstance().getContentResolver().query(InstanceColumns.CONTENT_URI, proj, selectClause, selectArgs, sortOrder);
 
         try {
             c.moveToFirst();
@@ -160,7 +163,7 @@ public class Utilities {
 
                 entry.type = "task";
                 entry.name = c.getString(c.getColumnIndex(InstanceColumns.T_TITLE));
-                entry.taskStatus = c.getString(c.getColumnIndex(InstanceColumns.T_ASS_STATUS));
+                entry.taskStatus = c.getString(c.getColumnIndex(InstanceColumns.T_TASK_STATUS));
                 entry.taskStart = dFormat.format(c.getLong(c.getColumnIndex(InstanceColumns.T_SCHED_START)));
                 entry.taskAddress = c.getString(c.getColumnIndex(InstanceColumns.T_ADDRESS));
                 entry.taskForm = c.getString(c.getColumnIndex(InstanceColumns.FORM_PATH));
@@ -171,7 +174,7 @@ public class Utilities {
                 entry.actLon = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LON));
                 entry.actLat = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LAT));
                 entry.isSynced = c.getString(c.getColumnIndex(InstanceColumns.T_IS_SYNC));
-                entry.assignmentId = c.getLong(c.getColumnIndex(InstanceColumns.T_ASS_ID));
+                entry.taskId = c.getLong(c.getColumnIndex(InstanceColumns.T_TASK_ID));
 
                 tasks.add(entry);
                 c.moveToNext();
@@ -197,7 +200,23 @@ public class Utilities {
         Uri taskUri =  Uri.withAppendedPath(InstanceColumns.CONTENT_URI, id.toString());
         final ContentResolver cr = Collect.getInstance().getContentResolver();
         cr.delete(taskUri, null, null);
+    }
 
+    /*
+     * Delete any tasks with the matching status
+     */
+    public static int deleteTasksWithStatus(String status) {
+
+        Uri dbUri =  InstanceColumns.CONTENT_URI;
+
+        String selectClause = InstanceColumns.T_TASK_STATUS + " = ? and "
+                + InstanceColumns.SOURCE + "= ? ";
+
+        String [] selectArgs = {"",""};
+        selectArgs[0] = status;
+        selectArgs[1] = Utilities.getSource();
+
+        return Collect.getInstance().getContentResolver().delete(dbUri, selectClause, selectArgs);
     }
 
     /*
@@ -208,18 +227,16 @@ public class Utilities {
         Uri dbUri =  InstanceColumns.CONTENT_URI;
 
         ContentValues values = new ContentValues();
-        values.put(InstanceColumns.T_ASS_STATUS, "closed");
+        values.put(InstanceColumns.T_TASK_STATUS, Utilities.STATUS_T_CLOSED);
 
-        String selectClause = InstanceColumns.T_ASS_STATUS + " = ? and "
+        String selectClause = InstanceColumns.T_TASK_STATUS + " = ? and "
                 + InstanceColumns.SOURCE + "= ? ";
 
         String [] selectArgs = {"",""};
         selectArgs[0] = status;
         selectArgs[1] = Utilities.getSource();
 
-       // Todo check if option is to delete on close
-        final ContentResolver cr = Collect.getInstance().getContentResolver();
-        cr.update(dbUri, values, selectClause, selectArgs);
+        Collect.getInstance().getContentResolver().update(dbUri, values, selectClause, selectArgs);
 
     }
 
@@ -233,9 +250,7 @@ public class Utilities {
         ContentValues values = new ContentValues();
         values.put(InstanceColumns.T_IS_SYNC, STATUS_SYNC_YES);
 
-
-        final ContentResolver cr = Collect.getInstance().getContentResolver();
-        cr.update(taskUri, values, null, null);
+        Collect.getInstance().getContentResolver().update(taskUri, values, null, null);
 
     }
 
@@ -247,32 +262,30 @@ public class Utilities {
         Uri taskUri =  Uri.withAppendedPath(InstanceColumns.CONTENT_URI, id.toString());
 
         ContentValues values = new ContentValues();
-        values.put(InstanceColumns.T_ASS_STATUS, status);
+        values.put(InstanceColumns.T_TASK_STATUS, status);
 
-
-        final ContentResolver cr = Collect.getInstance().getContentResolver();
-        cr.update(taskUri, values, null, null);
+        Collect.getInstance().getContentResolver().update(taskUri, values, null, null);
 
     }
 
     /*
      * Set the task assignment
      */
-    public static void setStatusForAssignment(long assignmentId, String status) {
+    public static void setStatusForTask(long taskId, String status) {
 
         Uri dbUri =  InstanceColumns.CONTENT_URI;
 
-        String selectClause = InstanceColumns.T_ASS_ID + " = " + assignmentId + " and "
-                + InstanceColumns.SOURCE + "= ? ";
+        String selectClause = InstanceColumns.T_TASK_ID + " = " + taskId + " and "
+                + InstanceColumns.SOURCE + " = ?";
+
 
         String [] selectArgs = {""};
         selectArgs[0] = Utilities.getSource();
 
         ContentValues values = new ContentValues();
-        values.put(InstanceColumns.STATUS, status);
+        values.put(InstanceColumns.T_TASK_STATUS, status);
 
-        final ContentResolver cr = Collect.getInstance().getContentResolver();
-        cr.update(dbUri, values, selectClause, selectArgs);
+        Collect.getInstance().getContentResolver().update(dbUri, values, selectClause, selectArgs);
 
     }
 

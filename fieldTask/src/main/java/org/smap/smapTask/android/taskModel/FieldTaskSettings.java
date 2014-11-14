@@ -14,18 +14,10 @@
 
 package org.smap.smapTask.android.taskModel;
 
-import java.util.List;
-
-import com.google.gson.annotations.SerializedName;
-import org.odk.collect.android.database.TaskAssignment;
-
-public class TaskResponse {
-
-	public String message;
-	public String status;
-	public String deviceId;
-	@SerializedName("data")
-	public List<TaskAssignment> taskAssignments;
-	public List<FormLocator> forms;
-    public FieldTaskSettings settings;
+/**
+ * Created by neilpenman on 14/11/2014.
+ */
+public class FieldTaskSettings {
+    public boolean ft_delete_submitted;
+    public boolean ft_send_trail;
 }

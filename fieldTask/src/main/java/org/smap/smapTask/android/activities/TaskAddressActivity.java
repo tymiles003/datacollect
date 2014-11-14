@@ -71,7 +71,7 @@ public class TaskAddressActivity extends Activity implements OnClickListener {
 
     	try {
 
-    		//String taskStatus = c.getString(c.getColumnIndex(FileDbAdapter.KEY_T_STATUS));
+    		//String assignment_status = c.getString(c.getColumnIndex(FileDbAdapter.KEY_T_STATUS));
     		//String taskTitle = c.getString(c.getColumnIndex(FileDbAdapter.KEY_T_TITLE));
         	//String taskAddress = c.getString(c.getColumnIndex(FileDbAdapter.KEY_T_ADDRESS));
         	
