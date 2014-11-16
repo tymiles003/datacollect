@@ -188,6 +188,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <!-- Smap
         <receiver
             android:name=".receivers.NetworkReceiver"
             android:enabled="true" >
@@ -198,6 +199,7 @@
                 <action android:name="org.odk.collect.android.FormSaved" />
             </intent-filter>
         </receiver>
+        -->
 
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"

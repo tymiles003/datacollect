@@ -168,7 +168,7 @@
             </intent-filter>
         </activity>
         <receiver
-	        android:name="org.odk.collect.android.receivers.NetworkReceiver"
+	        android:name=".receivers.NetworkReceiver"
 	        android:enabled="true" >
 	        <intent-filter>
 	            <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />

@@ -281,7 +281,8 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                 if(count > 0) {
                     results.put("Rejected Tasks", count + " deleted");
                 }
-                if(tr.settings.ft_delete_submitted) {
+
+                if(tr.settings !=null && tr.settings.ft_delete_submitted) {
                     count = Utilities.deleteTasksWithStatus(Utilities.STATUS_T_SUBMITTED);
                     if(count > 0) {
                         results.put("Submitted Tasks", count + " deleted");
