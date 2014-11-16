@@ -2,8 +2,6 @@
 ======
 [![Build Status](https://travis-ci.org/nap2000/fieldTask2.svg)](https://travis-ci.org/nap2000/fieldTask2)
 
-This repository contains the latest version of fieldTask ported to Android Studio
-
 fieldTask is an Android client for Smap Server that extends [odkCollect](http://opendatakit.org/use/collect/) with Task Management functionality. It depends on a modified
 version of odkCollect referenced as a library.
 
@@ -12,12 +10,7 @@ Follow the latest news about Smap on our [blog](http://blog.smap.com.au) and on 
 Frequently Asked Questions
 ---------------------------
 ##### How to install and run
-* Import as GIT project into Eclipse
-* Import smap version of ODK library as a GIT project
-* Import smap version of playservices as a GIT project
-* Open the properties of ODK1.4_lib and select Java Build Path then the Order and Export Tab
-* Uncheck "Android Private Libraries"
-* Clean the ODK1.4_lib project
+* Import as GIT project into Android Studio
 * Select fieldTask and run as an Android application
 
 Instructions on installing a Smap server can be found in the operations manual [here](http://www.smap.com.au/downloads.shtml)

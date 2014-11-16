@@ -10,6 +10,7 @@ gradlew.bat
 # Android Studio
 .gradle
 .idea
+*.iml
 
 .DS_Store
 .AppleDouble
