@@ -10,7 +10,14 @@ Follow the latest news about Smap on our [blog](http://blog.smap.com.au) and on 
 Frequently Asked Questions
 ---------------------------
 ##### How to install and run
-* Import as GIT project into Android Studio
+* Install Android Studio
+* In Android Studio open the SDK manager (from the tools menu)
+* Under "Extras" install:
+    * Android Support Repository
+    * Android Support Library
+    * Google Play Services
+    * Google Repository
+* Clone as a GIT project into Android Studio
 * Select fieldTask and run as an Android application
 
 Instructions on installing a Smap server can be found in the operations manual [here](http://www.smap.com.au/downloads.shtml)
