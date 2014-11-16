@@ -34,6 +34,7 @@ import com.mapbox.mapboxsdk.views.MapView;
 import com.mapbox.mapboxsdk.views.util.TilesLoadedListener;
 
 import org.smap.smapTask.android.R;
+import org.smap.smapTask.android.utilities.Utilities;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -359,13 +360,13 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
      */
     private Icon getIcon(String status) {
 
-        if(status.equals("rejected")) {
+        if(status.equals(Utilities.STATUS_T_REJECTED) || status.equals(Utilities.STATUS_T_CANCELLED)) {
             return rejected;
-        } else if(status.equals("accepted")) {
+        } else if(status.equals(Utilities.STATUS_T_ACCEPTED)) {
             return accepted;
-        } else if(status.equals("done")) {
+        } else if(status.equals(Utilities.STATUS_T_COMPLETE)) {
             return complete;
-        } else if(status.equals("submitted")) {
+        } else if(status.equals(Utilities.STATUS_T_SUBMITTED)) {
             return submitted;
         } else {
             Log.i("MapFragment", "Unknown task status: " + status);
@@ -382,7 +383,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         double lon = 0.0;
         LatLng locn = null;
 
-        if(t.taskStatus.equals("done") || t.taskStatus.equals("submitted")) {
+        if(t.taskStatus.equals(Utilities.STATUS_T_COMPLETE) || t.taskStatus.equals(Utilities.STATUS_T_SUBMITTED)) {
             lat = t.actLat;         // Actual coordinates of task
             lon = t.actLon;
         } else  {

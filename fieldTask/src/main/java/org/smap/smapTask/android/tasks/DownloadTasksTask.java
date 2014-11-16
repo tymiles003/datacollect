@@ -18,11 +18,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
 import org.smap.smapTask.android.listeners.TaskDownloaderListener;
 import org.smap.smapTask.android.taskModel.FormLocator;
+import org.smap.smapTask.android.taskModel.TaskCompletionInfo;
 import org.smap.smapTask.android.taskModel.TaskResponse;
 import org.smap.smapTask.android.utilities.ManageForm;
 import org.smap.smapTask.android.utilities.ManageForm.ManageFormDetails;
@@ -127,15 +129,6 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         username = settings.getString(PreferencesActivity.KEY_USERNAME, null);
         password = settings.getString(PreferencesActivity.KEY_PASSWORD, null);
 
-        /*
-         * Get an array of the existing tasks on the phone and create a hashmap indexed on the task id
-         */
-        Utilities.getTasks(tasks);
-        for(TaskEntry t : tasks) {
-            TaskStatus ts = new TaskStatus(t.id, t.taskStatus);
-            taskMap.put(t.taskId, ts);
-        }
-
         synchronise();      // Synchronise the phone with the server
 
         return results;
@@ -186,6 +179,16 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	        try {
 
                 /*
+                 * Submit any completed forms
+                 */
+                Outcome submitOutcome = submitCompletedForms();
+                if(submitOutcome != null) {
+                    for (String key : submitOutcome.mResults.keySet()) {
+                        results.put(key, submitOutcome.mResults.get(key));
+                    }
+                }
+
+                /*
                  * Delete tasks which were cancelled on the server and then updated on
                  * the phone during the last refresh
                  */
@@ -202,6 +205,15 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	            if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
 
                 /*
+                 * Get an array of the existing tasks on the phone and create a hashmap indexed on the task id
+                 */
+                Utilities.getTasks(tasks, false);
+                for(TaskEntry t : tasks) {
+                    TaskStatus ts = new TaskStatus(t.id, t.taskStatus);
+                    taskMap.put(t.taskId, ts);
+                }
+
+                /*
 	        	 * Get tasks from the server
 	        	 */
                 client = new DefaultHttpClient();
@@ -211,7 +223,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                             new UsernamePasswordCredentials(username, password));
                 }
 
-                // Call the service
+                // Call the service to get tasks from the server
                 InputStream is = null;
                 HttpGet getRequest = new HttpGet(taskURL);
                 getResponse = client.execute(getRequest);
@@ -248,7 +260,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                 /*
                  * Apply task changes
                  *  Add new tasks
-                 *  Update the status of tasks that have been cancelled on the server
+                 *  Update the status of tasks on the phone that have been cancelled on the server
                  */
                 addAndUpdateEntries();
 
@@ -258,7 +270,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
             	 *      Note in the case of "cancelled" the client is merely acknowledging that it received the cancellation notice
             	 *  (2) Pass the list of forms and versions that have been applied back to the server
             	 */
-		        updateTaskStatusToServer(tasks, username, password, serverUrl, tr);
+		        updateTaskStatusToServer();
 
                 if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
 
@@ -300,17 +312,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	
 	        }
         }
-        
-        
-        /*
-         * Submit any completed forms
-         */
-        Outcome outcome = submitCompletedForms();
-        if(outcome != null) {
-	        for (String key : outcome.mResults.keySet()) {
-	        	results.put(key, outcome.mResults.get(key));
-	        }
-        }
+
         
   
     }
@@ -361,31 +363,13 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
             }
         
     }
-    /*
-	 * Delete all entries in the database that have one of the provided task status values
-	 *
-    private void deleteTasks(ArrayList<String> statusValues) throws Exception {
-
-        Log.i("DownloadTasksTask", "deleteTasks");
-        for(TaskEntry t : tasks) {
-            for(String status : statusValues) {
-                if (t.taskStatus.equals(status)) {
-                    Utilities.deleteTask(t.id);
-                    tasks.remove(t);
-                    break;
-                }
-            }
-    	}
-		
-	}
-	*/
 
     /*
-	 * Loop through the entries in the database
+	 * Loop through the task entries in the database
 	 *  (1) Update on the server all that have a status of "accepted", "rejected" or "submitted"
+	 *  (2) Send details on submitted tasks, such as where they were completed and optionally the trace of user movements, to the server
 	 */
-	private void updateTaskStatusToServer(ArrayList<TaskEntry> tasks, String username, String password,
-			String serverUrl, TaskResponse tr) throws Exception {
+	private void updateTaskStatusToServer() throws Exception {
 
         DefaultHttpClient client = new DefaultHttpClient();
         HttpResponse getResponse = null;
@@ -400,14 +384,17 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         // Add device id to response
         tr.deviceId = new PropertyManager(Collect.getInstance().getApplicationContext())
 				.getSingularProperty(PropertyManager.DEVICE_ID_PROPERTY);
-        
-        tr.taskAssignments = new ArrayList<TaskAssignment> ();		// Reset the passed in taskAssignments, this wil now contain the resposne
 
-        for(TaskEntry t : tasks) {
-        	
-    		if(isCancelled()) { return; };		// Return if the user cancels
+        // Get tasks that have not been synchronised
+        ArrayList<TaskEntry> nonSynchTasks = new ArrayList<TaskEntry>();
+        Utilities.getTasks(nonSynchTasks, true);
 
-  	  		// Call the update service
+        /*
+         * Set updates to task status
+         */
+        tr.taskAssignments = new ArrayList<TaskAssignment> ();          // Updates to task status
+
+        for(TaskEntry t : nonSynchTasks) {
   	  		if(t.taskStatus != null && t.isSynced.equals(Utilities.STATUS_SYNC_NO)) {
   	  			TaskAssignment ta = new TaskAssignment();
   	  			ta.assignment = new Assignment();
@@ -417,9 +404,27 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 
 	            tr.taskAssignments.add(ta);
   	  		}
-
         }
-        
+
+        /*
+         * Set details on submitted tasks
+         */
+        tr.taskCompletionInfo = new ArrayList<TaskCompletionInfo> ();   // Details on completed tasks
+
+        for(TaskEntry t : nonSynchTasks) {
+            if((t.taskStatus.equals(Utilities.STATUS_T_SUBMITTED) || t.taskStatus.equals(Utilities.STATUS_T_CLOSED))
+                    && t.isSynced.equals(Utilities.STATUS_SYNC_NO)) {
+                TaskCompletionInfo tci = new TaskCompletionInfo();
+                tci.actFinish = t.actFinish;
+                tci.lat = t.actLat;
+                tci.lon = t.actLon;
+                tci.ident = t.ident;
+                tci.uuid = t.uuid;
+
+                tr.taskCompletionInfo.add(tci);
+            }
+        }
+
         // Call the service
         String taskURL = serverUrl + "/surveyKPI/myassignments";
         HttpPost postRequest = new HttpPost(taskURL);
@@ -474,8 +479,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	          	  	if(ts == null) {
 	          	  		Log.i(getClass().getSimpleName(), "New task: " + assignment.assignment_id);
 	          	  		// New task
-	          	  		if(assignment.assignment_status.equals(Utilities.STATUS_T_NEW) ||
-          	  						assignment.assignment_status.equals(Utilities.STATUS_T_ACCEPTED)) {
+	          	  		if(assignment.assignment_status.equals(Utilities.STATUS_T_ACCEPTED)) {
 
 	          	  			// Ensure the form and instance data are available on the phone
 	          	  			// First make sure the initial_data url is sensible (ie null or a URL)

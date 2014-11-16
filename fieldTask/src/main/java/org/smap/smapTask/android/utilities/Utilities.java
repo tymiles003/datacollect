@@ -33,14 +33,15 @@ import loaders.TaskEntry;
 
 public class Utilities {
 
-    public static final String STATUS_T_NEW = "new";
-    public static final String STATUS_T_PENDING = "pending";
+    // Valid values for task status
     public static final String STATUS_T_ACCEPTED = "accepted";
     public static final String STATUS_T_REJECTED = "rejected";
-    public static final String STATUS_T_DONE = "done";
+    public static final String STATUS_T_COMPLETE = "complete";
     public static final String STATUS_T_SUBMITTED = "submitted";
     public static final String STATUS_T_CANCELLED = "cancelled";
     public static final String STATUS_T_CLOSED = "closed";
+
+    // Valid values for is synced
     public static final String STATUS_SYNC_YES = "synchronized";
     public static final String STATUS_SYNC_NO = "not synchronized";
 	
@@ -75,8 +76,10 @@ public class Utilities {
                 InstanceColumns.SCHED_LAT,
                 InstanceColumns.ACT_LON,
                 InstanceColumns.ACT_LAT,
+                InstanceColumns.T_ACT_FINISH,
                 InstanceColumns.T_IS_SYNC,
-                InstanceColumns.T_TASK_ID
+                InstanceColumns.T_TASK_ID,
+                InstanceColumns.UUID
 
         };
 
@@ -96,7 +99,7 @@ public class Utilities {
             entry.type = "task";
             entry.name = c.getString(c.getColumnIndex(InstanceColumns.T_TITLE));
             entry.taskStatus = c.getString(c.getColumnIndex(InstanceColumns.T_TASK_STATUS));
-            entry.taskStart = dFormat.format(c.getLong(c.getColumnIndex(InstanceColumns.T_SCHED_START)));
+            entry.taskStart = c.getLong(c.getColumnIndex(InstanceColumns.T_SCHED_START));
             entry.taskAddress = c.getString(c.getColumnIndex(InstanceColumns.T_ADDRESS));
             entry.taskForm = c.getString(c.getColumnIndex(InstanceColumns.FORM_PATH));
             entry.instancePath = c.getString(c.getColumnIndex(InstanceColumns.INSTANCE_FILE_PATH));
@@ -105,8 +108,10 @@ public class Utilities {
             entry.schedLat = c.getDouble(c.getColumnIndex(InstanceColumns.SCHED_LAT));
             entry.actLon = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LON));
             entry.actLat = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LAT));
+            entry.actFinish = c.getLong(c.getColumnIndex(InstanceColumns.T_ACT_FINISH));
             entry.isSynced = c.getString(c.getColumnIndex(InstanceColumns.T_IS_SYNC));
             entry.taskId = c.getLong(c.getColumnIndex(InstanceColumns.T_TASK_ID));
+            entry.uuid = c.getString(c.getColumnIndex(InstanceColumns.UUID));
 
         } catch(Exception e) {
             e.printStackTrace();
@@ -122,7 +127,7 @@ public class Utilities {
         return entry;
     }
 
-    public static void getTasks(ArrayList<TaskEntry> tasks) {
+    public static void getTasks(ArrayList<TaskEntry> tasks, boolean all_non_synchronised) {
 
         // Get cursor
         String [] proj = {
@@ -137,18 +142,31 @@ public class Utilities {
                 InstanceColumns.SCHED_LAT,
                 InstanceColumns.ACT_LON,
                 InstanceColumns.ACT_LAT,
+                InstanceColumns.T_ACT_FINISH,
                 InstanceColumns.T_IS_SYNC,
-                InstanceColumns.T_TASK_ID
+                InstanceColumns.T_TASK_ID,
+                InstanceColumns.UUID
 
         };
 
-        String selectClause = "(" + InstanceColumns.SOURCE + " = ?" +
-                " or " + InstanceColumns.SOURCE + " = 'local')" +
-                " and " + InstanceColumns.T_TASK_STATUS + " != ? ";
+        String selectClause = null;
+        if(all_non_synchronised) {
+            selectClause = "(" + InstanceColumns.SOURCE + " = ?" +
+                    " or " + InstanceColumns.SOURCE + " = 'local')" +
+                    " and " + InstanceColumns.T_IS_SYNC + " = ? ";
+        } else {
+            selectClause = "(" + InstanceColumns.SOURCE + " = ?" +
+                    " or " + InstanceColumns.SOURCE + " = 'local')" +
+                    " and " + InstanceColumns.T_TASK_STATUS + " != ? ";
+        }
 
         String [] selectArgs = {"",""};
         selectArgs[0] = Utilities.getSource();
-        selectArgs[1] = Utilities.STATUS_T_CLOSED;
+        if(all_non_synchronised) {
+            selectArgs[1] = Utilities.STATUS_SYNC_NO;
+        } else {
+            selectArgs[1] = Utilities.STATUS_T_CLOSED;
+        }
 
         String sortOrder = InstanceColumns.T_SCHED_START + " DESC";
 
@@ -156,7 +174,6 @@ public class Utilities {
 
         try {
             c.moveToFirst();
-            DateFormat dFormat = DateFormat.getDateTimeInstance();
             while (!c.isAfterLast()) {
 
                 TaskEntry entry = new TaskEntry();
@@ -164,7 +181,7 @@ public class Utilities {
                 entry.type = "task";
                 entry.name = c.getString(c.getColumnIndex(InstanceColumns.T_TITLE));
                 entry.taskStatus = c.getString(c.getColumnIndex(InstanceColumns.T_TASK_STATUS));
-                entry.taskStart = dFormat.format(c.getLong(c.getColumnIndex(InstanceColumns.T_SCHED_START)));
+                entry.taskStart = c.getLong(c.getColumnIndex(InstanceColumns.T_SCHED_START));
                 entry.taskAddress = c.getString(c.getColumnIndex(InstanceColumns.T_ADDRESS));
                 entry.taskForm = c.getString(c.getColumnIndex(InstanceColumns.FORM_PATH));
                 entry.instancePath = c.getString(c.getColumnIndex(InstanceColumns.INSTANCE_FILE_PATH));
@@ -173,8 +190,10 @@ public class Utilities {
                 entry.schedLat = c.getDouble(c.getColumnIndex(InstanceColumns.SCHED_LAT));
                 entry.actLon = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LON));
                 entry.actLat = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LAT));
+                entry.actFinish = c.getLong(c.getColumnIndex(InstanceColumns.T_ACT_FINISH));
                 entry.isSynced = c.getString(c.getColumnIndex(InstanceColumns.T_IS_SYNC));
                 entry.taskId = c.getLong(c.getColumnIndex(InstanceColumns.T_TASK_ID));
+                entry.uuid = c.getString(c.getColumnIndex(InstanceColumns.UUID));
 
                 tasks.add(entry);
                 c.moveToNext();
@@ -204,17 +223,20 @@ public class Utilities {
 
     /*
      * Delete any tasks with the matching status
+     * Only delete if the task status has been successfully synchronised with the server
      */
     public static int deleteTasksWithStatus(String status) {
 
         Uri dbUri =  InstanceColumns.CONTENT_URI;
 
         String selectClause = InstanceColumns.T_TASK_STATUS + " = ? and "
-                + InstanceColumns.SOURCE + "= ? ";
+                + InstanceColumns.SOURCE + " = ? and "
+                + InstanceColumns.T_IS_SYNC + " = ?";
 
-        String [] selectArgs = {"",""};
+        String [] selectArgs = {"","",""};
         selectArgs[0] = status;
         selectArgs[1] = Utilities.getSource();
+        selectArgs[2] = Utilities.STATUS_SYNC_YES;
 
         return Collect.getInstance().getContentResolver().delete(dbUri, selectClause, selectArgs);
     }
@@ -294,9 +316,7 @@ public class Utilities {
      */
     public static boolean canReject(String currentStatus) {
         boolean valid = false;
-        if(currentStatus.equals(STATUS_T_PENDING) ||
-                currentStatus.equals(STATUS_T_NEW) ||
-                currentStatus.equals(STATUS_T_ACCEPTED)) {
+        if(currentStatus.equals(Utilities.STATUS_T_ACCEPTED)) {
             valid = true;
         }
         return valid;
@@ -319,9 +339,7 @@ public class Utilities {
      */
     public static boolean canAccept(String currentStatus) {
         boolean valid = false;
-        if(currentStatus.equals(STATUS_T_PENDING) ||
-                currentStatus.equals(STATUS_T_NEW) ||
-                currentStatus.equals(STATUS_T_REJECTED)) {
+        if(currentStatus.equals(STATUS_T_REJECTED)) {
             valid = true;
         }
 

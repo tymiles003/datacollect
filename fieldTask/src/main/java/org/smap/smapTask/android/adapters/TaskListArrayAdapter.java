@@ -29,7 +29,9 @@ import android.widget.TextView;
 
 import org.smap.smapTask.android.R;
 import org.smap.smapTask.android.utilities.KeyValueJsonFns;
+import org.smap.smapTask.android.utilities.Utilities;
 
+import java.text.DateFormat;
 import java.util.List;
 
 import loaders.TaskEntry;
@@ -49,6 +51,7 @@ public class TaskListArrayAdapter extends ArrayAdapter<TaskEntry> {
     public View getView(int position, View convertView, ViewGroup parent) {
 
     	View view;
+        DateFormat dFormat = DateFormat.getDateTimeInstance();
     	
     	if (convertView == null) {
     		view = mInflater.inflate(mLayout, parent, false);
@@ -62,13 +65,13 @@ public class TaskListArrayAdapter extends ArrayAdapter<TaskEntry> {
     	if(item.type.equals("form")) {
     		icon.setImageResource(R.drawable.form);
     	} else if (item.taskStatus != null) {
-    		if(item.taskStatus.equals("accepted")) {
+    		if(item.taskStatus.equals(Utilities.STATUS_T_ACCEPTED)) {
     			icon.setImageResource(R.drawable.task_open);
-    		} else if(item.taskStatus.equals("done")) {
+    		} else if(item.taskStatus.equals(Utilities.STATUS_T_COMPLETE)) {
     			icon.setImageResource(R.drawable.task_done);
-    		} else if(item.taskStatus.equals("rejected") || item.taskStatus.equals("missed") || item.taskStatus.equals("cancelled")) {
+    		} else if(item.taskStatus.equals(Utilities.STATUS_T_REJECTED) || item.taskStatus.equals(Utilities.STATUS_T_CANCELLED)) {
     			icon.setImageResource(R.drawable.task_reject);
-    		} else if(item.taskStatus.equals("submitted")) {
+    		} else if(item.taskStatus.equals(Utilities.STATUS_T_SUBMITTED)) {
     			icon.setImageResource(R.drawable.task_submitted);
     		}
     	}
@@ -83,8 +86,12 @@ public class TaskListArrayAdapter extends ArrayAdapter<TaskEntry> {
     	if(taskStartText != null) {
 	    	if(item.type.equals("form")) {
 		    	taskStartText.setText(getContext().getString(R.string.version) + ": " + item.formVersion);
-	    	} else {    	
-		    	taskStartText.setText(item.taskStart);
+	    	} else {
+                if(item.taskStatus.equals(Utilities.STATUS_T_COMPLETE) || item.taskStatus.equals(Utilities.STATUS_T_SUBMITTED)) {
+                    taskStartText.setText(dFormat.format(item.actFinish));
+                } else if (item.taskStart != 0) {
+                    taskStartText.setText(dFormat.format(item.taskStart));
+                }
 	    	}
     	}
     	

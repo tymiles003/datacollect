@@ -55,7 +55,7 @@ public class SmapTaskLoader extends AsyncTaskLoader<List<TaskEntry>> {
 		// Create corresponding array of entries and load their labels.
 		ArrayList<TaskEntry> entries = new ArrayList<TaskEntry>(10);
 		getForms(entries);
-        Utilities.getTasks(entries);
+        Utilities.getTasks(entries, false);
 
 		return entries;
 	}

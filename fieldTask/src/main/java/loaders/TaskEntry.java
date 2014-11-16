@@ -9,7 +9,7 @@ public class TaskEntry {
     public String name;
     public String project;
     public String ident;
-    public String taskStart;
+    public long taskStart;
     public String taskAddress;
     public String taskForm;
     public String instancePath;
@@ -19,8 +19,10 @@ public class TaskEntry {
     public double schedLat = 0.0;
     public double actLon = 0.0;
     public double actLat = 0.0;
+    public long actFinish;          // Date time the task was finalised
     public String isSynced;
     public long taskId;
+    public String uuid;
 
 
 

@@ -66,8 +66,8 @@ public final class InstanceProviderAPI {
 
         // Smap Start
         public static final String FORM_PATH = "formPath";          // Path to the form that for this instance
-        public static final String ACT_LON = "actLon";      // Actual longitude task was completed
-        public static final String ACT_LAT = "actLat";      // Actual latitude task was completed
+        public static final String ACT_LON = "actLon";              // Actual longitude task was completed
+        public static final String ACT_LAT = "actLat";              // Actual latitude task was completed
         public static final String SCHED_LON = "schedLon";          // Scheduled longitude for task
         public static final String SCHED_LAT = "schedLat";          // Scheduled latitude for task
         public static final String T_TITLE = "tTitle";              // Task title
@@ -78,8 +78,9 @@ public final class InstanceProviderAPI {
         public static final String T_GEOM = "tGeom";                // Full geometry for location of task
         public static final String T_GEOM_TYPE = "tGeomType";       // Geometry type; Polygon, linestring, point
         public static final String T_IS_SYNC = "tIsSync";           // Set if the instance has been synced
-        public static final String T_TASK_ID = "taskId";           // Task Id
-        public static final String T_TASK_STATUS = "taskStatus";     // Assignment Status
+        public static final String T_TASK_ID = "tTaskId";            // Task Id
+        public static final String T_TASK_STATUS = "tAssStatus";    // Assignment Status
+        public static final String UUID = "uuid";
         // Smap End
 
 //        public static final String DEFAULT_SORT_ORDER = "modified DESC";

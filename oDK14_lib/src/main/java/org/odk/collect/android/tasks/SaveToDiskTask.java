@@ -168,10 +168,13 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
 
         // Smap Start
         if(mMarkCompleted) {
-            values.put(InstanceColumns.T_TASK_STATUS, "done");
+            values.put(InstanceColumns.T_TASK_STATUS, "complete");
         } else {
             values.put(InstanceColumns.T_TASK_STATUS, "accepted");
         }
+
+        // Add uuid
+        values.put(InstanceColumns.UUID, formController.getSubmissionMetadata().instanceId);
 
         // Add actual location
         Location location = Collect.getInstance().getLocation();
@@ -272,39 +275,6 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
         LocalBroadcastManager.getInstance(Collect.getInstance()).sendBroadcast(intent); // Smap
         //updateSmapTaskStatus(source);	// SMAP
     }
-
-    // ----------- SMAP start
-    //private void updateSmapTaskStatus(String source) {
-    //    FileDbAdapter fda = new FileDbAdapter();
-    //    FormController formController = Collect.getInstance().getFormController();
-    //    try {
-    //        fda.open();
-            
-    //    	if(mTaskId == -1) {
-        		// Create new local task
-                //TaskAssignment ta = new TaskAssignment();
-                //ta.task = new Task();
-                //ta.assignment = new Assignment();
-                //ta.task.title = source + " : " + mInstanceName;
-                //ta.task.scheduled_at = new Date();
-                //if(mMarkCompleted) {
-                //	ta.assignment.assignment_status = "completed";
-                //} else {
-                //	ta.assignment.assignment_status = "accepted";
-                //}
-               // mTaskId = fda.createTask(-1, source, ta, mFormPath, formController.getInstancePath().getAbsolutePath());
-        	//}
-        	//fda.updateTask(mTaskId, formController.getInstancePath().getAbsolutePath(), mMarkCompleted);	// Update task store with instance path and status
-        	
-        //} catch (Exception e) {
-       // 	e.printStackTrace();	// TODO handle exception
-        //} finally {
-        //    fda.close();
-        //}
-		//Intent intent = new Intent("refresh");
-	    //LocalBroadcastManager.getInstance(Collect.getInstance()).sendBroadcast(intent);
-    //}
-    // ----------- SMAP end
     
     /**
      * Return the name of the savepoint file for a given instance.
