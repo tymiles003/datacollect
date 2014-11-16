@@ -47,5 +47,11 @@ This API allows you to maintain data using surveys. In the following video the d
 Development
 -----------
 * Code contributions are very welcome. 
-* [Issue Tracker](https://github.com/smap-consulting/fieldTask/issues)
+* [Issue Tracker](https://github.com/nap2000/fieldTask2/issues)
 
+Acknowledgements
+----------------
+
+This project includes:
+* the odkCollect Library of (http://opendatakit.org/) from the University of Washington
+* the Android SDK from [MapBox] (https://www.mapbox.com/)
