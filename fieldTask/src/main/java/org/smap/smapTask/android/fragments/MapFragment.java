@@ -59,7 +59,6 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     Icon rejected = null;
     Icon complete = null;
     Icon submitted = null;
-    Icon unknown_task_status = null;
 
     private MapView mv;
     private String satellite = "brunosan.map_fragment-cyglrrfu";
@@ -77,11 +76,10 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
         // Create icons
         userLocationIcon = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_userlocation)));
-        accepted = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.task_open)));
-        rejected = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.task_reject)));
-        complete = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.task_done)));
-        submitted = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.task_submitted)));
-        unknown_task_status = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.task_unknown)));
+        accepted = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_open)));
+        rejected = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_reject)));
+        complete = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_done)));
+        submitted = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_submitted)));
 
         // Set Default Map Type
         replaceMapView("mapquest");
@@ -287,7 +285,9 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
 
     private void clearTasks() {
-        markerOverlay.removeAllItems();
+        if(markerOverlay != null) {
+            markerOverlay.removeAllItems();
+        }
     }
 
     public void setUserLocation(LatLng location) {
@@ -370,7 +370,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
             return submitted;
         } else {
             Log.i("MapFragment", "Unknown task status: " + status);
-            return unknown_task_status;
+            return accepted;
         }
     }
 
@@ -383,12 +383,12 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         double lon = 0.0;
         LatLng locn = null;
 
-        if(t.taskStatus.equals(Utilities.STATUS_T_COMPLETE) || t.taskStatus.equals(Utilities.STATUS_T_SUBMITTED)) {
-            lat = t.actLat;         // Actual coordinates of task
-            lon = t.actLon;
-        } else  {
+        if((t.actLat == 0.0) && (t.actLon == 0.0)) {
             lat = t.schedLat;       // Scheduled coordinates of task
             lon = t.schedLon;
+        } else  {
+            lat = t.actLat;         // Actual coordinates of task
+            lon = t.actLon;
         }
 
         if(lat != 0.0 && lon != 0.0) {

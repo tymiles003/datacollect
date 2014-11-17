@@ -179,16 +179,6 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	        try {
 
                 /*
-                 * Submit any completed forms
-                 */
-                Outcome submitOutcome = submitCompletedForms();
-                if(submitOutcome != null) {
-                    for (String key : submitOutcome.mResults.keySet()) {
-                        results.put(key, submitOutcome.mResults.get(key));
-                    }
-                }
-
-                /*
                  * Delete tasks which were cancelled on the server and then updated on
                  * the phone during the last refresh
                  */
@@ -203,6 +193,16 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                 Utilities.closeTasksWithStatus(Utilities.STATUS_T_SUBMITTED);
 
 	            if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
+
+                /*
+                 * Submit any completed forms
+                 */
+                Outcome submitOutcome = submitCompletedForms();
+                if(submitOutcome != null) {
+                    for (String key : submitOutcome.mResults.keySet()) {
+                        results.put(key, submitOutcome.mResults.get(key));
+                    }
+                }
 
                 /*
                  * Get an array of the existing tasks on the phone and create a hashmap indexed on the task id

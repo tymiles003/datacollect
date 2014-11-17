@@ -59,7 +59,7 @@ public class Utilities {
 		return source;
 	}
 
-    public static TaskEntry getTaskForTaskId(long id) {
+    public static TaskEntry getTaskWithId(long id) {
 
         TaskEntry entry = null;
 
