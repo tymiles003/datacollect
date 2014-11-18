@@ -305,8 +305,14 @@ public class MainTabsActivity extends TabActivity implements
 		
 		Log.i("taskDownloadingComplete", "Complete");
     	Log.i("++++taskDownloadingComplete", "Send intent");
+
+        // Refresh task list
     	Intent intent = new Intent("refresh");
 	    LocalBroadcastManager.getInstance(getApplication()).sendBroadcast(intent);
+
+        // Refresh trace
+        Intent intentPoints = new Intent("refreshPoints");
+        LocalBroadcastManager.getInstance(getApplication()).sendBroadcast(intentPoints);
 	    
 		try {
             dismissDialog(PROGRESS_DIALOG);

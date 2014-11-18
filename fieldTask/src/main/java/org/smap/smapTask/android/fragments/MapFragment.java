@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
+import android.location.Location;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.Fragment;
@@ -44,9 +45,11 @@ import loaders.TaskEntry;
 
 import static org.smap.smapTask.android.R.drawable;
 
-public class MapFragment extends Fragment implements LoaderManager.LoaderCallbacks<List<TaskEntry>> {
+public class MapFragment extends Fragment implements LoaderManager.LoaderCallbacks<List<TaskEntry>>,
+{
 
     ItemizedIconOverlay markerOverlay = null;
+    PathOverlay po = null;
     ArrayList<Marker> markers = null;
     private double tasksNorth;
     private double tasksSouth;
@@ -177,22 +180,6 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         //        mv.zoomToBoundingBox(box);
     }
 
-    private void addLine() {
-        // Configures a line
-        Paint linePaint = new Paint();
-        linePaint.setStyle(Paint.Style.STROKE);
-        linePaint.setColor(Color.BLUE);
-        linePaint.setStrokeWidth(5);
-
-        PathOverlay po = new PathOverlay().setPaint(linePaint);
-
-        po.addPoint(new LatLng(51.7, 0.3));
-        po.addPoint(new LatLng(51.2, 0));
-
-        // Adds line and marker to the overlay
-        mv.getOverlays().add(po);
-    }
-
     private Button changeButtonTypeface(Button button) {
         //Typeface tf = Typeface.createFromAsset(this.getAssets(), "fonts/semibold.ttf");
         //button.setTypeface(tf);
@@ -209,7 +196,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
     /**
      * Method to show settings  in alert dialog
-     * On pressing Settings button will lauch Settings Options - GPS
+     * On pressing Settings button will launch Settings Options - GPS
      */
     public void showSettingsAlert() {
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
@@ -280,7 +267,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
             }
         }
 
-        zoomToData();
+        zoomToData(false);
     }
 
 
@@ -290,11 +277,16 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         }
     }
 
-    public void setUserLocation(LatLng location) {
+    public void setUserLocation(Location location) {
         Log.i("MapFragment", "setUserLocation()");
 
+        LatLng point = new LatLng(location.getLatitude(), location.getLongitude());
+
+        if(markers == null) {
+            markers = new ArrayList<Marker>();
+        }
         if(userLocationMarker == null) {
-            userLocationMarker = new Marker(mv, "", "", location);
+            userLocationMarker = new Marker(mv, "", "", point);
             userLocationMarker.setIcon(userLocationIcon);
 
             if (markerOverlay == null) {
@@ -305,17 +297,33 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
                 markerOverlay.addItem(userLocationMarker);
             }
         } else {
-            userLocationMarker.setPoint(location);
+            userLocationMarker.setPoint(point);
             userLocationMarker.updateDrawingPosition();
             userLocationMarker.setIcon(userLocationIcon);
         }
-        zoomToData();
+        updatePath(point);
+        zoomToData(true);
     }
 
-    private void zoomToData() {
+    private void updatePath(LatLng point) {
+        if(po == null) {
+            Paint linePaint = new Paint();
+            linePaint.setStyle(Paint.Style.STROKE);
+            linePaint.setColor(Color.BLUE);
+            linePaint.setStrokeWidth(5);
 
-        // Todo Add Trace
 
+            po = new PathOverlay().setPaint(linePaint);
+            mv.getOverlays().add(po);
+        }
+
+        po.addPoint(point);
+
+    }
+
+    private void zoomToData(boolean userLocationChanged) {
+
+        boolean userOutsideBoundingBox = false;
         double north = tasksNorth;    // Add Margin
         double south = tasksSouth;
         double east = tasksEast;
@@ -327,15 +335,30 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
             double lon = userLocationMarker.getPoint().getLongitude();
             if(lat > north) {
                 north = lat;
+                userOutsideBoundingBox = true;
             }
             if(lat < south) {
                 south = lat;
+                userOutsideBoundingBox = true;
             }
             if(lon > east) {
                 east = lon;
+                userOutsideBoundingBox = true;
             }
             if(lon < west) {
                 west = lon;
+                userOutsideBoundingBox = true;
+            }
+
+            if(userLocationChanged) {
+                BoundingBox viewableBox = mv.getBoundingBox();
+                if(lat > viewableBox.getLatNorth() ||
+                        lat > viewableBox.getLatSouth() ||
+                        lon > viewableBox.getLonEast() ||
+                        lon < viewableBox.getLonWest()
+                        ) {
+                    userOutsideBoundingBox = true;
+                }
             }
         }
 
@@ -349,9 +372,15 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
             west -= 0.01;
         }
 
+        /*
+         * Zoom to the new bounding box only if the task list has changed or the user is outside of the current
+         *  viewable area
+         */
         if(north > south && east > west) {
-            BoundingBox bb = new BoundingBox(north, east, south, west);
-            mv.zoomToBoundingBox(bb, true, true, true, true);
+            if(!userLocationChanged || userOutsideBoundingBox) {
+                BoundingBox bb = new BoundingBox(north, east, south, west);
+                mv.zoomToBoundingBox(bb, true, true, true, true);
+            }
         }
     }
 

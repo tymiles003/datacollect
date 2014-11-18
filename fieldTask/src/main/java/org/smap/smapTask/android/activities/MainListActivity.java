@@ -209,11 +209,6 @@ public class MainListActivity extends FragmentActivity  {
 	    	if(task.type.equals("task")) {
 		    	Intent i = new Intent(getActivity(), org.smap.smapTask.android.activities.TaskAddressActivity.class);
 		        i.putExtra("id", task.id);
-		       
-		        //if(mActivity != null && mActivity.userLocation != null) {
-		        //	i.putExtra("lon", String.valueOf(mActivity.userLocation.getLon()));
-		        //	i.putExtra("lat", String.valueOf(mActivity.userLocation.getLat()));
-		        //}
 		        
 		    	startActivity(i);
 	    	}

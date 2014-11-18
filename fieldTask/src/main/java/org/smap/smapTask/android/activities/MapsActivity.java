@@ -28,6 +28,7 @@ import com.mapbox.mapboxsdk.geometry.LatLng;
 import org.odk.collect.android.application.Collect;
 import org.smap.smapTask.android.R;
 import org.smap.smapTask.android.fragments.MapFragment;
+import org.smap.smapTask.android.utilities.TraceUtilities;
 import org.smap.smapTask.android.utilities.Utilities;
 
 /**
@@ -61,10 +62,10 @@ public class MapsActivity extends FragmentActivity  {
             @Override
             public void onLocationChanged(Location location) {
 
-                // TODO check for accuracy
+                // TODO check for accuracy and discard results that are not accurate
                 Collect.getInstance().setLocation(location);
-                LatLng point = new LatLng(location.getLatitude(), location.getLongitude());
-                map.setUserLocation(point);
+                TraceUtilities.insertPoint(location);
+                map.setUserLocation(location);
             }
 
             @Override

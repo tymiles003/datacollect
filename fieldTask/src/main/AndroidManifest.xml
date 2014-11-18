@@ -65,6 +65,10 @@
             android:exported="true"
             android:name="org.odk.collect.android.provider.InstanceProvider"
             android:authorities="org.odk.collect.android.provider.odk.instances.smap" />
+        <provider
+            android:exported="true"
+            android:name="org.smap.smapTask.android.provider.TraceProvider"
+            android:authorities="org.smap.smapTask.android.provider.trace" />
 
         <activity
             android:name=".activities.MainTabsActivity"
