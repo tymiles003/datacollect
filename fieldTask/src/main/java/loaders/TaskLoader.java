@@ -36,12 +36,12 @@ import java.util.List;
  * An implementation of AsyncTaskLoader which loads a {@code List<TaskEntry>}
  * containing all tasks on the device.
  */
-public class SmapTaskLoader extends AsyncTaskLoader<List<TaskEntry>> {
+public class TaskLoader extends AsyncTaskLoader<List<TaskEntry>> {
 
 	private List<TaskEntry> mTasks = null;
-	private SmapTaskObserver mSmapTaskObserver;	// Monitor changes to task data
+	private TaskObserver mTaskObserver;	// Monitor changes to task data
 
-	public SmapTaskLoader(Context ctx) {
+	public TaskLoader(Context ctx) {
 		super(ctx);
 	}
 
@@ -142,8 +142,8 @@ public class SmapTaskLoader extends AsyncTaskLoader<List<TaskEntry>> {
 
 		// Register the observers that will notify the Loader when changes are
 		// made.
-		if (mSmapTaskObserver == null) {
-			mSmapTaskObserver = new SmapTaskObserver(this);
+		if (mTaskObserver == null) {
+			mTaskObserver = new TaskObserver(this);
 		}
 
 		if (takeContentChanged()) {
@@ -172,13 +172,13 @@ public class SmapTaskLoader extends AsyncTaskLoader<List<TaskEntry>> {
 		}
 
 		// The Loader is being reset, so we should stop monitoring for changes.
-		if (mSmapTaskObserver != null) {
+		if (mTaskObserver != null) {
 			try {
-				getContext().unregisterReceiver(mSmapTaskObserver);
+				getContext().unregisterReceiver(mTaskObserver);
 			} catch (Exception e) {
 				
 			}
-			mSmapTaskObserver = null;
+			mTaskObserver = null;
 		}
 
 	}

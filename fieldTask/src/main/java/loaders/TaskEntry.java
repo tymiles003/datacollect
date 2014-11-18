@@ -1,7 +1,7 @@
 package loaders;
 
 /**
- * This class holds the per-item data in the {@link SmapTaskLoader}.
+ * This class holds the per-item data in the {@link TaskLoader}.
  */
 public class TaskEntry {
     public String type;    // form or task

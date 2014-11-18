@@ -26,7 +26,6 @@ import android.support.v4.content.AsyncTaskLoader;
 import android.util.Log;
 
 import org.odk.collect.android.application.Collect;
-import org.odk.collect.android.provider.FormsProviderAPI.FormsColumns;
 import org.smap.smapTask.android.provider.TraceProviderAPI.TraceColumns;
 import org.smap.smapTask.android.utilities.Utilities;
 
@@ -37,12 +36,12 @@ import java.util.List;
  * An implementation of AsyncTaskLoader which loads a {@code List<PointEntry>}
  * containing all tasks on the device.
  */
-public class SmapPointLoader extends AsyncTaskLoader<List<PointEntry>> {
+public class MapDataLoader extends AsyncTaskLoader<MapEntry> {
 
-	private List<PointEntry> mPoints = null;
-	private SmapPointObserver mSmapPointObserver;	// Monitor changes to task data
+	private MapEntry mData = null;
+	private MapDataObserver mMapDataObserver;	// Monitor changes to task data
 
-	public SmapPointLoader(Context ctx) {
+	public MapDataLoader(Context ctx) {
 		super(ctx);
 	}
 
@@ -51,13 +50,17 @@ public class SmapPointLoader extends AsyncTaskLoader<List<PointEntry>> {
 	 * {@link loaders.PointEntry} objects.
 	 */
 	@Override
-	public List<PointEntry> loadInBackground() {
+	public MapEntry loadInBackground() {
+
+        MapEntry data = new MapEntry();
 
 		// Create corresponding array of entries and load their labels.
-		ArrayList<PointEntry> entries = new ArrayList<PointEntry>(100);
-		getPoints(entries);
+		data.points = new ArrayList<PointEntry>(100);
+        data.tasks = new ArrayList<TaskEntry> (10);
+        getPoints(data.points);
+        Utilities.getTasks(data.tasks, false);
 
-		return entries;
+		return data;
 	}
 
 	private void getPoints(ArrayList<PointEntry> entries) {
@@ -68,7 +71,7 @@ public class SmapPointLoader extends AsyncTaskLoader<List<PointEntry>> {
                 TraceColumns.TIME,
                 };
 
-        String sortOrder = TraceColumns._ID + " ASC, ";
+        String sortOrder = TraceColumns._ID + " ASC; ";
 
         final ContentResolver resolver = Collect.getInstance().getContentResolver();
         Cursor pointListCursor = resolver.query(TraceColumns.CONTENT_URI, proj, null, null, sortOrder);
@@ -101,48 +104,48 @@ public class SmapPointLoader extends AsyncTaskLoader<List<PointEntry>> {
 	 * onLoadFinished.
 	 */
 	@Override
-	public void deliverResult(List<PointEntry> points) {
+	public void deliverResult(MapEntry data) {
 		if (isReset()) {
 			Log.w("taskloader",
 					"+++ Warning! An async query came in while the Loader was reset! +++");
 
-			if (points != null) {
-				releaseResources(points);
+			if (data != null) {
+				releaseResources(data);
 				return;
 			}
 		}
 
 		// Hold a reference to the old data so it doesn't get garbage collected.
 		// We must protect it until the new data has been delivered.
-		List<PointEntry> oldPoints = mPoints;
-		mPoints = points;
+		MapEntry oldData = mData;
+		mData = data;
 
 		if (isStarted()) {
-			super.deliverResult(points);
+			super.deliverResult(data);
 		}
 
 		// Invalidate the old data as we don't need it any more.
-		if (oldPoints != null && oldPoints != points) {
-			releaseResources(oldPoints);
+		if (oldData != null && oldData != data) {
+			releaseResources(oldData);
 		}
 	}
 
 	@Override
 	protected void onStartLoading() {
 
-		if (mPoints != null) {
-			deliverResult(mPoints);
+		if (mData != null) {
+			deliverResult(mData);
 		}
 
 		// Register the observers that will notify the Loader when changes are
 		// made.
-		if (mSmapPointObserver == null) {
-			mSmapPointObserver = new SmapPointObserver(this);
+		if (mMapDataObserver == null) {
+			mMapDataObserver = new MapDataObserver(this);
 		}
 
 		if (takeContentChanged()) {
 			forceLoad();
-		} else if (mPoints == null) {
+		} else if (mData == null) {
 			forceLoad();
 		}
 	}
@@ -160,28 +163,28 @@ public class SmapPointLoader extends AsyncTaskLoader<List<PointEntry>> {
 		onStopLoading();
 
 		// At this point we can release the resources associated with 'tasks'.
-		if (mPoints != null) {
-			releaseResources(mPoints);
-			mPoints = null;
+		if (mData != null) {
+			releaseResources(mData);
+			mData = null;
 		}
 
 		// The Loader is being reset, so we should stop monitoring for changes.
-		if (mSmapPointObserver != null) {
+		if (mMapDataObserver != null) {
 			try {
-				getContext().unregisterReceiver(mSmapPointObserver);
+				getContext().unregisterReceiver(mMapDataObserver);
 			} catch (Exception e) {
 				
 			}
-			mSmapPointObserver = null;
+			mMapDataObserver = null;
 		}
 
 	}
 
 	@Override
-	public void onCanceled(List<PointEntry> points) {
+	public void onCanceled(MapEntry data) {
 	
-		super.onCanceled(points);
-		releaseResources(points);
+		super.onCanceled(data);
+		releaseResources(data);
 	}
 
 	@Override
@@ -201,7 +204,7 @@ public class SmapPointLoader extends AsyncTaskLoader<List<PointEntry>> {
 	 * Helper method to take care of releasing resources associated with an
 	 * actively loaded data set.
 	 */
-	private void releaseResources(List<PointEntry> points) {
+	private void releaseResources(MapEntry data) {
 
 	}
 

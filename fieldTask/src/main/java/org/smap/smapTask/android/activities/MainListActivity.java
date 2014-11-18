@@ -16,7 +16,7 @@ package org.smap.smapTask.android.activities;
 
 import java.util.List;
 
-import loaders.SmapTaskLoader;
+import loaders.TaskLoader;
 import loaders.TaskEntry;
 
 import org.smap.smapTask.android.adapters.TaskListArrayAdapter;
@@ -164,7 +164,7 @@ public class MainListActivity extends FragmentActivity  {
 	    
 	    @Override
 	    public Loader<List<TaskEntry>> onCreateLoader(int id, Bundle args) {
-	    	return new SmapTaskLoader(getActivity());
+	    	return new TaskLoader(getActivity());
 	    }
 	
 	    @Override

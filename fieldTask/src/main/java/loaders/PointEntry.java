@@ -1,7 +1,7 @@
 package loaders;
 
 /**
- * This class holds the per-item data in the {@link loaders.SmapPointLoader}.
+ * This class holds the per-item data in the {@link MapDataLoader}.
  */
 public class PointEntry {
     public double lat;    // form or task

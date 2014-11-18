@@ -8,11 +8,11 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 
-public class SmapTaskObserver extends BroadcastReceiver {
+public class TaskObserver extends BroadcastReceiver {
 
-	  private SmapTaskLoader mLoader;
+	  private TaskLoader mLoader;
 	  
-public SmapTaskObserver(SmapTaskLoader loader) {
+public TaskObserver(TaskLoader loader) {
     mLoader = loader;
 	
     LocalBroadcastManager.getInstance(mLoader.getContext()).registerReceiver(this,

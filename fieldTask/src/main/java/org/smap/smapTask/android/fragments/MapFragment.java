@@ -40,12 +40,15 @@ import org.smap.smapTask.android.utilities.Utilities;
 import java.util.ArrayList;
 import java.util.List;
 
-import loaders.SmapTaskLoader;
+import loaders.MapDataLoader;
+import loaders.MapEntry;
+import loaders.PointEntry;
+import loaders.TaskLoader;
 import loaders.TaskEntry;
 
 import static org.smap.smapTask.android.R.drawable;
 
-public class MapFragment extends Fragment implements LoaderManager.LoaderCallbacks<List<TaskEntry>>,
+public class MapFragment extends Fragment implements LoaderManager.LoaderCallbacks<MapEntry>
 {
 
     ItemizedIconOverlay markerOverlay = null;
@@ -109,18 +112,19 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     }
 
     @Override
-    public void onLoadFinished(Loader<List<TaskEntry>> loader, List<TaskEntry> data) {
-        showTasks(data);
+    public void onLoadFinished(Loader<MapEntry> loader, MapEntry data) {
+        showTasks(data.tasks);
+        showPoints(data.points);
     }
 
     @Override
-    public void onLoaderReset(Loader<List<TaskEntry>> loader) {
+    public void onLoaderReset(Loader<MapEntry> loader) {
         clearTasks();
     }
 
     @Override
-    public Loader<List<TaskEntry>> onCreateLoader(int id, Bundle args) {
-        return new SmapTaskLoader(getActivity());
+    public Loader<MapEntry> onCreateLoader(int id, Bundle args) {
+        return new MapDataLoader(getActivity());
     }
 
     final String[] availableLayers = {
@@ -277,6 +281,25 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         }
     }
 
+    private void showPoints(List<PointEntry> data) {
+        if(po == null) {
+            addPathOverlay();
+        } else {
+            clearPoints();
+        }
+
+        for(int i = 0; i < data.size(); i++) {
+            LatLng point = new LatLng(data.get(i).lat, data.get(i).lon);
+            po.addPoint(point);
+        }
+    }
+
+    private void clearPoints() {
+        if(po != null) {
+            clearPoints();
+        }
+    }
+
     public void setUserLocation(Location location) {
         Log.i("MapFragment", "setUserLocation()");
 
@@ -307,18 +330,22 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
     private void updatePath(LatLng point) {
         if(po == null) {
-            Paint linePaint = new Paint();
-            linePaint.setStyle(Paint.Style.STROKE);
-            linePaint.setColor(Color.BLUE);
-            linePaint.setStrokeWidth(5);
-
-
-            po = new PathOverlay().setPaint(linePaint);
-            mv.getOverlays().add(po);
+            addPathOverlay();
         }
 
         po.addPoint(point);
 
+    }
+
+    private void addPathOverlay() {
+        Paint linePaint = new Paint();
+        linePaint.setStyle(Paint.Style.STROKE);
+        linePaint.setColor(Color.BLUE);
+        linePaint.setStrokeWidth(5);
+
+
+        po = new PathOverlay().setPaint(linePaint);
+        mv.getOverlays().add(po);
     }
 
     private void zoomToData(boolean userLocationChanged) {

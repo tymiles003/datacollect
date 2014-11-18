@@ -8,11 +8,11 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 
-public class SmapPointObserver extends BroadcastReceiver {
+public class MapDataObserver extends BroadcastReceiver {
 
-	  private SmapPointLoader mLoader;
+	  private MapDataLoader mLoader;
 
-public SmapPointObserver(SmapPointLoader loader) {
+public MapDataObserver(MapDataLoader loader) {
     mLoader = loader;
 	
     LocalBroadcastManager.getInstance(mLoader.getContext()).registerReceiver(this,
