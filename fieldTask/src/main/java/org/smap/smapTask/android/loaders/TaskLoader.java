@@ -17,7 +17,7 @@
  * 
  * @author Neil Penman (neilpenman@gmail.com)
  */
-package loaders;
+package org.smap.smapTask.android.loaders;
 
 import android.content.ContentResolver;
 import android.content.Context;

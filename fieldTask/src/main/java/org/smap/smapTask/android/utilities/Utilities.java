@@ -29,7 +29,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 
-import loaders.TaskEntry;
+import org.smap.smapTask.android.loaders.PointEntry;
+import org.smap.smapTask.android.loaders.TaskEntry;
+import org.smap.smapTask.android.provider.TraceProviderAPI;
 
 public class Utilities {
 
@@ -344,5 +346,42 @@ public class Utilities {
         }
 
         return valid;
+    }
+
+    /*
+     * Get the trail of points
+     */
+    public static void getPoints(ArrayList<PointEntry> entries) {
+
+        String [] proj = {TraceProviderAPI.TraceColumns._ID,
+                TraceProviderAPI.TraceColumns.LAT,
+                TraceProviderAPI.TraceColumns.LON,
+                TraceProviderAPI.TraceColumns.TIME,
+        };
+
+        String sortOrder = TraceProviderAPI.TraceColumns._ID + " ASC; ";
+
+        final ContentResolver resolver = Collect.getInstance().getContentResolver();
+        Cursor pointListCursor = resolver.query(TraceProviderAPI.TraceColumns.CONTENT_URI, proj, null, null, sortOrder);
+
+
+        if(pointListCursor != null) {
+
+            pointListCursor.moveToFirst();
+            while (!pointListCursor.isAfterLast()) {
+
+                PointEntry entry = new PointEntry();
+
+                entry.lat = pointListCursor.getDouble(pointListCursor.getColumnIndex(TraceProviderAPI.TraceColumns.LAT));
+                entry.lon = pointListCursor.getDouble(pointListCursor.getColumnIndex(TraceProviderAPI.TraceColumns.LON));
+                entry.time = pointListCursor.getLong(pointListCursor.getColumnIndex(TraceProviderAPI.TraceColumns.TIME));
+
+                entries.add(entry);
+                pointListCursor.moveToNext();
+            }
+        }
+        if(pointListCursor != null) {
+            pointListCursor.close();
+        }
     }
 }

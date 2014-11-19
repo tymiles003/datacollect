@@ -17,7 +17,7 @@
  * 
  * @author Neil Penman (neilpenman@gmail.com)
  */
-package loaders;
+package org.smap.smapTask.android.loaders;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -30,7 +30,6 @@ import org.smap.smapTask.android.provider.TraceProviderAPI.TraceColumns;
 import org.smap.smapTask.android.utilities.Utilities;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * An implementation of AsyncTaskLoader which loads a {@code List<PointEntry>}
@@ -47,7 +46,7 @@ public class MapDataLoader extends AsyncTaskLoader<MapEntry> {
 
 	/**
 	 * This method is called on a background thread and generates a List of
-	 * {@link loaders.PointEntry} objects.
+	 * {@link org.smap.smapTask.android.loaders.PointEntry} objects.
 	 */
 	@Override
 	public MapEntry loadInBackground() {
@@ -57,44 +56,10 @@ public class MapDataLoader extends AsyncTaskLoader<MapEntry> {
 		// Create corresponding array of entries and load their labels.
 		data.points = new ArrayList<PointEntry>(100);
         data.tasks = new ArrayList<TaskEntry> (10);
-        getPoints(data.points);
+        Utilities.getPoints(data.points);
         Utilities.getTasks(data.tasks, false);
 
 		return data;
-	}
-
-	private void getPoints(ArrayList<PointEntry> entries) {
-
-        String [] proj = {TraceColumns._ID,
-                TraceColumns.LAT,
-                TraceColumns.LON,
-                TraceColumns.TIME,
-                };
-
-        String sortOrder = TraceColumns._ID + " ASC; ";
-
-        final ContentResolver resolver = Collect.getInstance().getContentResolver();
-        Cursor pointListCursor = resolver.query(TraceColumns.CONTENT_URI, proj, null, null, sortOrder);
-
-
-		if(pointListCursor != null) {
-    		 
-			pointListCursor.moveToFirst();
-			while (!pointListCursor.isAfterLast()) {
-        		 
-                PointEntry entry = new PointEntry();
-
-        		entry.lat = pointListCursor.getDouble(pointListCursor.getColumnIndex(TraceColumns.LAT));
-                entry.lon = pointListCursor.getDouble(pointListCursor.getColumnIndex(TraceColumns.LON));
-                entry.time = pointListCursor.getLong(pointListCursor.getColumnIndex(TraceColumns.TIME));
-	             
-	            entries.add(entry);
-	            pointListCursor.moveToNext();
-        	 }
-    	}
-        if(pointListCursor != null) {
-            pointListCursor.close();
-        }
 	}
 
 	/**

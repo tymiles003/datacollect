@@ -34,7 +34,7 @@ import org.smap.smapTask.android.utilities.Utilities;
 import java.text.DateFormat;
 import java.util.List;
 
-import loaders.TaskEntry;
+import org.smap.smapTask.android.loaders.TaskEntry;
 
 public class TaskListArrayAdapter extends ArrayAdapter<TaskEntry> {
     

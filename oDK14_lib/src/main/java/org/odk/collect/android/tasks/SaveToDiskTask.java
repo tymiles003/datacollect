@@ -18,6 +18,7 @@ import org.odk.collect.android.R;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Calendar;
 import java.util.Date;
 import java.io.RandomAccessFile;
 
@@ -190,8 +191,7 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
         values.put(InstanceColumns.ACT_LON, lon);
         values.put(InstanceColumns.ACT_LAT, lat);
 
-        Date theDate = new Date();
-        values.put(InstanceColumns.T_ACT_FINISH, theDate.getTime());
+        values.put(InstanceColumns.T_ACT_FINISH, Calendar.getInstance().getTime().getTime());
         values.put(InstanceColumns.T_IS_SYNC, InstanceProviderAPI.STATUS_SYNC_NO);
         // Smap End
 

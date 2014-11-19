@@ -18,11 +18,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
 import org.smap.smapTask.android.listeners.TaskDownloaderListener;
+import org.smap.smapTask.android.loaders.PointEntry;
 import org.smap.smapTask.android.taskModel.FormLocator;
 import org.smap.smapTask.android.taskModel.TaskCompletionInfo;
 import org.smap.smapTask.android.taskModel.TaskResponse;
@@ -68,7 +68,7 @@ import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import loaders.TaskEntry;
+import org.smap.smapTask.android.loaders.TaskEntry;
 
 /**
  * Background task for downloading tasks 
@@ -426,6 +426,10 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
             }
         }
 
+        // Get Points
+        tr.userTrail = new ArrayList<PointEntry>(100);
+        Utilities.getPoints(tr.userTrail);
+
         // Call the service
         String taskURL = serverUrl + "/surveyKPI/myassignments";
         HttpPost postRequest = new HttpPost(taskURL);
@@ -448,6 +452,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
     		for(TaskAssignment ta : tr.taskAssignments) {
     			Utilities.setTaskSynchronized((long) ta.assignment.dbId);		// Mark the task status as synchronised
     		}
+
         	
     	}
 		

@@ -1,4 +1,4 @@
-package loaders;
+package org.smap.smapTask.android.loaders;
 
 /**
  * This class holds the per-item data in the {@link MapDataLoader}.

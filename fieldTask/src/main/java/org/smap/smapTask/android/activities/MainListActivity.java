@@ -16,8 +16,8 @@ package org.smap.smapTask.android.activities;
 
 import java.util.List;
 
-import loaders.TaskLoader;
-import loaders.TaskEntry;
+import org.smap.smapTask.android.loaders.TaskLoader;
+import org.smap.smapTask.android.loaders.TaskEntry;
 
 import org.smap.smapTask.android.adapters.TaskListArrayAdapter;
 import org.odk.collect.android.provider.FormsProviderAPI.FormsColumns;

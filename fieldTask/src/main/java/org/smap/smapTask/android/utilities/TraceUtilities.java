@@ -14,24 +14,13 @@
 
 package org.smap.smapTask.android.utilities;
 
-import android.content.ContentResolver;
 import android.content.ContentValues;
-import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.location.Location;
 import android.net.Uri;
-import android.preference.PreferenceManager;
+
 import org.smap.smapTask.android.provider.TraceProviderAPI.TraceColumns;
 
 import org.odk.collect.android.application.Collect;
-import org.odk.collect.android.preferences.PreferencesActivity;
-import org.odk.collect.android.provider.InstanceProviderAPI.InstanceColumns;
-import org.odk.collect.android.utilities.STFileUtils;
-
-import java.text.DateFormat;
-import java.util.ArrayList;
-
-import loaders.TaskEntry;
 
 public class TraceUtilities {
 

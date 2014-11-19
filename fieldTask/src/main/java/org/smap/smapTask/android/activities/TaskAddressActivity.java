@@ -42,7 +42,7 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import loaders.TaskEntry;
+import org.smap.smapTask.android.loaders.TaskEntry;
 
 public class TaskAddressActivity extends Activity implements OnClickListener {
 

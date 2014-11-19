@@ -1,4 +1,4 @@
-package loaders;
+package org.smap.smapTask.android.loaders;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -8,20 +8,20 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 
-public class TaskObserver extends BroadcastReceiver {
+public class MapDataObserver extends BroadcastReceiver {
 
-	  private TaskLoader mLoader;
-	  
-public TaskObserver(TaskLoader loader) {
+	  private MapDataLoader mLoader;
+
+public MapDataObserver(MapDataLoader loader) {
     mLoader = loader;
 	
     LocalBroadcastManager.getInstance(mLoader.getContext()).registerReceiver(this,
-  	      new IntentFilter("refresh"));
+  	      new IntentFilter("refreshPoints"));
   }
 
   @Override
   public void onReceive(Context context, Intent intent) {
-	  Log.i("SmapTaskObserver: ", "++++++++received refresh");
+	  Log.i("SmapPointObserver: ", "++++++++received refresh");
 	  mLoader.onContentChanged();
   }
 }

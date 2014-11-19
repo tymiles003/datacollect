@@ -40,11 +40,10 @@ import org.smap.smapTask.android.utilities.Utilities;
 import java.util.ArrayList;
 import java.util.List;
 
-import loaders.MapDataLoader;
-import loaders.MapEntry;
-import loaders.PointEntry;
-import loaders.TaskLoader;
-import loaders.TaskEntry;
+import org.smap.smapTask.android.loaders.MapDataLoader;
+import org.smap.smapTask.android.loaders.MapEntry;
+import org.smap.smapTask.android.loaders.PointEntry;
+import org.smap.smapTask.android.loaders.TaskEntry;
 
 import static org.smap.smapTask.android.R.drawable;
 
@@ -296,7 +295,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
     private void clearPoints() {
         if(po != null) {
-            clearPoints();
+            po.removeAllPoints();
         }
     }
 
