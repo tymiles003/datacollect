@@ -27,6 +27,7 @@ import android.util.Log;
 
 import org.odk.collect.android.application.Collect;
 import org.smap.smapTask.android.provider.TraceProviderAPI.TraceColumns;
+import org.smap.smapTask.android.utilities.TraceUtilities;
 import org.smap.smapTask.android.utilities.Utilities;
 
 import java.util.ArrayList;
@@ -56,7 +57,7 @@ public class MapDataLoader extends AsyncTaskLoader<MapEntry> {
 		// Create corresponding array of entries and load their labels.
 		data.points = new ArrayList<PointEntry>(100);
         data.tasks = new ArrayList<TaskEntry> (10);
-        Utilities.getPoints(data.points);
+        TraceUtilities.getPoints(data.points);
         Utilities.getTasks(data.tasks, false);
 
 		return data;

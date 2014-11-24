@@ -29,6 +29,7 @@ import org.smap.smapTask.android.taskModel.TaskResponse;
 import org.smap.smapTask.android.utilities.ManageForm;
 import org.smap.smapTask.android.utilities.ManageForm.ManageFormDetails;
 import org.smap.smapTask.android.utilities.ManageFormResponse;
+import org.smap.smapTask.android.utilities.TraceUtilities;
 import org.smap.smapTask.android.utilities.Utilities;
 
 import org.apache.http.HttpEntity;
@@ -245,6 +246,10 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 
                 if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
 
+                if(tr.settings !=null ) {
+                    Collect.getInstance().setRecordLocation(tr.settings.ft_send_trail);
+                }
+
                 /*
                  * Synchronise forms
                  *  Get any forms the user does not currently have
@@ -374,6 +379,8 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 
         DefaultHttpClient client = new DefaultHttpClient();
         HttpResponse getResponse = null;
+        TaskResponse updateResponse = new TaskResponse();
+        updateResponse.forms = tr.forms;
         
         // Add credentials
         if(username != null && password != null) {
@@ -383,7 +390,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         }
         
         // Add device id to response
-        tr.deviceId = new PropertyManager(Collect.getInstance().getApplicationContext())
+        updateResponse.deviceId = new PropertyManager(Collect.getInstance().getApplicationContext())
 				.getSingularProperty(PropertyManager.DEVICE_ID_PROPERTY);
 
         // Get tasks that have not been synchronised
@@ -393,7 +400,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         /*
          * Set updates to task status
          */
-        tr.taskAssignments = new ArrayList<TaskAssignment> ();          // Updates to task status
+        updateResponse.taskAssignments = new ArrayList<TaskAssignment> ();          // Updates to task status
 
         for(TaskEntry t : nonSynchTasks) {
   	  		if(t.taskStatus != null && t.isSynced.equals(Utilities.STATUS_SYNC_NO)) {
@@ -403,32 +410,34 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
   	  			ta.assignment.dbId = (int) t.id;
   	  			ta.assignment.assignment_status = t.taskStatus;
 
-	            tr.taskAssignments.add(ta);
+	            updateResponse.taskAssignments.add(ta);
   	  		}
         }
 
         /*
          * Set details on submitted tasks
          */
-        tr.taskCompletionInfo = new ArrayList<TaskCompletionInfo> ();   // Details on completed tasks
+        if(tr.settings != null && tr.settings.ft_send_trail) {
+            updateResponse.taskCompletionInfo = new ArrayList<TaskCompletionInfo>();   // Details on completed tasks
 
-        for(TaskEntry t : nonSynchTasks) {
-            if((t.taskStatus.equals(Utilities.STATUS_T_SUBMITTED) || t.taskStatus.equals(Utilities.STATUS_T_CLOSED))
-                    && t.isSynced.equals(Utilities.STATUS_SYNC_NO)) {
-                TaskCompletionInfo tci = new TaskCompletionInfo();
-                tci.actFinish = t.actFinish;
-                tci.lat = t.actLat;
-                tci.lon = t.actLon;
-                tci.ident = t.ident;
-                tci.uuid = t.uuid;
+            for (TaskEntry t : nonSynchTasks) {
+                if ((t.taskStatus.equals(Utilities.STATUS_T_SUBMITTED) || t.taskStatus.equals(Utilities.STATUS_T_CLOSED))
+                        && t.isSynced.equals(Utilities.STATUS_SYNC_NO)) {
+                    TaskCompletionInfo tci = new TaskCompletionInfo();
+                    tci.actFinish = t.actFinish;
+                    tci.lat = t.actLat;
+                    tci.lon = t.actLon;
+                    tci.ident = t.ident;
+                    tci.uuid = t.uuid;
 
-                tr.taskCompletionInfo.add(tci);
+                    updateResponse.taskCompletionInfo.add(tci);
+                }
             }
-        }
 
-        // Get Points
-        tr.userTrail = new ArrayList<PointEntry>(100);
-        Utilities.getPoints(tr.userTrail);
+            // Get Points
+            updateResponse.userTrail = new ArrayList<PointEntry>(100);
+            TraceUtilities.getPoints(updateResponse.userTrail);
+        }
 
         // Call the service
         String taskURL = serverUrl + "/surveyKPI/myassignments";
@@ -436,7 +445,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         ArrayList<NameValuePair> postParameters = new ArrayList<NameValuePair>();
         
         Gson gson=  new GsonBuilder().disableHtmlEscaping().setDateFormat("yyyy-MM-dd").create();
-		String resp = gson.toJson(tr);
+		String resp = gson.toJson(updateResponse);
 		
         postParameters.add(new BasicNameValuePair("assignInput", resp));
         
@@ -449,11 +458,10 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
     		Log.w(getClass().getSimpleName(), "Error:" + statusCode + " for URL " + taskURL);
     	} else {
     		Log.w("updateTaskStatusToServer", "Status updated");
-    		for(TaskAssignment ta : tr.taskAssignments) {
+    		for(TaskAssignment ta : updateResponse.taskAssignments) {
     			Utilities.setTaskSynchronized((long) ta.assignment.dbId);		// Mark the task status as synchronised
     		}
-
-        	
+            TraceUtilities.deleteSource();
     	}
 		
 	}

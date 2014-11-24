@@ -1,6 +1,6 @@
 
 
-package org.smap.smapTask.android.provider;
+package org.smap.smapTask.android.databases;
 
 import android.content.ContentProvider;
 import android.content.ContentUris;
@@ -15,12 +15,13 @@ import android.util.Log;
 
 import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.database.ODKSQLiteOpenHelper;
+import org.smap.smapTask.android.provider.TraceProviderAPI;
 import org.smap.smapTask.android.provider.TraceProviderAPI.TraceColumns;
 
 /**
  *
  */
-public class TraceProvider extends ContentProvider {
+public class SourceDb extends ContentProvider {
 
     private static final String t = "TraceProvider";
 

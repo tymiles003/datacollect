@@ -29,6 +29,7 @@ import org.javarosa.form.api.FormEntryPrompt;
 import org.javarosa.model.xform.XFormsModule;
 import org.odk.collect.android.R;
 import org.odk.collect.android.application.Collect;
+import org.odk.collect.android.database.TraceUtilities;
 import org.odk.collect.android.exception.JavaRosaException;
 import org.odk.collect.android.listeners.AdvanceToNextListener;
 import org.odk.collect.android.listeners.FormLoaderListener;
@@ -65,6 +66,9 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -154,6 +158,8 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 	public static final String KEY_ERROR = "error";
     public static final String KEY_TASK = "task";		// SMAP
     private long mTaskId;								// SMAP
+    private LocationManager locationManager;            // smap
+    private LocationListener locationListener;          // smap
 
 	// Identifies the gp of the form used to launch form entry
 	public static final String KEY_FORMPATH = "formpath";
@@ -302,6 +308,44 @@ public class FormEntryActivity extends Activity implements AnimationListener,
             }
             //-------- SMAP End ---------
 		}
+
+        // Start Smap
+        /*
+		 * Add a location listener
+		 */
+        locationManager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
+        locationListener = new LocationListener() {
+
+            @Override
+            public void onLocationChanged(Location location) {
+
+                // TODO check for accuracy and discard results that are not accurate
+                boolean updatePath = Collect.getInstance().isRecordLocation();
+                if(updatePath) {
+                    TraceUtilities.insertPoint(location);
+                }
+                Collect.getInstance().setLocation(location);
+                TraceUtilities.insertPoint(location);
+            }
+
+            @Override
+            public void onProviderDisabled(String arg0) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status,
+                                        Bundle extras) {
+
+            }
+
+        };
+        // End smap
 
 		// If a parse error message is showing then nothing else is loaded
 		// Dialogs mid form just disappear on rotation.
@@ -2747,11 +2791,18 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 	protected void onStart() {
 		super.onStart();
 		Collect.getInstance().getActivityLogger().logOnStart(this);
+
+        // start smap
+        if ( locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, (float) 6.0, locationListener);
+        }
+        // end smap
 	}
 
 	@Override
 	protected void onStop() {
 		Collect.getInstance().getActivityLogger().logOnStop(this);
+        locationManager.removeUpdates(locationListener);                // smap
 		super.onStop();
 	}
 

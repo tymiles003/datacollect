@@ -16,12 +16,15 @@
 package org.smap.smapTask.android.activities;
 
 import android.content.Context;
+import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import com.mapbox.mapboxsdk.geometry.LatLng;
 
@@ -63,9 +66,12 @@ public class MapsActivity extends FragmentActivity  {
             public void onLocationChanged(Location location) {
 
                 // TODO check for accuracy and discard results that are not accurate
+                boolean updatePath = Collect.getInstance().isRecordLocation();
+                if(updatePath) {
+                    TraceUtilities.insertPoint(location);
+                }
                 Collect.getInstance().setLocation(location);
-                TraceUtilities.insertPoint(location);
-                map.setUserLocation(location);
+                map.setUserLocation(location, updatePath);
             }
 
             @Override
@@ -90,24 +96,37 @@ public class MapsActivity extends FragmentActivity  {
 
     @Override
     protected void onPause() {
+        Log.i("mapsActivity", "---------------- onPause");
         super.onPause();
-        locationManager.removeUpdates(locationListener);
+
     }
 
     @Override
     protected void onResume() {
+        Log.i("mapsActivity", "---------------- onResume");
         super.onResume();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.i("mapsActivity", "---------------- onStop");
+        locationManager.removeUpdates(locationListener);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        Log.i("mapsActivity", "---------------- onStart");
         if ( locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 30000, (float) 10.0, locationListener);
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, (float) 6.0, locationListener);
         }
 
 
     }
 
-    @Override
-    protected void onDestroy() {
-    	super.onDestroy();
-	}
+
 
 	
 }

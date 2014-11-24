@@ -50,8 +50,11 @@ import static org.smap.smapTask.android.R.drawable;
 public class MapFragment extends Fragment implements LoaderManager.LoaderCallbacks<MapEntry>
 {
 
-    ItemizedIconOverlay markerOverlay = null;
+
     PathOverlay po = null;
+    private PointEntry lastPathPoint;
+
+    ItemizedIconOverlay markerOverlay = null;
     ArrayList<Marker> markers = null;
     private double tasksNorth;
     private double tasksSouth;
@@ -114,6 +117,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     public void onLoadFinished(Loader<MapEntry> loader, MapEntry data) {
         showTasks(data.tasks);
         showPoints(data.points);
+        zoomToData(false);
     }
 
     @Override
@@ -270,7 +274,6 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
             }
         }
 
-        zoomToData(false);
     }
 
 
@@ -282,24 +285,29 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
     private void showPoints(List<PointEntry> data) {
         if(po == null) {
+            Log.i("showPoint", "====== po null");
             addPathOverlay();
         } else {
-            clearPoints();
+            Log.i("showPoint", "====== Removed all points");
+            po.removeAllPoints();
+            mv.removeOverlay(po);
+            addPathOverlay();
         }
+
 
         for(int i = 0; i < data.size(); i++) {
-            LatLng point = new LatLng(data.get(i).lat, data.get(i).lon);
-            po.addPoint(point);
+            po.addPoint(data.get(i).lat, data.get(i).lon);
+        }
+        if(data.size() > 0) {
+            lastPathPoint = new PointEntry();
+            PointEntry lastPoint = data.get(data.size() - 1);
+            lastPathPoint.lat = lastPoint.lat;
+            lastPathPoint.lon = lastPoint.lon;
         }
     }
 
-    private void clearPoints() {
-        if(po != null) {
-            po.removeAllPoints();
-        }
-    }
 
-    public void setUserLocation(Location location) {
+    public void setUserLocation(Location location, boolean recordLocation) {
         Log.i("MapFragment", "setUserLocation()");
 
         LatLng point = new LatLng(location.getLatitude(), location.getLongitude());
@@ -323,7 +331,9 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
             userLocationMarker.updateDrawingPosition();
             userLocationMarker.setIcon(userLocationIcon);
         }
-        updatePath(point);
+        if(recordLocation) {
+            updatePath(point);
+        }
         zoomToData(true);
     }
 
@@ -342,7 +352,6 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         linePaint.setColor(Color.BLUE);
         linePaint.setStrokeWidth(5);
 
-
         po = new PathOverlay().setPaint(linePaint);
         mv.getOverlays().add(po);
     }
@@ -350,7 +359,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     private void zoomToData(boolean userLocationChanged) {
 
         boolean userOutsideBoundingBox = false;
-        double north = tasksNorth;    // Add Margin
+        double north = tasksNorth;
         double south = tasksSouth;
         double east = tasksEast;
         double west = tasksWest;
@@ -359,33 +368,49 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         if(userLocationMarker != null) {
             double lat = userLocationMarker.getPoint().getLatitude();
             double lon = userLocationMarker.getPoint().getLongitude();
+
             if(lat > north) {
                 north = lat;
-                userOutsideBoundingBox = true;
             }
             if(lat < south) {
                 south = lat;
-                userOutsideBoundingBox = true;
             }
             if(lon > east) {
                 east = lon;
-                userOutsideBoundingBox = true;
             }
             if(lon < west) {
                 west = lon;
-                userOutsideBoundingBox = true;
             }
 
             if(userLocationChanged) {
                 BoundingBox viewableBox = mv.getBoundingBox();
                 if(lat > viewableBox.getLatNorth() ||
-                        lat > viewableBox.getLatSouth() ||
+                        lat < viewableBox.getLatSouth() ||
                         lon > viewableBox.getLonEast() ||
                         lon < viewableBox.getLonWest()
                         ) {
                     userOutsideBoundingBox = true;
                 }
             }
+        }
+
+        // Add last path point to bounding box
+        if(lastPathPoint != null) {
+            double lat = lastPathPoint.lat;
+            double lon = lastPathPoint.lon;
+            if(lat > north) {
+                north = lat;
+            }
+            if(lat < south) {
+                south = lat;
+            }
+            if(lon > east) {
+                east = lon;
+            }
+            if(lon < west) {
+                west = lon;
+            }
+
         }
 
         // Make sure bounding box is not a point

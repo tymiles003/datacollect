@@ -35,6 +35,7 @@ import org.odk.collect.android.utilities.CompatibilityUtils;
 import org.smap.smapTask.android.R;
 import org.smap.smapTask.android.listeners.TaskDownloaderListener;
 import org.smap.smapTask.android.tasks.DownloadTasksTask;
+import org.smap.smapTask.android.utilities.TraceUtilities;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -46,6 +47,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
@@ -92,6 +96,7 @@ public class MainTabsActivity extends TabActivity implements
     public DownloadTasksTask mDownloadTasks;
 	private Context mContext;
 	private SharedPreferences mAdminPreferences;
+    private Thread locnThread = null;
 	
 	private TextView mTVFF;
 	private TextView mTVDF;
@@ -152,7 +157,8 @@ public class MainTabsActivity extends TabActivity implements
 			mTVDF.setTextColor(Color.WHITE);
 			mTVDF.setPadding(0, 0, 0, 6);
 		}
-	}
+
+    }
 	
 	private TextView getTextViewChild(ViewGroup viewGroup) {
 		for (int i = 0; i < viewGroup.getChildCount(); i++) {
@@ -309,10 +315,6 @@ public class MainTabsActivity extends TabActivity implements
         // Refresh task list
     	Intent intent = new Intent("refresh");
 	    LocalBroadcastManager.getInstance(getApplication()).sendBroadcast(intent);
-
-        // Refresh trace
-        Intent intentPoints = new Intent("refreshPoints");
-        LocalBroadcastManager.getInstance(getApplication()).sendBroadcast(intentPoints);
 	    
 		try {
             dismissDialog(PROGRESS_DIALOG);
@@ -520,5 +522,19 @@ public class MainTabsActivity extends TabActivity implements
 		// TODO Auto-generated method stub
 		
 	}
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.i("MainTabsTask", "onStart============================");
+
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.i("MainTabsTask", "onStop============================");
+
+    }
 
 }

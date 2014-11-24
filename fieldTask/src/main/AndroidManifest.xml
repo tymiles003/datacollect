@@ -50,9 +50,9 @@
         android:smallScreens="true" />
         
     <application
+        tools:replace="android:icon"
         android:name="org.odk.collect.android.application.Collect"
         android:largeHeap="true"
-        tools:replace="icon"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:allowBackup="true"

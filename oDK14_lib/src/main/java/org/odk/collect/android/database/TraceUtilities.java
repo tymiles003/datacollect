@@ -12,18 +12,20 @@
  * the License.
  */
 
-package org.smap.smapTask.android.utilities;
+package org.odk.collect.android.database;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.location.Location;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 
-import org.smap.smapTask.android.loaders.PointEntry;
-import org.smap.smapTask.android.provider.TraceProviderAPI.TraceColumns;
-
+import org.odk.collect.android.database.TraceProviderAPI.TraceColumns;
 import org.odk.collect.android.application.Collect;
+import org.odk.collect.android.preferences.PreferencesActivity;
+import org.odk.collect.android.utilities.STFileUtils;
 
 import java.util.ArrayList;
 
@@ -39,10 +41,20 @@ public class TraceUtilities {
         values.put(TraceColumns.LAT, location.getLatitude());
         values.put(TraceColumns.LON, location.getLongitude());
         values.put(TraceColumns.TIME, Long.valueOf(System.currentTimeMillis()));
-        values.put(TraceColumns.SOURCE, Utilities.getSource());
+
+        values.put(TraceColumns.SOURCE, getSource());
 
         Collect.getInstance().getContentResolver().insert(dbUri, values);
 
+    }
+
+    private static String getSource() {
+        SharedPreferences settings = PreferenceManager
+                .getDefaultSharedPreferences(Collect.getInstance()
+                        .getBaseContext());
+        String serverUrl = settings.getString(
+                PreferencesActivity.KEY_SERVER_URL, null);
+        return STFileUtils.getSource(serverUrl);
     }
 
     /*
@@ -58,7 +70,7 @@ public class TraceUtilities {
         };
 
         String [] selectArgs = {""};
-        selectArgs[0] = Utilities.getSource();
+        selectArgs[0] = getSource();
         String selectClause = TraceColumns.SOURCE + " = ?";
 
         String sortOrder = TraceColumns._ID + " ASC; ";
@@ -92,7 +104,7 @@ public class TraceUtilities {
         Uri dbUri =  TraceColumns.CONTENT_URI;
 
         String [] selectArgs = {""};
-        selectArgs[0] = Utilities.getSource();
+        selectArgs[0] = getSource();
         String selectClause = TraceColumns.SOURCE + " = ?";
 
         Collect.getInstance().getContentResolver().delete(dbUri, selectClause, selectArgs);

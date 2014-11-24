@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.smap.smapTask.android.provider;
+package org.odk.collect.android.database;
 
 import android.net.Uri;
 import android.provider.BaseColumns;

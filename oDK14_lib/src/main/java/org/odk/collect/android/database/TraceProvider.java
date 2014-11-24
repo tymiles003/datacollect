@@ -1,6 +1,6 @@
 
 
-package org.smap.smapTask.android.provider;
+package org.odk.collect.android.database;
 
 import android.content.ContentProvider;
 import android.content.ContentUris;
@@ -14,8 +14,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import org.odk.collect.android.application.Collect;
-import org.odk.collect.android.database.ODKSQLiteOpenHelper;
-import org.smap.smapTask.android.provider.TraceProviderAPI.TraceColumns;
+import org.odk.collect.android.database.TraceProviderAPI.TraceColumns;
 
 /**
  *

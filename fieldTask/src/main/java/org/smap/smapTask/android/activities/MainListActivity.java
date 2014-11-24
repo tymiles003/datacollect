@@ -27,8 +27,12 @@ import org.odk.collect.android.application.Collect;
 
 import android.app.AlertDialog;
 import android.content.ContentUris;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -46,6 +50,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import org.smap.smapTask.android.R;
+import org.smap.smapTask.android.utilities.TraceUtilities;
 import org.smap.smapTask.android.utilities.Utilities;
 
 /**
@@ -58,6 +63,9 @@ public class MainListActivity extends FragmentActivity  {
 	
 	private LoaderManager.LoaderCallbacks<List<TaskEntry>> mCallbacks;
 	private AlertDialog mAlertDialog;
+
+    private LocationManager locationManager;
+    private LocationListener locationListener;
 	
 	
 	 @Override
@@ -70,59 +78,45 @@ public class MainListActivity extends FragmentActivity  {
              TaskListFragment list = new TaskListFragment();
              fm.beginTransaction().add(android.R.id.content, list).commit();
          }
+
+        /*
+		 * Add a location listener
+		 */
+         locationManager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
+         locationListener = new LocationListener() {
+
+             @Override
+             public void onLocationChanged(Location location) {
+
+                 // TODO check for accuracy and discard results that are not accurate
+                 boolean updatePath = Collect.getInstance().isRecordLocation();
+                 if(updatePath) {
+                     TraceUtilities.insertPoint(location);
+                 }
+                 Collect.getInstance().setLocation(location);
+                 TraceUtilities.insertPoint(location);
+             }
+
+             @Override
+             public void onProviderDisabled(String arg0) {
+
+             }
+
+             @Override
+             public void onProviderEnabled(String provider) {
+
+             }
+
+             @Override
+             public void onStatusChanged(String provider, int status,
+                                         Bundle extras) {
+
+             }
+
+         };
+
      }
-	    
 
-	 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see android.app.Activity#onPause()
-	 */
-	@Override
-	public void onPause() {
-		dismissDialogs();
-
-	    super.onPause();
-	}
-	
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-	}
-	
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see android.app.Activity#onResume()
-	 */
-	@Override
-	public void onResume() {
-	    super.onResume();
-
-		Intent intent = new Intent("refresh");
-	    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-		
-	}
-	
-	@Override
-	protected void onStop() {
-		 try {
-		      super.onStop();
-		      
-		    } catch (Exception e) {
-		     
-		    }
-	}
-	
-	/**
-	 * Dismiss any dialogs that we manage.
-	 */
-	private void dismissDialogs() {
-		if (mAlertDialog != null && mAlertDialog.isShowing()) {
-			mAlertDialog.dismiss();
-		}
-	}	  
 	
 	/*
 	 * Fragment to display list of tasks
@@ -283,11 +277,49 @@ public class MainListActivity extends FragmentActivity  {
 			cInstanceProvider.close();
 			
 		}
-		
-
-	    
 
 	 }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.i("MainListActivity", "onStart============================");
+
+        if ( locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, (float) 6.0, locationListener);
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.i("MainListActivity", "onStop============================");
+        locationManager.removeUpdates(locationListener);
+
+    }
+
+    @Override
+    public void onPause() {
+        dismissDialogs();
+
+        super.onPause();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+    }
+
+
+    /**
+     * Dismiss any dialogs that we manage.
+     */
+    private void dismissDialogs() {
+        if (mAlertDialog != null && mAlertDialog.isShowing()) {
+            mAlertDialog.dismiss();
+        }
+    }
 
 }
 
