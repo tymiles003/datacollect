@@ -247,7 +247,9 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                 if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
 
                 if(tr.settings !=null ) {
-                    Collect.getInstance().setRecordLocation(tr.settings.ft_send_trail);
+                    SharedPreferences.Editor editor = settings.edit();
+                    editor.putBoolean(PreferencesActivity.KEY_STORE_USER_TRAIL, tr.settings.ft_send_trail);
+                    editor.commit();
                 }
 
                 /*

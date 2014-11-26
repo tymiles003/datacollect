@@ -242,11 +242,6 @@ public class Collect extends Application {
     public Location getLocation() {
         return location;
     }
-
-    public void setRecordLocation(boolean v) { recordLocation = v;}
-
-    public boolean isRecordLocation() { return recordLocation;}
-
     // End Smap
 
 

@@ -526,14 +526,12 @@ public class MainTabsActivity extends TabActivity implements
     @Override
     protected void onStart() {
         super.onStart();
-        Log.i("MainTabsTask", "onStart============================");
 
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        Log.i("MainTabsTask", "onStop============================");
 
     }
 

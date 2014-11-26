@@ -26,6 +26,7 @@ import org.odk.collect.android.activities.FormEntryActivity;
 import org.odk.collect.android.application.Collect;
 
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -50,6 +51,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import org.smap.smapTask.android.R;
+import org.smap.smapTask.android.receivers.LocationChangedReceiver;
 import org.smap.smapTask.android.utilities.TraceUtilities;
 import org.smap.smapTask.android.utilities.Utilities;
 
@@ -65,7 +67,8 @@ public class MainListActivity extends FragmentActivity  {
 	private AlertDialog mAlertDialog;
 
     private LocationManager locationManager;
-    private LocationListener locationListener;
+   // private LocationListener locationListener;
+    protected PendingIntent locationListenerPendingIntent;
 	
 	
 	 @Override
@@ -79,42 +82,10 @@ public class MainListActivity extends FragmentActivity  {
              fm.beginTransaction().add(android.R.id.content, list).commit();
          }
 
-        /*
-		 * Add a location listener
-		 */
+         // Setup the location update Pending Intents
          locationManager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
-         locationListener = new LocationListener() {
-
-             @Override
-             public void onLocationChanged(Location location) {
-
-                 // TODO check for accuracy and discard results that are not accurate
-                 boolean updatePath = Collect.getInstance().isRecordLocation();
-                 if(updatePath) {
-                     TraceUtilities.insertPoint(location);
-                 }
-                 Collect.getInstance().setLocation(location);
-                 TraceUtilities.insertPoint(location);
-             }
-
-             @Override
-             public void onProviderDisabled(String arg0) {
-
-             }
-
-             @Override
-             public void onProviderEnabled(String provider) {
-
-             }
-
-             @Override
-             public void onStatusChanged(String provider, int status,
-                                         Bundle extras) {
-
-             }
-
-         };
-
+         Intent activeIntent = new Intent(this, LocationChangedReceiver.class);
+         locationListenerPendingIntent = PendingIntent.getBroadcast(this, 0, activeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
      }
 
 	
@@ -284,25 +255,37 @@ public class MainListActivity extends FragmentActivity  {
     protected void onStart() {
         super.onStart();
         Log.i("MainListActivity", "onStart============================");
+        requestLocationUpdates();
 
-        if ( locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, (float) 6.0, locationListener);
-        }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         Log.i("MainListActivity", "onStop============================");
-        locationManager.removeUpdates(locationListener);
+        disableLocationUpdates();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.i("MainListActivity", "onResume============================");
+
+        /*
+        if ( locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, (float) 6.0, locationListener);
+        }
+        */
 
     }
 
     @Override
     public void onPause() {
         dismissDialogs();
-
         super.onPause();
+
+        Log.i("MainListActivity", "onPause============================");
+        //locationManager.removeUpdates(locationListener);
     }
 
     @Override
@@ -319,6 +302,25 @@ public class MainListActivity extends FragmentActivity  {
         if (mAlertDialog != null && mAlertDialog.isShowing()) {
             mAlertDialog.dismiss();
         }
+    }
+
+    /**
+     * Start listening for location updates.
+     */
+    protected void requestLocationUpdates() {
+        // Normal updates while activity is visible.
+        // TODO manage multiple providers
+        // TODO Manage provder being enabled / disabled
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, (float) 6.0, locationListenerPendingIntent);
+    }
+
+    /**
+     * Stop listening for location updates
+     */
+    protected void disableLocationUpdates() {
+
+        locationManager.removeUpdates(locationListenerPendingIntent);
+
     }
 
 }

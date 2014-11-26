@@ -310,31 +310,33 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     public void setUserLocation(Location location, boolean recordLocation) {
         Log.i("MapFragment", "setUserLocation()");
 
-        LatLng point = new LatLng(location.getLatitude(), location.getLongitude());
+        if(location != null) {
+            LatLng point = new LatLng(location.getLatitude(), location.getLongitude());
 
-        if(markers == null) {
-            markers = new ArrayList<Marker>();
-        }
-        if(userLocationMarker == null) {
-            userLocationMarker = new Marker(mv, "", "", point);
-            userLocationMarker.setIcon(userLocationIcon);
-
-            if (markerOverlay == null) {
-                markers.add(userLocationMarker);
-                markerOverlay = new ItemizedIconOverlay(getActivity(), markers, onItemGestureListener);
-                mv.getOverlays().add(markerOverlay);
-            } else {
-                markerOverlay.addItem(userLocationMarker);
+            if (markers == null) {
+                markers = new ArrayList<Marker>();
             }
-        } else {
-            userLocationMarker.setPoint(point);
-            userLocationMarker.updateDrawingPosition();
-            userLocationMarker.setIcon(userLocationIcon);
+            if (userLocationMarker == null) {
+                userLocationMarker = new Marker(mv, "", "", point);
+                userLocationMarker.setIcon(userLocationIcon);
+
+                if (markerOverlay == null) {
+                    markers.add(userLocationMarker);
+                    markerOverlay = new ItemizedIconOverlay(getActivity(), markers, onItemGestureListener);
+                    mv.getOverlays().add(markerOverlay);
+                } else {
+                    markerOverlay.addItem(userLocationMarker);
+                }
+            } else {
+                userLocationMarker.setPoint(point);
+                userLocationMarker.updateDrawingPosition();
+                userLocationMarker.setIcon(userLocationIcon);
+            }
+            if (recordLocation) {
+                updatePath(point);
+            }
+            zoomToData(true);
         }
-        if(recordLocation) {
-            updatePath(point);
-        }
-        zoomToData(true);
     }
 
     private void updatePath(LatLng point) {
@@ -384,12 +386,16 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
             if(userLocationChanged) {
                 BoundingBox viewableBox = mv.getBoundingBox();
-                if(lat > viewableBox.getLatNorth() ||
-                        lat < viewableBox.getLatSouth() ||
-                        lon > viewableBox.getLonEast() ||
-                        lon < viewableBox.getLonWest()
-                        ) {
-                    userOutsideBoundingBox = true;
+                if(viewableBox != null) {
+                    if (lat > viewableBox.getLatNorth() ||
+                            lat < viewableBox.getLatSouth() ||
+                            lon > viewableBox.getLonEast() ||
+                            lon < viewableBox.getLonWest()
+                            ) {
+                        userOutsideBoundingBox = true;
+                    }
+                } else {
+                    userOutsideBoundingBox = true;      // User location being set on resume of activity
                 }
             }
         }
