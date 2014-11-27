@@ -254,44 +254,31 @@ public class MainListActivity extends FragmentActivity  {
     @Override
     protected void onStart() {
         super.onStart();
-        Log.i("MainListActivity", "onStart============================");
         requestLocationUpdates();
-
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         Log.i("MainListActivity", "onStop============================");
-        disableLocationUpdates();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.i("MainListActivity", "onResume============================");
-
-        /*
-        if ( locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, (float) 6.0, locationListener);
-        }
-        */
-
     }
 
     @Override
     public void onPause() {
         dismissDialogs();
         super.onPause();
-
-        Log.i("MainListActivity", "onPause============================");
-        //locationManager.removeUpdates(locationListener);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-
+        Log.i("MainListActivity", "onDestroy============================");
+        disableLocationUpdates();
     }
 
 
