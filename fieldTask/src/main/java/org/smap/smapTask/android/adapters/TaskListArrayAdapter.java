@@ -79,22 +79,26 @@ public class TaskListArrayAdapter extends ArrayAdapter<TaskEntry> {
     	
     	TextView taskNameText = (TextView) view.findViewById(R.id.toptext);
     	if (taskNameText != null) {
-    		taskNameText.setText(item.name);
-    	}
+            taskNameText.setText(item.name + " (" + item.formVersion + ")");
+        }
 
     	TextView taskStartText = (TextView) view.findViewById(R.id.middletext);
     	if(taskStartText != null) {
 	    	if(item.type.equals("form")) {
-		    	taskStartText.setText(getContext().getString(R.string.version) + ": " + item.formVersion);
+                taskStartText.setText(getContext().getString(R.string.smap_project) + ": " + item.project);
+		    	// taskStartText.setText(getContext().getString(R.string.version) + ": " + item.formVersion);
 	    	} else {
+                String addressText = null;
                 if(item.taskStatus.equals(Utilities.STATUS_T_COMPLETE) || item.taskStatus.equals(Utilities.STATUS_T_SUBMITTED)) {
-                    taskStartText.setText(dFormat.format(item.actFinish));
+                    addressText = dFormat.format(item.actFinish);
                 } else if (item.taskStart != 0) {
-                    taskStartText.setText(dFormat.format(item.taskStart));
+                    addressText = dFormat.format(item.taskStart);
                 }
+                addressText += KeyValueJsonFns.getValues(item.taskAddress);
+                taskStartText.setText(addressText);
 	    	}
     	}
-    	
+    	/*
     	TextView taskAddressText = (TextView) view.findViewById(R.id.bottomtext);
     	if (taskAddressText != null) {
     		if(item.type.equals("form")) {
@@ -103,6 +107,7 @@ public class TaskListArrayAdapter extends ArrayAdapter<TaskEntry> {
     			taskAddressText.setText(KeyValueJsonFns.getValues(item.taskAddress));
     		}
     	}
+    	*/
     	 
     	return view;
     }

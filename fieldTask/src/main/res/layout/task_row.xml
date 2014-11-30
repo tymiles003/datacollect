@@ -31,6 +31,7 @@
             android:singleLine="true"
             android:ellipsize="marquee"
         />
+        <!--
         <TextView
             android:id="@+id/bottomtext"
             android:layout_width="match_parent"
@@ -38,5 +39,6 @@
             android:singleLine="true"
             android:ellipsize="marquee"
         />
+        -->
     </LinearLayout>
 </LinearLayout>

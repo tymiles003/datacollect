@@ -85,7 +85,7 @@ public class MainListActivity extends FragmentActivity  {
          // Setup the location update Pending Intents
          locationManager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
          Intent activeIntent = new Intent(this, LocationChangedReceiver.class);
-         locationListenerPendingIntent = PendingIntent.getBroadcast(this, 0, activeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+         locationListenerPendingIntent = PendingIntent.getBroadcast(this, 1000, activeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
      }
 
 	
@@ -254,6 +254,7 @@ public class MainListActivity extends FragmentActivity  {
     @Override
     protected void onStart() {
         super.onStart();
+        Log.i("MainListActivity", "onStart============================");
         requestLocationUpdates();
     }
 
