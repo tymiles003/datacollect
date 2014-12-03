@@ -31,8 +31,6 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -41,7 +39,6 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -52,7 +49,6 @@ import android.widget.ListView;
 
 import org.smap.smapTask.android.R;
 import org.smap.smapTask.android.receivers.LocationChangedReceiver;
-import org.smap.smapTask.android.utilities.TraceUtilities;
 import org.smap.smapTask.android.utilities.Utilities;
 
 /**
@@ -67,7 +63,6 @@ public class MainListActivity extends FragmentActivity  {
 	private AlertDialog mAlertDialog;
 
     private LocationManager locationManager;
-   // private LocationListener locationListener;
     protected PendingIntent locationListenerPendingIntent;
 	
 	
@@ -299,7 +294,13 @@ public class MainListActivity extends FragmentActivity  {
         // Normal updates while activity is visible.
         // TODO manage multiple providers
         // TODO Manage provder being enabled / disabled
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, (float) 6.0, locationListenerPendingIntent);
+
+        /*
+         * Only use GPS to get locations for tracking the user
+         *  Using less accurate sources is not feasible to collect a gpx trail
+         *  However it may be useful if we were just recording location of survey
+         */
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 20000, (float) 20.0, locationListenerPendingIntent);
     }
 
     /**
@@ -310,6 +311,7 @@ public class MainListActivity extends FragmentActivity  {
         locationManager.removeUpdates(locationListenerPendingIntent);
 
     }
+
 
 }
 

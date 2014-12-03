@@ -44,7 +44,7 @@ public class LocationChangedReceiver extends BroadcastReceiver {
 
     /**
      * When a new location is received, extract it from the Intent and use
-     * TODO start a service to hancle new location
+     * TODO start a service to handle new location
      *
      */
     @Override
@@ -54,6 +54,10 @@ public class LocationChangedReceiver extends BroadcastReceiver {
         if (intent.hasExtra(providerEnabledKey)) {
             if (!intent.getBooleanExtra(providerEnabledKey, true)) {
                 Log.i(TAG, "===================== Provider disabled");
+                if (!intent.getBooleanExtra(providerEnabledKey, true)) {
+                    Intent providerDisabledIntent = new Intent("org.smap.smapTask.android.active_location_update_provider_disabled");
+                    context.sendBroadcast(providerDisabledIntent);
+                }
             }
         }
         if (intent.hasExtra(locationKey)) {

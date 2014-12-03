@@ -86,28 +86,21 @@ public class TaskListArrayAdapter extends ArrayAdapter<TaskEntry> {
     	if(taskStartText != null) {
 	    	if(item.type.equals("form")) {
                 taskStartText.setText(getContext().getString(R.string.smap_project) + ": " + item.project);
-		    	// taskStartText.setText(getContext().getString(R.string.version) + ": " + item.formVersion);
 	    	} else {
-                String addressText = null;
+                String line2 = null;
                 if(item.taskStatus.equals(Utilities.STATUS_T_COMPLETE) || item.taskStatus.equals(Utilities.STATUS_T_SUBMITTED)) {
-                    addressText = dFormat.format(item.actFinish);
+                    line2 = dFormat.format(item.actFinish);
                 } else if (item.taskStart != 0) {
-                    addressText = dFormat.format(item.taskStart);
+                    line2 = dFormat.format(item.taskStart);
                 }
-                addressText += KeyValueJsonFns.getValues(item.taskAddress);
-                taskStartText.setText(addressText);
+                String addressText = KeyValueJsonFns.getValues(item.taskAddress);
+                if(addressText != null) {
+                    line2 += " " + addressText;
+                }
+                taskStartText.setText(line2);
 	    	}
     	}
-    	/*
-    	TextView taskAddressText = (TextView) view.findViewById(R.id.bottomtext);
-    	if (taskAddressText != null) {
-    		if(item.type.equals("form")) {
-    			taskAddressText.setText(getContext().getString(R.string.smap_project) + ": " + item.project);
-    		} else {
-    			taskAddressText.setText(KeyValueJsonFns.getValues(item.taskAddress));
-    		}
-    	}
-    	*/
+
     	 
     	return view;
     }

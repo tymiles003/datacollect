@@ -80,7 +80,7 @@ public class Utilities {
                 InstanceColumns.ACT_LAT,
                 InstanceColumns.T_ACT_FINISH,
                 InstanceColumns.T_IS_SYNC,
-                InstanceColumns.T_TASK_ID,
+                InstanceColumns.T_ASS_ID,
                 InstanceColumns.UUID
 
         };
@@ -112,7 +112,7 @@ public class Utilities {
             entry.actLat = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LAT));
             entry.actFinish = c.getLong(c.getColumnIndex(InstanceColumns.T_ACT_FINISH));
             entry.isSynced = c.getString(c.getColumnIndex(InstanceColumns.T_IS_SYNC));
-            entry.taskId = c.getLong(c.getColumnIndex(InstanceColumns.T_TASK_ID));
+            // entry.taskId = c.getLong(c.getColumnIndex(InstanceColumns.T_TASK_ID));
             entry.uuid = c.getString(c.getColumnIndex(InstanceColumns.UUID));
 
         } catch(Exception e) {
@@ -146,7 +146,7 @@ public class Utilities {
                 InstanceColumns.ACT_LAT,
                 InstanceColumns.T_ACT_FINISH,
                 InstanceColumns.T_IS_SYNC,
-                InstanceColumns.T_TASK_ID,
+                InstanceColumns.T_ASS_ID,
                 InstanceColumns.UUID
 
         };
@@ -194,7 +194,7 @@ public class Utilities {
                 entry.actLat = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LAT));
                 entry.actFinish = c.getLong(c.getColumnIndex(InstanceColumns.T_ACT_FINISH));
                 entry.isSynced = c.getString(c.getColumnIndex(InstanceColumns.T_IS_SYNC));
-                entry.taskId = c.getLong(c.getColumnIndex(InstanceColumns.T_TASK_ID));
+                entry.assId = c.getLong(c.getColumnIndex(InstanceColumns.T_ASS_ID));
                 entry.uuid = c.getString(c.getColumnIndex(InstanceColumns.UUID));
 
                 tasks.add(entry);
@@ -279,7 +279,7 @@ public class Utilities {
     }
 
     /*
-     * Mark the task as synchronised
+     * Mark the status of a task
      */
     public static void setStatusForTask(Long id, String status) {
 
@@ -287,19 +287,22 @@ public class Utilities {
 
         ContentValues values = new ContentValues();
         values.put(InstanceColumns.T_TASK_STATUS, status);
+        values.put(InstanceColumns.T_IS_SYNC, Utilities.STATUS_SYNC_NO);
 
         Collect.getInstance().getContentResolver().update(taskUri, values, null, null);
 
     }
 
-    /*
-     * Set the task assignment
-     */
-    public static void setStatusForTask(long taskId, String status) {
+
+
+ /*
+ * Set the status for the provided assignment id
+ */
+    public static void setStatusForAssignment(long assId, String status) {
 
         Uri dbUri =  InstanceColumns.CONTENT_URI;
 
-        String selectClause = InstanceColumns.T_TASK_ID + " = " + taskId + " and "
+        String selectClause = InstanceColumns.T_ASS_ID + " = " + assId + " and "
                 + InstanceColumns.SOURCE + " = ?";
 
 

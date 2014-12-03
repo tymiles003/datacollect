@@ -206,12 +206,12 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                 }
 
                 /*
-                 * Get an array of the existing tasks on the phone and create a hashmap indexed on the task id
+                 * Get an array of the existing tasks on the phone and create a hashmap indexed on the assignment id
                  */
                 Utilities.getTasks(tasks, false);
                 for(TaskEntry t : tasks) {
-                    TaskStatus ts = new TaskStatus(t.id, t.taskStatus);
-                    taskMap.put(t.taskId, ts);
+                    TaskStatus ts = new TaskStatus(t.assId, t.taskStatus);
+                    taskMap.put(t.assId, ts);
                 }
 
                 /*
@@ -408,7 +408,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
   	  		if(t.taskStatus != null && t.isSynced.equals(Utilities.STATUS_SYNC_NO)) {
   	  			TaskAssignment ta = new TaskAssignment();
   	  			ta.assignment = new Assignment();
-  	  			ta.assignment.assignment_id = (int) t.taskId;
+  	  			ta.assignment.assignment_id = (int) t.assId;
   	  			ta.assignment.dbId = (int) t.id;
   	  			ta.assignment.assignment_status = t.taskStatus;
 
@@ -517,7 +517,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	          	  		Log.i(getClass().getSimpleName(), "Existing Task: " + assignment.assignment_id + " : " + assignment.assignment_status);
 
 	          	  		if(assignment.assignment_status.equals(Utilities.STATUS_T_CANCELLED) && !ts.status.equals(Utilities.STATUS_T_CANCELLED)) {
-                            Utilities.setStatusForTask(assignment.assignment_id, assignment.assignment_status);
+                            Utilities.setStatusForAssignment(assignment.assignment_id, assignment.assignment_status);
                             results.put(ta.task.title, assignment.assignment_status);
 	          	  		}
 	          	  	}

@@ -31,6 +31,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -169,7 +170,7 @@ public class TaskAddressActivity extends Activity implements OnClickListener {
     			String instancePath = taskEntry.instancePath;
     			
     			if(canComplete) {
-    				completeTask(instancePath, formPath, taskEntry.taskId);
+    				completeTask(instancePath, formPath, taskEntry.id);
     			} else {
         			Toast.makeText(getApplicationContext(), getString(R.string.smap_cannot_complete),
     		                Toast.LENGTH_SHORT).show();
@@ -186,7 +187,9 @@ public class TaskAddressActivity extends Activity implements OnClickListener {
                 Log.i("Reject Button", "");
 
 	    		if(Utilities.canReject(taskEntry.taskStatus)) {
-                    Utilities.setStatusForTask(taskEntry.taskId,Utilities.STATUS_T_REJECTED);
+                    Utilities.setStatusForTask(taskEntry.id, Utilities.STATUS_T_REJECTED);
+                    Intent intent = new Intent("refresh");      // Notify map and task list of change
+                    LocalBroadcastManager.getInstance(getApplication()).sendBroadcast(intent);
 	    		} else {
 	    			Toast.makeText(getApplicationContext(), getString(R.string.smap_cannot_reject),
 			                Toast.LENGTH_SHORT).show();

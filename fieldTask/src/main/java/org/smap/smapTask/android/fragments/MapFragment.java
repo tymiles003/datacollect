@@ -69,10 +69,6 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     Icon submitted = null;
 
     private MapView mv;
-    private String satellite = "brunosan.map_fragment-cyglrrfu";
-    private String street = "examples.map_fragment-i87786ca";
-    private final String mbTile = "test.MBTiles";
-    private String currentLayer = "";
     private static final int MAP_LOADER_ID = 2;
 
     @Override
@@ -91,7 +87,6 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
         // Set Default Map Type
         replaceMapView("mapquest");
-        currentLayer = "terrain";
 
         getLoaderManager().initLoader(MAP_LOADER_ID, null, this);       // Get the task locations
 
@@ -129,10 +124,6 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     public Loader<MapEntry> onCreateLoader(int id, Bundle args) {
         return new MapDataLoader(getActivity());
     }
-
-    final String[] availableLayers = {
-        "OpenStreetMap", "OpenSeaMap", "mapquest", "open-streets-dc.mbtiles", "test.MBTiles"
-    };
 
     protected void replaceMapView(String layer) {
         ITileLayer source;
@@ -187,19 +178,6 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         //        mv.zoomToBoundingBox(box);
     }
 
-    private Button changeButtonTypeface(Button button) {
-        //Typeface tf = Typeface.createFromAsset(this.getAssets(), "fonts/semibold.ttf");
-        //button.setTypeface(tf);
-        return button;
-    }
-
-    public LatLng getMapCenter() {
-        return mv.getCenter();
-    }
-
-    public void setMapCenter(ILatLng center) {
-        mv.setCenter(center);
-    }
 
     /**
      * Method to show settings  in alert dialog

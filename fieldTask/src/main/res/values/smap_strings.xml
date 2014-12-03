@@ -22,11 +22,14 @@
     <string name="smap_cannot_complete">Unable to complete task</string>  
     <string name="smap_cannot_reject">Unable to reject task</string>
     <string name="smap_complete_task">Complete Task</string>
+    <string name="smap_data_collection">Data Collection</string>
     <string name="smap_destination_not_found">The destination for the route is not set</string>
     <string name="smap_done">: done. </string>
     <string name="smap_finding_route">Routing</string>
     <string name="smap_found_route">Route to destination has been found!</string>
     <string name="smap_get_tasks">Refresh Task List</string>
+    <string name="smap_gps_trail">GPS Trail</string>
+    <string name="smap_gps_trail_summary">Record the path taken by the user</string>
     <string name="smap_menu_settings">Settings</string>
     <string name="smap_missed">: rejected. </string>
     <string name="smap_no_tasks">No tasks downloaded</string>

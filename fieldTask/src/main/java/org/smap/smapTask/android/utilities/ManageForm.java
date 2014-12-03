@@ -96,12 +96,12 @@ public class ManageForm {
 			// get all complete or failed submission instances
 			String selection = null;
 			String selectionArgs1 [] = { InstanceProviderAPI.STATUS_INCOMPLETE, 
-					formId,
-					version
+					formId
 					};
 			
 			String selectionArgs2 [] = 	{ InstanceProviderAPI.STATUS_INCOMPLETE, 
-					formId
+					formId,
+                    version
 					};
 			
 			if(version == null) {
@@ -122,9 +122,9 @@ public class ManageForm {
         	
         	final ContentResolver resolver = Collect.getInstance().getContentResolver();
         	if(version == null) {
-        		c = resolver.query(InstanceColumns.CONTENT_URI, proj, selection, selectionArgs2, null);
-        	} else {
         		c = resolver.query(InstanceColumns.CONTENT_URI, proj, selection, selectionArgs1, null);
+        	} else {
+        		c = resolver.query(InstanceColumns.CONTENT_URI, proj, selection, selectionArgs2, null);
         	}
             
         	if(c.getCount() > 0) {
@@ -229,7 +229,7 @@ public class ManageForm {
         	String [] proj = {FormsColumns._ID, FormsColumns.JR_FORM_ID, FormsColumns.JR_VERSION}; 
         	
 			String selectClause = FormsColumns.SOURCE + "='" + Utilities.getSource() + "' or " + 
-					FormsColumns.SOURCE + "=null";
+					FormsColumns.SOURCE + " is null";
         	
         	final ContentResolver resolver = Collect.getInstance().getContentResolver();
         	c = resolver.query(FormsColumns.CONTENT_URI, proj, selectClause, null, null);
@@ -368,7 +368,7 @@ public class ManageForm {
         values.put(InstanceColumns.ACT_LON, 0.0);
         values.put(InstanceColumns.ACT_LAT, 0.0);
         values.put(InstanceColumns.T_TITLE, ta.task.title);
-        values.put(InstanceColumns.T_TASK_ID, ta.assignment.assignment_id);
+        values.put(InstanceColumns.T_ASS_ID, ta.assignment.assignment_id);
         values.put(InstanceColumns.T_TASK_STATUS, ta.assignment.assignment_status);
         if(ta.task.scheduled_at != null) {
             values.put(InstanceColumns.T_SCHED_START, ta.task.scheduled_at.getTime());

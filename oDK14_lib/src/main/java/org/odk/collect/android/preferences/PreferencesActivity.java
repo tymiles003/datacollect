@@ -97,7 +97,7 @@ public class PreferencesActivity extends PreferenceActivity implements
 	public static final String KEY_NAVIGATION = "navigation";
 	public static final String KEY_CONSTRAINT_BEHAVIOR = "constraint_behavior";
 
-    public static final String KEY_STORE_USER_TRAIL = "store_user_trail";       // smap
+    public static final String KEY_STORE_USER_TRAIL = "smap_gps_trail";       // smap
 
 	private PreferenceScreen mSplashPathPreference;
 	private EditTextPreference mSubmissionUrlPreference;
@@ -112,6 +112,7 @@ public class PreferencesActivity extends PreferenceActivity implements
 
 	private CheckBoxPreference mAutosendWifiPreference;
 	private CheckBoxPreference mAutosendNetworkPreference;
+    private CheckBoxPreference mStoreUserTrailPreference;             // smap
 	private ListPreference mProtocolPreference;
 
 	@Override
@@ -134,6 +135,11 @@ public class PreferencesActivity extends PreferenceActivity implements
 				AdminPreferencesActivity.KEY_CHANGE_SERVER, true);
 		boolean urlAvailable = adminPreferences.getBoolean(
 				AdminPreferencesActivity.KEY_CHANGE_URL, true);
+
+        // Smap start
+        // Add ability to turn off user trail of gps locations
+        mStoreUserTrailPreference = (CheckBoxPreference) findPreference(KEY_STORE_USER_TRAIL);
+        // Smap end
 
 		PreferenceCategory autosendCategory = (PreferenceCategory) findPreference(getString(R.string.autosend));
 		mAutosendWifiPreference = (CheckBoxPreference) findPreference(KEY_AUTOSEND_WIFI);

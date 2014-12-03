@@ -4,6 +4,7 @@ package org.smap.smapTask.android.loaders;
  * This class holds the per-item data in the {@link TaskLoader}.
  */
 public class TaskEntry {
+    public long id;
     public String type;    // form or task
     public String taskStatus;
     public String name;
@@ -14,14 +15,13 @@ public class TaskEntry {
     public String taskForm;
     public String instancePath;
     public int formVersion;
-    public long id;
     public double schedLon = 0.0;
     public double schedLat = 0.0;
     public double actLon = 0.0;
     public double actLat = 0.0;
     public long actFinish;          // Date time the task was finalised
     public String isSynced;
-    public long taskId;
+    public long assId;
     public String uuid;
 
 

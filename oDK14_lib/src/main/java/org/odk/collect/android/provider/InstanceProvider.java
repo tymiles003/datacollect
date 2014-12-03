@@ -90,7 +90,7 @@ public class InstanceProvider extends ContentProvider {
                + InstanceColumns.T_GEOM + " text, "		        // smap
                + InstanceColumns.T_GEOM_TYPE + " text, "		// smap
                + InstanceColumns.T_IS_SYNC + " text, "		    // smap
-               + InstanceColumns.T_TASK_ID + " long, "		    // smap
+               + InstanceColumns.T_ASS_ID + " long, "		    // smap
                + InstanceColumns.T_TASK_STATUS + " text, "		// smap
                + InstanceColumns.UUID + " text, "		        // smap
                + InstanceColumns.STATUS + " text not null, "
@@ -148,7 +148,7 @@ public class InstanceProvider extends ContentProvider {
                 db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
                         InstanceColumns.T_IS_SYNC + " text;");
                 db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
-                        InstanceColumns.T_TASK_ID + " long;");
+                        InstanceColumns.T_ASS_ID + " long;");
                 db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
                         InstanceColumns.T_TASK_STATUS + " text;");
                 db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
@@ -474,7 +474,7 @@ public class InstanceProvider extends ContentProvider {
         sInstancesProjectionMap.put(InstanceColumns.T_GEOM, InstanceColumns.T_GEOM);                // smap
         sInstancesProjectionMap.put(InstanceColumns.T_GEOM_TYPE, InstanceColumns.T_GEOM_TYPE);      // smap
         sInstancesProjectionMap.put(InstanceColumns.T_IS_SYNC, InstanceColumns.T_IS_SYNC);          // smap
-        sInstancesProjectionMap.put(InstanceColumns.T_TASK_ID, InstanceColumns.T_TASK_ID);          // smap
+        sInstancesProjectionMap.put(InstanceColumns.T_ASS_ID, InstanceColumns.T_ASS_ID);          // smap
         sInstancesProjectionMap.put(InstanceColumns.T_TASK_STATUS, InstanceColumns.T_TASK_STATUS);  // smap
         sInstancesProjectionMap.put(InstanceColumns.UUID, InstanceColumns.UUID);                    // smap
     }

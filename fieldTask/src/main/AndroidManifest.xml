@@ -200,6 +200,9 @@
         <activity
             android:name=".activities.MainListActivity"
             android:label="@string/app_name" />
+            <intent-filter>
+                <action android:name="android.intent.action.ACTION_BATTERY_LOW"/>
+            </intent-filter>
         <activity
             android:name=".activities.TaskAddressActivity"
             android:noHistory="true"
