@@ -4,6 +4,8 @@ build/
 local.properties
 import-summary.txt
 
+.apk
+
 gradlew
 gradlew.bat
 
