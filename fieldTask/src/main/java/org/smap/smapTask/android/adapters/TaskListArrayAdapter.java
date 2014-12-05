@@ -79,7 +79,7 @@ public class TaskListArrayAdapter extends ArrayAdapter<TaskEntry> {
     	
     	TextView taskNameText = (TextView) view.findViewById(R.id.toptext);
     	if (taskNameText != null) {
-            taskNameText.setText(item.name + " (" + item.formVersion + ")");
+            taskNameText.setText(item.name + " (v:" + item.formVersion + ")");
         }
 
     	TextView taskStartText = (TextView) view.findViewById(R.id.middletext);
