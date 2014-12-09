@@ -49,6 +49,7 @@ import android.widget.ListView;
 
 import org.smap.smapTask.android.R;
 import org.smap.smapTask.android.receivers.LocationChangedReceiver;
+import org.smap.smapTask.android.utilities.Constants;
 import org.smap.smapTask.android.utilities.Utilities;
 
 /**
@@ -300,7 +301,7 @@ public class MainListActivity extends FragmentActivity  {
          *  Using less accurate sources is not feasible to collect a gpx trail
          *  However it may be useful if we were just recording location of survey
          */
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 20000, (float) 20.0, locationListenerPendingIntent);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 20000, Constants.GPS_ACCURACY, locationListenerPendingIntent);
     }
 
     /**

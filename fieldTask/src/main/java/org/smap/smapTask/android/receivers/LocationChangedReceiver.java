@@ -29,6 +29,7 @@ import android.util.Log;
 
 import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.preferences.PreferencesActivity;
+import org.smap.smapTask.android.utilities.Constants;
 import org.smap.smapTask.android.utilities.TraceUtilities;
 
 
@@ -62,22 +63,56 @@ public class LocationChangedReceiver extends BroadcastReceiver {
         }
         if (intent.hasExtra(locationKey)) {
             Location location = (Location)intent.getExtras().get(locationKey);
-            Log.d(TAG, "============== Updating location");
 
-            // Save the current location
-            Collect.getInstance().setLocation(location);
+            if(isValidLocation(location) && isAccurateLocation(location)) {
+                Log.d(TAG, "============== Updating location");
 
-            // Notify any activity interested that there is a new location
-            LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent("locationChanged"));
+                // Save the current location
+                Collect.getInstance().setLocation(location);
 
-            // Save the location in the database
-            if(settings == null) {
-                settings = PreferenceManager.getDefaultSharedPreferences(context);
-            }
-            if(settings.getBoolean(PreferencesActivity.KEY_STORE_USER_TRAIL, false)) {
-                TraceUtilities.insertPoint(location);
+                // Notify any activity interested that there is a new location
+                LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent("locationChanged"));
+
+                // Save the location in the database
+                if (settings == null) {
+                    settings = PreferenceManager.getDefaultSharedPreferences(context);
+                }
+                if (settings.getBoolean(PreferencesActivity.KEY_STORE_USER_TRAIL, false)) {
+                    TraceUtilities.insertPoint(location);
+                }
             }
 
         }
+    }
+
+    /*
+     * Check to see if this is a valid location
+     */
+    private boolean isValidLocation(Location location) {
+        boolean valid = true;
+        if(location == null || Math.abs(location.getLatitude()) > 90
+                || Math.abs(location.getLongitude()) > 180) {
+            valid = false;
+        }
+
+        // Return false if the location is 0 0, more likely than not this is a bad location
+        if(Math.abs(location.getLongitude()) == 0.0 && Math.abs(location.getLongitude()) == 0.0) {
+            valid = false;
+        }
+
+        return valid;
+    }
+
+    /*
+  * Check to see if this is a valid location
+  */
+    private boolean isAccurateLocation(Location location) {
+
+        boolean accurate = true;
+        if (!location.hasAccuracy() || location.getAccuracy() >= Constants.GPS_ACCURACY) {
+            Log.d(TAG, "Ignore onLocationChangedAsync. Poor accuracy.");
+            accurate = false;
+        }
+        return accurate;
     }
 }

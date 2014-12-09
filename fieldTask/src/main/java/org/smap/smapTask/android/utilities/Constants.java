@@ -16,7 +16,8 @@ public final class Constants {
     public static final String LOCATION_FILE = "sdcard/location.txt";
     // Stores the connect / disconnect data in a text file
     public static final String LOG_FILE = "sdcard/log.txt";
-
+    // Accuracy required of GPS
+    public static final float GPS_ACCURACY = (float) 10.0;
 
     /**
      * Suppress default constructor for noninstantiability
