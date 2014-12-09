@@ -301,7 +301,7 @@ public class MainListActivity extends FragmentActivity  {
          *  Using less accurate sources is not feasible to collect a gpx trail
          *  However it may be useful if we were just recording location of survey
          */
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 20000, Constants.GPS_ACCURACY, locationListenerPendingIntent);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Constants.GPS_INTERVAL, Constants.GPS_DISTANCE, locationListenerPendingIntent);
     }
 
     /**
