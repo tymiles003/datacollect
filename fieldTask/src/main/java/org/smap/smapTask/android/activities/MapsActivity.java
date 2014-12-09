@@ -61,10 +61,12 @@ public class MapsActivity extends FragmentActivity  {
         if (fm.findFragmentById(R.id.map_content_frame) == null) {
             map = new MapFragment();
             fm.beginTransaction().add(android.R.id.content, map).commit();
+
+            // Listen for new locations
+            mo = new MapLocationObserver(getApplicationContext(), map);
         }
 
-        // Listen for new locations
-        mo = new MapLocationObserver(getApplicationContext(), map);
+
     }
 
     @Override

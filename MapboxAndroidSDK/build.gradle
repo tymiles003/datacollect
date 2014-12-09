@@ -7,13 +7,11 @@ buildscript {
         classpath 'com.jakewharton.sdkmanager:gradle-plugin:0.10.1'
     }
 }
-
 apply plugin: 'android-sdk-manager'
 apply plugin: 'com.android.library'
 //apply plugin: 'checkstyle'
 apply plugin: 'maven'
 apply plugin: 'signing'
-
 allprojects {
     group project.GROUP
     version project.VERSION_NAME
@@ -26,11 +24,6 @@ allprojects {
 //        options.encoding = 'UTF-8'
 //    }
 }
-
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     compile 'com.android.support:support-v4:21.0.0'
     compile 'com.squareup.okhttp:okhttp:2.0.0'
@@ -41,7 +34,6 @@ dependencies {
         transitive = true
     }
 }
-
 android {
     compileSdkVersion 'Google Inc.:Google APIs:19'
     buildToolsVersion '21.0.2'
@@ -71,7 +63,6 @@ android {
     productFlavors {
     }
 }
-
 android.libraryVariants.all { variant ->
     def name = variant.name
     task "javadoc$name"(type: Javadoc) {
@@ -86,12 +77,10 @@ android.libraryVariants.all { variant ->
         exclude '**/R.html', '**/R.*.html'
     }
 }
-
 //checkstyle {
 //    configFile project.file('../checks.xml')
 //    showViolations true
 //}
-
 //android.libraryVariants.all { variant ->
 //    def name = variant.buildType.name
 //    def checkstyle = project.tasks.create "checkstyle${name.capitalize()}", Checkstyle
@@ -103,7 +92,6 @@ android.libraryVariants.all { variant ->
 //    checkstyle.exclude('**/uk/co/senab/bitmapcache/*')
 //    project.tasks.getByName("check").dependsOn checkstyle
 //}
-
 // From https://raw.github.com/mcxiaoke/gradle-mvn-push/master/jar.gradle
 android.libraryVariants.all { variant ->
     def jarTask = project.tasks.create(name: "jar${variant.name.capitalize()}", type: Jar) {
@@ -114,33 +102,26 @@ android.libraryVariants.all { variant ->
     jarTask.dependsOn variant.javaCompile
     artifacts.add('archives', jarTask);
 }
-
 // From https://raw.github.com/mcxiaoke/gradle-mvn-push/master/gradle-mvn-push.gradle
 def isReleaseBuild() {
     return VERSION_NAME.contains("SNAPSHOT") == false
 }
-
 def getReleaseRepositoryUrl() {
     return hasProperty('RELEASE_REPOSITORY_URL') ? RELEASE_REPOSITORY_URL :
             "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
 }
-
 def getSnapshotRepositoryUrl() {
     return hasProperty('SNAPSHOT_REPOSITORY_URL') ? SNAPSHOT_REPOSITORY_URL :
             "https://oss.sonatype.org/content/repositories/snapshots/"
 }
-
 def getRepositoryUsername() {
     return hasProperty('USERNAME') ? USERNAME :
             (hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : "")
 }
-
 def getRepositoryPassword() {
     return hasProperty('PASSWORD') ? PASSWORD :
             (hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : "")
 }
-
-
 task apklib(type: Zip) {
     appendix = extension = 'apklib'
 
@@ -152,11 +133,9 @@ task apklib(type: Zip) {
         from 'src'
     }
 }
-
 artifacts {
     archives apklib
 }
-
 afterEvaluate { project ->
     uploadArchives {
         repositories {
@@ -242,4 +221,7 @@ afterEvaluate { project ->
         archives androidSourcesJar
         archives androidJavadocsJar
     }
+}
+repositories {
+    mavenCentral()
 }

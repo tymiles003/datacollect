@@ -308,7 +308,11 @@ public class MainListActivity extends FragmentActivity  {
      */
     protected void disableLocationUpdates() {
 
-        locationManager.removeUpdates(locationListenerPendingIntent);
+        try {
+            locationManager.removeUpdates(locationListenerPendingIntent);
+        } catch (Exception e) {
+            // Ignore failures, we are exiting after all
+        }
 
     }
 

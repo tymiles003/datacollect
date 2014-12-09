@@ -170,12 +170,14 @@
             android:name=".activities.SplashScreenActivity"
             android:label="@string/app_name"
             android:theme="@android:style/Theme.Dialog" >
+            <!--    smap
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            -->
         </activity>
         <!-- Enable Shortcuts for Command Actions -->
         <activity
@@ -188,18 +190,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <!-- Smap
-        <receiver
-            android:name=".receivers.NetworkReceiver"
-            android:enabled="true" >
-            <intent-filter>
-                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="org.odk.collect.android.FormSaved" />
-            </intent-filter>
-        </receiver>
-        -->
 
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"

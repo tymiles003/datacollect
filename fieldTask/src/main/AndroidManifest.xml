@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
      Copyright (C) 2013 Smap Consulting Licensed under the Apache 
 	License, Version 2.0 (the "License"); you may not use this file except in 
 	compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
@@ -10,18 +9,28 @@
 
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.smap.smapTask.android"
     xmlns:tools="http://schemas.android.com/tools"
+    package="org.smap.smapTask.android"
     android:versionCode="1883"
-    android:versionName="3.7" >
+    android:versionName="3.7">
 
-    <uses-feature android:name="android.hardware.location" android:required="false" />
-    <uses-feature android:name="android.hardware.location.network" android:required="false" />
-    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location.network"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false" />
 
-    <uses-feature android:name="android.hardware.telephony" android:required="false" />
-    <uses-feature android:name="android.hardware.wifi" android:required="false" />
-    
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.wifi"
+        android:required="false" />
+
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -32,54 +41,59 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!--  for Maps v2 functionality -->
-    <uses-feature android:glEsVersion="0x00020000" android:required="false" />
+    <uses-feature
+        android:glEsVersion="0x00020000"
+        android:required="false" />
     <permission
-          android:name="org.opendatakit.tables.permission.MAPS_RECEIVE"
-          android:protectionLevel="signature" />
+        android:name="org.opendatakit.tables.permission.MAPS_RECEIVE"
+        android:protectionLevel="signature" />
+
     <uses-permission android:name="org.opendatakit.tables.permission.MAPS_RECEIVE" />
     <uses-permission android:name="com.google.android.providers.gsf.permission.READ_GSERVICES" />
-    
-    <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="8" />
+
+    <uses-sdk
+        android:minSdkVersion="8"
+        android:targetSdkVersion="8" />
 
     <supports-screens
         android:anyDensity="true"
-        android:xlargeScreens="true"
         android:largeScreens="true"
         android:normalScreens="true"
         android:resizeable="true"
-        android:smallScreens="true" />
-        
+        android:smallScreens="true"
+        android:xlargeScreens="true" />
+
     <application
-        tools:replace="android:icon"
         android:name="org.odk.collect.android.application.Collect"
-        android:largeHeap="true"
+        android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:allowBackup="true"
-        android:theme="@style/Collect" >
+        android:largeHeap="true"
+        android:theme="@style/Collect"
+        tools:replace="android:icon, android:theme">
         <provider
-            android:exported="true"
             android:name="org.odk.collect.android.provider.FormsProvider"
-            android:authorities="org.odk.collect.android.provider.odk.forms.smap" />
+            android:authorities="org.odk.collect.android.provider.odk.forms.smap"
+            android:exported="true" />
         <provider
-            android:exported="true"
             android:name="org.odk.collect.android.provider.InstanceProvider"
-            android:authorities="org.odk.collect.android.provider.odk.instances.smap" />
+            android:authorities="org.odk.collect.android.provider.odk.instances.smap"
+            android:exported="true" />
         <provider
-            android:exported="true"
             android:name="org.smap.smapTask.android.provider.TraceProvider"
-            android:authorities="org.smap.smapTask.android.provider.trace" />
+            android:authorities="org.smap.smapTask.android.provider.trace"
+            android:exported="true" />
 
         <activity
             android:name=".activities.MainTabsActivity"
             android:configChanges="orientation"
-            android:label="@string/app_name" >
-        </activity>
+            android:label="@string/app_name"></activity>
         <activity
             android:name="org.odk.collect.android.activities.FormEntryActivity"
             android:configChanges="orientation"
             android:label="@string/app_name"
-            android:windowSoftInputMode="adjustResize" >
+            android:windowSoftInputMode="adjustResize">
+            <!--
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <action android:name="android.intent.action.EDIT" />
@@ -89,35 +103,39 @@
                 <data android:mimeType="vnd.android.cursor.item/vnd.odk.form" />
                 <data android:mimeType="vnd.android.cursor.item/vnd.odk.instance" />
             </intent-filter>
+            -->
         </activity>
         <activity
             android:name="org.odk.collect.android.activities.InstanceChooserList"
-            android:label="@string/app_name" >
+            android:label="@string/app_name">
+            <!--
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.EDIT" />
 
-        	<intent-filter>
-            	<action android:name="android.intent.action.VIEW" />
-            	<action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
 
-            	<category android:name="android.intent.category.DEFAULT" />
-
-            	<data android:mimeType="vnd.android.cursor.dir/vnd.odk.instance" />
-        	</intent-filter>
-		</activity>
+                <data android:mimeType="vnd.android.cursor.dir/vnd.odk.instance" />
+            </intent-filter>
+            -->
+        </activity>
         <activity
             android:name="org.odk.collect.android.activities.InstanceChooserTabs"
             android:label="@string/app_name" />
         <activity
             android:name="org.odk.collect.android.activities.FormChooserList"
-            android:label="@string/app_name" >
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <action android:name="android.intent.action.EDIT" />
-                <action android:name="android.intent.action.PICK" />
+            android:label="@string/app_name">
+            <!--
+    <intent-filter>
+    <action android:name="android.intent.action.VIEW" />
+    <action android:name="android.intent.action.EDIT" />
+    <action android:name="android.intent.action.PICK" />
 
-                <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.DEFAULT" />
 
-                <data android:mimeType="vnd.android.cursor.dir/vnd.odk.form" />
-            </intent-filter>
+    <data android:mimeType="vnd.android.cursor.dir/vnd.odk.form" />
+    </intent-filter>
+    -->
         </activity>
         <activity
             android:name="org.odk.collect.android.activities.FormManagerList"
@@ -133,14 +151,16 @@
             android:label="@string/app_name" />
         <activity
             android:name="org.odk.collect.android.activities.InstanceUploaderList"
-            android:noHistory="true"
-            android:label="@string/app_name" >
+            android:label="@string/app_name"
+            android:noHistory="true">
+            <!--
             <intent-filter>
-	            <action android:name="android.intent.action.VIEW" />
-	            <action android:name="android.intent.action.EDIT" />
+            <action android:name="android.intent.action.VIEW" />
+            <action android:name="android.intent.action.EDIT" />
 
-	            <category android:name="android.intent.category.DEFAULT" />
-	        </intent-filter>
+            <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            -->
         </activity>
         <activity
             android:name="org.odk.collect.android.activities.InstanceUploaderActivity"
@@ -163,36 +183,38 @@
         <activity
             android:name=".activities.SplashScreenActivity"
             android:label="@string/app_name"
-            android:theme="@android:style/Theme.Dialog" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+            android:theme="@android:style/Theme.Dialog">
 
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.LAUNCHER" />
+            <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
+
         <receiver
-	        android:name=".receivers.NetworkReceiver"
-	        android:enabled="true" >
-	        <intent-filter>
-	            <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
-	        </intent-filter>
-	        <intent-filter>
-	            <action android:name="org.odk.collect.android.FormSaved" />
-	        </intent-filter>
-    	</receiver>
+            android:name=".receivers.NetworkReceiver"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="org.odk.collect.android.FormSaved" />
+            </intent-filter>
+        </receiver>
         <receiver
             android:name=".receivers.LocationChangedReceiver"
-            android:enabled="true" >
-        </receiver>
+            android:enabled="true"></receiver>
         <!--
-       <meta-data
-            android:name="com.google.android.maps.v2.API_KEY"
-            android:value="AIzaSyB-2u_Jk8MHvMrsOUa-s2JEIV8NGyZkC0w"/>
-       -->
-       <uses-library
+        <meta-data
+        android:name="com.google.android.maps.v2.API_KEY"
+        android:value="AIzaSyB-2u_Jk8MHvMrsOUa-s2JEIV8NGyZkC0w"/>
+        -->
+        <uses-library
             android:name="com.google.android.maps"
-            android:required="false" />             
+            android:required="false" />
 
         <activity
             android:name=".activities.MapsActivity"
@@ -200,17 +222,19 @@
         <activity
             android:name=".activities.MainListActivity"
             android:label="@string/app_name" />
-            <intent-filter>
-                <action android:name="android.intent.action.ACTION_BATTERY_LOW"/>
-            </intent-filter>
+        <!--
+<intent-filter>
+    <action android:name="android.intent.action.ACTION_BATTERY_LOW"/>
+</intent-filter>
+-->
         <activity
             android:name=".activities.TaskAddressActivity"
-            android:noHistory="true"
-            android:label="@string/app_name" />
+            android:label="@string/app_name"
+            android:noHistory="true" />
         <activity
             android:name="org.odk.collect.android.activities.DrawActivity"
             android:label="@string/app_name" />
- 
+
     </application>
 
 </manifest>
