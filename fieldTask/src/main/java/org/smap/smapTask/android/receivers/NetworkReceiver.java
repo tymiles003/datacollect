@@ -111,9 +111,13 @@ public class NetworkReceiver extends BroadcastReceiver implements TaskDownloader
     private void refreshTasks(Context context) {
         //mProgressMsg = getString(org.smap.smapTask.android.R.string.smap_synchronising);
         //showDialog(PROGRESS_DIALOG);
-        mDownloadTasks = new DownloadTasksTask();
-        mDownloadTasks.setDownloaderListener(this, context);
-        mDownloadTasks.execute();
+        if(!running) {
+            running = true;
+            mContext = context;
+            mDownloadTasks = new DownloadTasksTask();
+            mDownloadTasks.setDownloaderListener(this, context);
+            mDownloadTasks.execute();
+        }
     }
 
     /*
@@ -176,6 +180,7 @@ public class NetworkReceiver extends BroadcastReceiver implements TaskDownloader
         }
     }
     */
+
 
     @Override
     public void uploadingComplete(HashMap<String, String> result) {

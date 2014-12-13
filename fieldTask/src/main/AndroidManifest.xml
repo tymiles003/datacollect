@@ -11,8 +11,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="org.smap.smapTask.android"
-    android:versionCode="1883"
-    android:versionName="3.7">
+    android:versionCode="1884"
+    android:versionName="3.8">
 
     <uses-feature
         android:name="android.hardware.location"
