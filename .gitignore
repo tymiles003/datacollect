@@ -1,6 +1,8 @@
 bin/
 gen/
 build/
+fieldTask-release/
+fieldTask/fieldTask-release/
 local.properties
 import-summary.txt
 
