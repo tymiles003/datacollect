@@ -46,7 +46,7 @@ public class ManageForm {
 	     public boolean exists = false;
 	}
 	
-	public ManageFormDetails getFormDetails(String formId, String formVersionString) {
+	public ManageFormDetails getFormDetails(String formId, String formVersionString, String source) {
 	
 		ManageFormDetails fd = new ManageFormDetails();
    	 	Cursor c = null;
@@ -54,9 +54,10 @@ public class ManageForm {
 		try {
         	
         	String selectionClause = FormsColumns.JR_FORM_ID + "=? AND "
-					+ FormsColumns.JR_VERSION + "=?";
+					+ FormsColumns.JR_VERSION + "=? AND "
+                    + FormsColumns.SOURCE + "=?";
         	
-        	String [] selectionArgs = new String[] { formId, formVersionString };
+        	String [] selectionArgs = new String[] { formId, formVersionString, source };
         	//String [] selectionArgs = new String [1];
         	//selectionArgs[0] = formId;
         	String [] proj = {FormsColumns._ID, FormsColumns.DISPLAY_NAME, FormsColumns.JR_FORM_ID,
@@ -139,82 +140,6 @@ public class ManageForm {
 		
 		return isIncomplete;
 	}
-        	
-	     
-	/*
-	 * Parameters
-	 *   formId:  	Stored as jrFormId in the forms database.
-	 *   			Extracted by odk from the id attribute on top level data element in the downloaded xml
-	 *   formURL:	URL to download the form
-	 *   			Not stored
-	 *   instanceDataURL:
-	 *   			URL to download the data.
-	 *   			Not stored
-	 *   
-	 *   Because odk uniquely identifies forms based on the id extracted from the down loaded xml file
-	 *    the formId must be sourced from the task management system along with the URL so we can check
-	 *    if the form has already been downloaded.  
-	 */
-    public ManageFormResponse insertForm(FormLocator form) {
-
-        String formVersionString = String.valueOf(form.version);	
-        
-        ManageFormResponse mfResponse = new ManageFormResponse();
-        
-    	ManageFormDetails fd = getFormDetails(form.ident, formVersionString);    // Get the form details
-		
-    	if(!fd.exists) {	
-        	 // Form was not found try downloading it
-        	 FileResult dl = null;
-        	 
-        	 try {
-        		 mfResponse.statusMsg = "Downloading form: " + form.name;
-        		 DownloadFormsTask dft = new DownloadFormsTask();
-        		 dl = dft.downloadXform(form.ident, form.url);
-        	 } catch (Exception e) {
-        		 mfResponse.isError = true;
-        		 mfResponse.statusMsg = "Unable to download form from " + form.url;
-        		 return mfResponse;
-        	 }
-        	 
-
-        	 try {
-        		 ContentValues v = new ContentValues();
-        		 v.put(FormsColumns.FORM_FILE_PATH, dl.getFile().getAbsolutePath());
-
-                 HashMap<String, String> formInfo = FileUtils.parseXML(dl.getFile());
-                 v.put(FormsColumns.DISPLAY_NAME, formInfo.get(FileUtils.TITLE));
-                 v.put(FormsColumns.JR_VERSION, formInfo.get(FileUtils.VERSION));
-                 v.put(FormsColumns.JR_FORM_ID, formInfo.get(FileUtils.FORMID));
-                 v.put(FormsColumns.PROJECT, formInfo.get(FileUtils.PROJECT));
-                 v.put(FormsColumns.SUBMISSION_URI, formInfo.get(FileUtils.SUBMISSIONURI));
-                 v.put(FormsColumns.BASE64_RSA_PUBLIC_KEY, formInfo.get(FileUtils.BASE64_RSA_PUBLIC_KEY));
-        		
-        		 
-                 fd.formName = formInfo.get(FileUtils.TITLE);
-                 fd.submissionUri = formInfo.get(FileUtils.SUBMISSIONURI);
-                 fd.formPath = dl.getFile().getAbsolutePath();
-                 //form.id = formInfo.get(FileUtils.FORMID);	// Update the formID with the actual value in the form (should be the same)
-                 
-                Collect.getInstance().getContentResolver().insert(FormsColumns.CONTENT_URI, v);
-               
-                 
-        	 } catch (Throwable e) {
-           		 mfResponse.isError = true;
-           		 Log.e("ManageForm", e.getMessage());
-        		 mfResponse.statusMsg = "Unable to insert form "  + form.url + " into form database.";
-      
-        		 return mfResponse;
-        	 }
-            	 
-    	} else {
-    		mfResponse.statusMsg = "Form: " + form.name + " already downloaded";
-    	}
-         
-         mfResponse.isError = false;
-         mfResponse.formPath = fd.formPath;
-         return mfResponse;
-    }
     
     /*
      * Delete any forms not in the passed in HashMap unless there is an incomplete instance
@@ -296,7 +221,7 @@ public class ManageForm {
 	 *   			Not stored
 	 *    
 	 */
-    public ManageFormResponse insertInstance(TaskAssignment ta, long assignmentId) {
+    public ManageFormResponse insertInstance(TaskAssignment ta, long assignmentId, String source) {
 
         String formId = ta.task.form_id;
         int formVersion = ta.task.form_version;
@@ -307,7 +232,7 @@ public class ManageForm {
         
         ManageFormResponse mfResponse = new ManageFormResponse();
         
-    	ManageFormDetails fd = getFormDetails(formId, formVersionString);    // Get the form details
+    	ManageFormDetails fd = getFormDetails(formId, formVersionString, source);    // Get the form details
 		
     	if(fd.exists) {
          

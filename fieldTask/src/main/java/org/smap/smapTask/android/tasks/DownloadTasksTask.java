@@ -505,7 +505,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	                		
 	          	  			// Add instance data
 	          	  			ManageForm mf = new ManageForm();
-	          	  			ManageFormResponse mfr = mf.insertInstance(ta, assignment.assignment_id);
+	          	  			ManageFormResponse mfr = mf.insertInstance(ta, assignment.assignment_id, source);
 	          	  			if(!mfr.isError) {
 	          	  				results.put(ta.task.title, "Created");
 	          	  			} else {
@@ -552,8 +552,10 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
     		// Create an array of ODK form details
         	for(FormLocator form : forms) {
         		String formVersionString = String.valueOf(form.version);
-        		ManageFormDetails mfd = mf.getFormDetails(form.ident, formVersionString);    // Get the form details
+        		ManageFormDetails mfd = mf.getFormDetails(form.ident, formVersionString, source);    // Get the form details
+                Log.i("DownloadTasksTask", "+++ Form: " + form.ident + ":" + formVersionString);
         		if(!mfd.exists) {
+                    Log.i("DownloadTasksTask", "+++ Form does not exist: " + form.ident + ":" + formVersionString);
         			form.url = serverUrl + "/formXML?key=" + form.ident;	// Set the form url from the server address and form ident
         			if(form.hasManifest) {
         				form.manifestUrl = serverUrl + "/xformsManifest?key=" + form.ident;
@@ -562,7 +564,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         			FormDetails fd = new FormDetails(form.name, form.url, form.manifestUrl, form.ident, formVersionString);
         			toDownload.add(fd);
         		}
-        		
+
         		// Store a hashmap of new forms so we can delete existing forms not in the list
         		String entryHash = form.ident + "_v_" + form.version;
         		formMap.put(entryHash, entryHash);
