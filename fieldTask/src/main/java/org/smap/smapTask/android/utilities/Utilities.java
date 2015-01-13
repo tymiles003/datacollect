@@ -139,6 +139,7 @@ public class Utilities {
                 InstanceColumns.T_SCHED_START,
                 InstanceColumns.T_ADDRESS,
                 InstanceColumns.FORM_PATH,
+                InstanceColumns.JR_VERSION,
                 InstanceColumns.INSTANCE_FILE_PATH,
                 InstanceColumns.SCHED_LON,
                 InstanceColumns.SCHED_LAT,
@@ -186,6 +187,7 @@ public class Utilities {
                 entry.taskStart = c.getLong(c.getColumnIndex(InstanceColumns.T_SCHED_START));
                 entry.taskAddress = c.getString(c.getColumnIndex(InstanceColumns.T_ADDRESS));
                 entry.taskForm = c.getString(c.getColumnIndex(InstanceColumns.FORM_PATH));
+                entry.formVersion = c.getInt(c.getColumnIndex(InstanceColumns.JR_VERSION));
                 entry.instancePath = c.getString(c.getColumnIndex(InstanceColumns.INSTANCE_FILE_PATH));
                 entry.id = c.getLong(c.getColumnIndex(InstanceColumns._ID));
                 entry.schedLon = c.getDouble(c.getColumnIndex(InstanceColumns.SCHED_LON));
