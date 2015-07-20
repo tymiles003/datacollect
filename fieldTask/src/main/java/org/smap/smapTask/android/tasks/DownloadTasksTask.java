@@ -180,8 +180,8 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	        try {
 
                 /*
-                 * Delete tasks which were cancelled on the server and then updated on
-                 * the phone during the last refresh
+                 * Delete tasks which were cancelled on the phone and and
+                 *  have been synchronised with the server
                  */
                 count = Utilities.deleteTasksWithStatus(Utilities.STATUS_T_CANCELLED);
                 if(count > 0) {
@@ -239,7 +239,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                 }
 
                 // De-serialise
-                gson = new GsonBuilder().setDateFormat("dd/MM/yyyy hh:mm").create();
+                gson = new GsonBuilder().setDateFormat("yyyy-MM-dd hh:mm").create();
                 Reader isReader = new InputStreamReader(is);
                 tr = gson.fromJson(isReader, TaskResponse.class);
                 Log.i(getClass().getSimpleName(), "Message:" + tr.message);
@@ -497,11 +497,18 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	          	  		// New task
 	          	  		if(assignment.assignment_status.equals(Utilities.STATUS_T_ACCEPTED)) {
 
-	          	  			// Ensure the form and instance data are available on the phone
-	          	  			// First make sure the initial_data url is sensible (ie null or a URL)
-	          	  			if(ta.task.initial_data != null && !ta.task.initial_data.startsWith("http")) {
-	          	  				ta.task.initial_data = null;	
-	          	  			}
+                            // Ensure the instance data is available on the phone
+                            // Use update_id in preference to initial_data url
+                            if(ta.task.update_id != null) {
+                                ta.task.initial_data = serverUrl + "/instanceXML/" +
+                                        ta.task.form_id + "/0?key=instanceid&keyval=" + ta.task.update_id;
+                                Log.i(getClass().getSimpleName(), "Instance url: " + ta.task.initial_data);
+                            } else {
+                                // Make sure the initial_data url is sensible (ie null or a URL
+                                if (ta.task.initial_data != null && !ta.task.initial_data.startsWith("http")) {
+                                    ta.task.initial_data = null;
+                                }
+                            }
 	                		
 	          	  			// Add instance data
 	          	  			ManageForm mf = new ManageForm();
