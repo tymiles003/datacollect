@@ -14,12 +14,37 @@
 
 package org.smap.smapTask.android.utilities;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.zip.GZIPInputStream;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+import com.google.gson.JsonSyntaxException;
 
 import org.odk.collect.android.application.Collect;
+import org.odk.collect.android.exception.TaskCancelledException;
 import org.odk.collect.android.preferences.PreferencesActivity;
 import org.odk.collect.android.provider.InstanceProviderAPI.InstanceColumns;
+import org.odk.collect.android.tasks.DownloadFormsTask;
+import org.odk.collect.android.utilities.FileUtils;
 import org.odk.collect.android.utilities.STFileUtils;
 
 import android.content.ContentResolver;
@@ -28,11 +53,21 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
+import org.odk.collect.android.utilities.WebUtils;
+import org.opendatakit.httpclientandroidlib.Header;
+import org.opendatakit.httpclientandroidlib.HttpEntity;
+import org.opendatakit.httpclientandroidlib.HttpResponse;
+import org.opendatakit.httpclientandroidlib.HttpStatus;
+import org.opendatakit.httpclientandroidlib.client.HttpClient;
+import org.opendatakit.httpclientandroidlib.client.methods.HttpGet;
+import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
 import org.smap.smapTask.android.loaders.PointEntry;
 import org.smap.smapTask.android.loaders.TaskEntry;
 import org.smap.smapTask.android.provider.TraceProviderAPI.TraceColumns;
 
+import org.smap.smapTask.android.taskModel.InstanceXML;
 public class Utilities {
 
     // Valid values for task status
@@ -127,6 +162,152 @@ public class Utilities {
         }
 
         return entry;
+    }
+
+    /**
+     * Common routine to download an instance XML document including any attachments
+     *
+     * Smap Specific
+     *
+     * @param file        the final file
+     * @param downloadUrl the url to get the contents from.
+     * @throws Exception
+     */
+    public static void downloadInstanceFile(File file, String downloadUrl, String serverUrl, String formId) throws Exception {
+
+        String t = "DownloadInstanceFile";
+
+        URI uri;
+        try {
+            // assume the downloadUrl is escaped properly
+            URL url = new URL(downloadUrl);
+            uri = url.toURI();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            throw e;
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            throw e;
+        }
+
+        // get shared HttpContext so that authentication and cookies are retained.
+        HttpContext localContext = Collect.getInstance().getHttpContext();
+
+        HttpClient httpclient = WebUtils.createHttpClient(WebUtils.CONNECTION_TIMEOUT);
+
+        // Add credentials
+        SharedPreferences settings =
+                PreferenceManager.getDefaultSharedPreferences(Collect.getInstance());
+
+        String username = settings.getString(PreferencesActivity.KEY_USERNAME, null);
+        String password = settings.getString(PreferencesActivity.KEY_PASSWORD, null);
+
+        if(username != null && password != null) {
+            Uri u = Uri.parse(downloadUrl);
+            WebUtils.addCredentials(username, password, u.getHost());
+        }
+
+
+        // set up request...
+        HttpGet req = WebUtils.createOpenRosaHttpGet(uri);
+        req.addHeader(WebUtils.ACCEPT_ENCODING_HEADER, WebUtils.GZIP_CONTENT_ENCODING);
+
+        HttpResponse response;
+        try {
+            response = httpclient.execute(req, localContext);
+            int statusCode = response.getStatusLine().getStatusCode();
+
+            if (statusCode != HttpStatus.SC_OK) {
+                WebUtils.discardEntityBytes(response);
+                if (statusCode == HttpStatus.SC_UNAUTHORIZED) {
+                    // clear the cookies -- should not be necessary?
+                    Collect.getInstance().getCookieStore().clear();
+                }
+                String errMsg =
+                        Collect.getInstance().getString(org.odk.collect.android.R.string.file_fetch_failed, downloadUrl,
+                                response.getStatusLine().getReasonPhrase(), statusCode);
+                Log.e(t, errMsg);
+                throw new Exception(errMsg);
+            }
+
+            // Create instance object
+            Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd hh:mm").create();
+
+            InputStream is = null;
+            OutputStream os = null;
+            try {
+                HttpEntity entity = response.getEntity();
+                is = entity.getContent();
+                Header contentEncoding = entity.getContentEncoding();
+                if ( contentEncoding != null && contentEncoding.getValue().equalsIgnoreCase(WebUtils.GZIP_CONTENT_ENCODING) ) {
+                    is = new GZIPInputStream(is);
+                }
+
+                Reader isReader = new InputStreamReader(is);
+                InstanceXML instance = gson.fromJson(isReader, InstanceXML.class);
+
+                os = new FileOutputStream(file);
+                byte buf[] = new byte[4096];
+                int len;
+                os.write(instance.instanceStrToEdit.getBytes());
+                //while ((len = is.read(buf)) > 0) {
+                //    os.write(buf, 0, len);
+                //}
+                os.flush();
+
+                if(instance.files.size() > 0) {
+                    for(String media : instance.files) {
+                        DownloadFormsTask dft = new DownloadFormsTask();
+                        String mediaUrl = serverUrl + "/attachments/" +
+                                formId + "/" + media;
+                        String mediaPath = file.getParent() + "/" + media;
+                        try {
+                            File f = new File(mediaPath);
+                            dft.downloadFile(f, mediaUrl);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+            } finally {
+                if (os != null) {
+                    try {
+                        os.close();
+                    } catch (Exception e) {
+                    }
+                }
+                if (is != null) {
+                    try {
+                        // ensure stream is consumed...
+                        final long count = 1024L;
+                        while (is.skip(count) == count)
+                            ;
+                    } catch (Exception e) {
+                        // no-op
+                    }
+                    try {
+                        is.close();
+                    } catch (Exception e) {
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(t, e.toString());
+            // silently retry unless this is the last attempt,
+            // in which case we rethrow the exception.
+
+            FileUtils.deleteAndReport(file);
+
+
+            throw e;
+        }
+
+
+
+
+
+
     }
 
     public static void getTasks(ArrayList<TaskEntry> tasks, boolean all_non_synchronised) {

@@ -17,7 +17,11 @@ package org.smap.smapTask.android.tasks;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.Type;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -59,6 +63,12 @@ import org.odk.collect.android.tasks.InstanceUploaderTask.Outcome;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import com.google.gson.JsonSyntaxException;
 
 import android.content.ContentResolver;
@@ -116,8 +126,30 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 		}
 	}
 
-	
-	@Override
+    /*
+     * Add a custom date parser as old versions of the server will send an invalid date format
+     */
+    public class DateDeserializer implements JsonDeserializer<Date> {
+        public Date deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
+            SimpleDateFormat sdfOld = new SimpleDateFormat("dd/MM/yyyy hh:mm");
+            SimpleDateFormat sdfNew = new SimpleDateFormat("yyyy-MM-dd hh:mm");
+            Date date = null;
+            try {
+                try {
+                    date = sdfNew.parse(json.getAsJsonPrimitive().getAsString());
+                } catch (Exception e) {
+                    date = sdfOld.parse(json.getAsJsonPrimitive().getAsString());
+                }
+                return date;
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            return date;
+        }
+    }
+
+
+    @Override
     protected HashMap<String, String> doInBackground(Void... values) {
 	
 		results = new HashMap<String,String>();
@@ -239,7 +271,10 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                 }
 
                 // De-serialise
-                gson = new GsonBuilder().setDateFormat("yyyy-MM-dd hh:mm").create();
+                //gson = new GsonBuilder().setDateFormat("dd/MM/yyyy hh:mm").create();    // old date format replace with next line or solution that handles both
+                //gson = new GsonBuilder().setDateFormat("yyyy-MM-dd hh:mm").create();
+                GsonBuilder gb = new GsonBuilder().registerTypeAdapter(Date.class, new DateDeserializer());
+                gson = gb.create();
                 Reader isReader = new InputStreamReader(is);
                 tr = gson.fromJson(isReader, TaskResponse.class);
                 Log.i(getClass().getSimpleName(), "Message:" + tr.message);
@@ -500,8 +535,10 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                             // Ensure the instance data is available on the phone
                             // Use update_id in preference to initial_data url
                             if(ta.task.update_id != null) {
-                                ta.task.initial_data = serverUrl + "/instanceXML/" +
-                                        ta.task.form_id + "/0?key=instanceid&keyval=" + ta.task.update_id;
+                                //ta.task.initial_data = serverUrl + "/instanceXML/" +
+                                //        ta.task.form_id + "/0?key=instanceid&keyval=" + ta.task.update_id;
+                                ta.task.initial_data = serverUrl + "/webForm/instance/" +
+                                        ta.task.form_id + "/" + ta.task.update_id;
                                 Log.i(getClass().getSimpleName(), "Instance url: " + ta.task.initial_data);
                             } else {
                                 // Make sure the initial_data url is sensible (ie null or a URL
@@ -512,7 +549,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	                		
 	          	  			// Add instance data
 	          	  			ManageForm mf = new ManageForm();
-	          	  			ManageFormResponse mfr = mf.insertInstance(ta, assignment.assignment_id, source);
+	          	  			ManageFormResponse mfr = mf.insertInstance(ta, assignment.assignment_id, source, serverUrl);
 	          	  			if(!mfr.isError) {
 	          	  				results.put(ta.task.title, "Created");
 	          	  			} else {

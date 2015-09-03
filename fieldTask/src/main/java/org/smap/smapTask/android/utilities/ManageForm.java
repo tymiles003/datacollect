@@ -221,7 +221,7 @@ public class ManageForm {
 	 *   			Not stored
 	 *    
 	 */
-    public ManageFormResponse insertInstance(TaskAssignment ta, long assignmentId, String source) {
+    public ManageFormResponse insertInstance(TaskAssignment ta, long assignmentId, String source, String serverUrl) {
 
         String formId = ta.task.form_id;
         int formVersion = ta.task.form_version;
@@ -239,10 +239,18 @@ public class ManageForm {
 	  		 // Get the instance path
 	         instancePath = getInstancePath(fd.formPath, assignmentId);
 	         if(instancePath != null && initialDataURL != null) {
-	        	 File f = null;
-	
-	             f = new File(instancePath);
-	             DownloadFormsTask dft = new DownloadFormsTask();
+	        	 File f = new File(instancePath);
+                 try {
+                     Utilities.downloadInstanceFile(f, initialDataURL, serverUrl, formId);
+                 } catch (Exception e) {
+                     e.printStackTrace();
+                     mfResponse.isError = true;
+                     mfResponse.statusMsg = "Unable to download initial data from " + initialDataURL + " into file: "
+                             + instancePath + " " + e.getMessage();
+                     return mfResponse;
+                 }
+                 /*
+                 DownloadFormsTask dft = new DownloadFormsTask();
 	             try {
 	             dft.downloadFile(f, initialDataURL);
 	             } catch (Exception e) {
@@ -251,6 +259,7 @@ public class ManageForm {
 	            	 mfResponse.statusMsg = "Unable to download initial data from " + initialDataURL + " into file: " + instancePath;
 	         		 return mfResponse;
 	             }
+	             */
 	         }
 
             if(ta.task.title == null) {

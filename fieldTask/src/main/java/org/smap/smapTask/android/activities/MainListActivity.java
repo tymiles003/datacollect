@@ -301,7 +301,9 @@ public class MainListActivity extends FragmentActivity  {
          *  Using less accurate sources is not feasible to collect a gpx trail
          *  However it may be useful if we were just recording location of survey
          */
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Constants.GPS_INTERVAL, Constants.GPS_DISTANCE, locationListenerPendingIntent);
+        if (locationManager.getAllProviders().contains(LocationManager.GPS_PROVIDER)) {     // Fix issue with errors on devices without GPS
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Constants.GPS_INTERVAL, Constants.GPS_DISTANCE, locationListenerPendingIntent);
+        }
     }
 
     /**
@@ -309,11 +311,13 @@ public class MainListActivity extends FragmentActivity  {
      */
     protected void disableLocationUpdates() {
 
-        try {
+
+    try {
             locationManager.removeUpdates(locationListenerPendingIntent);
-        } catch (Exception e) {
+    } catch (Exception e) {
             // Ignore failures, we are exiting after all
-        }
+    }
+
 
     }
 

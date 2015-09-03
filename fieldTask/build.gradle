@@ -6,8 +6,10 @@ android {
 
     defaultConfig {
         applicationId "org.smap.smapTask.android"
-        minSdkVersion 8
-        targetSdkVersion 8
+        minSdkVersion 9
+        targetSdkVersion 9
+        versionCode 1888
+        versionName "3.9"
     }
 
     buildTypes {
@@ -33,8 +35,8 @@ android {
 
     productFlavors {
         standard {
-            applicationId "org.smap.smapTask.android.standard"
-            versionName "3.8-standard"
+            applicationId "org.smap.smapTask.android"
+            versionName "3.9"
         }
         plan {
             applicationId "org.smap.smapTask.android.plan"
