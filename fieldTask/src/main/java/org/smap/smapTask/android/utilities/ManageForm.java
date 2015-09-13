@@ -221,7 +221,7 @@ public class ManageForm {
 	 *   			Not stored
 	 *    
 	 */
-    public ManageFormResponse insertInstance(TaskAssignment ta, long assignmentId, String source, String serverUrl) {
+    public ManageFormResponse insertInstance(TaskAssignment ta, long assignmentId, String source, String serverUrl, int version) {
 
         String formId = ta.task.form_id;
         int formVersion = ta.task.form_version;
@@ -241,7 +241,7 @@ public class ManageForm {
 	         if(instancePath != null && initialDataURL != null) {
 	        	 File f = new File(instancePath);
                  try {
-                     Utilities.downloadInstanceFile(f, initialDataURL, serverUrl, formId);
+                     Utilities.downloadInstanceFile(f, initialDataURL, serverUrl, formId, version);
                  } catch (Exception e) {
                      e.printStackTrace();
                      mfResponse.isError = true;

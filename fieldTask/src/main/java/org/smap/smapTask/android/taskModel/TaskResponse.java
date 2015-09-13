@@ -25,6 +25,7 @@ public class TaskResponse {
 
 	public String message;
 	public String status;
+    public int version;     // Manage progressive enhancement of this service by incrementing version
 	public String deviceId;
 	@SerializedName("data")
 	public List<TaskAssignment> taskAssignments;

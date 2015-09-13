@@ -535,10 +535,13 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                             // Ensure the instance data is available on the phone
                             // Use update_id in preference to initial_data url
                             if(ta.task.update_id != null) {
-                                //ta.task.initial_data = serverUrl + "/instanceXML/" +
-                                //        ta.task.form_id + "/0?key=instanceid&keyval=" + ta.task.update_id;
-                                ta.task.initial_data = serverUrl + "/webForm/instance/" +
-                                        ta.task.form_id + "/" + ta.task.update_id;
+                                if(tr.version < 1) {
+                                    ta.task.initial_data = serverUrl + "/instanceXML/" +
+                                            ta.task.form_id + "/0?key=instanceid&keyval=" + ta.task.update_id;
+                                } else {
+                                    ta.task.initial_data = serverUrl + "/webForm/instance/" +
+                                            ta.task.form_id + "/" + ta.task.update_id;
+                                }
                                 Log.i(getClass().getSimpleName(), "Instance url: " + ta.task.initial_data);
                             } else {
                                 // Make sure the initial_data url is sensible (ie null or a URL
@@ -549,7 +552,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	                		
 	          	  			// Add instance data
 	          	  			ManageForm mf = new ManageForm();
-	          	  			ManageFormResponse mfr = mf.insertInstance(ta, assignment.assignment_id, source, serverUrl);
+	          	  			ManageFormResponse mfr = mf.insertInstance(ta, assignment.assignment_id, source, serverUrl, tr.version);
 	          	  			if(!mfr.isError) {
 	          	  				results.put(ta.task.title, "Created");
 	          	  			} else {

@@ -173,7 +173,7 @@ public class Utilities {
      * @param downloadUrl the url to get the contents from.
      * @throws Exception
      */
-    public static void downloadInstanceFile(File file, String downloadUrl, String serverUrl, String formId) throws Exception {
+    public static void downloadInstanceFile(File file, String downloadUrl, String serverUrl, String formId, int version) throws Exception {
 
         String t = "DownloadInstanceFile";
 
@@ -244,31 +244,39 @@ public class Utilities {
                 }
 
                 Reader isReader = new InputStreamReader(is);
-                InstanceXML instance = gson.fromJson(isReader, InstanceXML.class);
 
                 os = new FileOutputStream(file);
                 byte buf[] = new byte[4096];
                 int len;
-                os.write(instance.instanceStrToEdit.getBytes());
-                //while ((len = is.read(buf)) > 0) {
-                //    os.write(buf, 0, len);
-                //}
-                os.flush();
 
-                if(instance.files.size() > 0) {
-                    for(String media : instance.files) {
-                        DownloadFormsTask dft = new DownloadFormsTask();
-                        String mediaUrl = serverUrl + "/attachments/" +
-                                formId + "/" + media;
-                        String mediaPath = file.getParent() + "/" + media;
-                        try {
-                            File f = new File(mediaPath);
-                            dft.downloadFile(f, mediaUrl);
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                if(version < 1) {
+                    while ((len = is.read(buf)) > 0) {
+                        os.write(buf, 0, len);
+                    }
+                } else {
+                    InstanceXML instance = gson.fromJson(isReader, InstanceXML.class);
+
+                    os.write(instance.instanceStrToEdit.getBytes());
+
+                    if(instance.files != null && instance.files.size() > 0) {
+                        for(String media : instance.files) {
+                            DownloadFormsTask dft = new DownloadFormsTask();
+                            String mediaUrl = serverUrl + "/attachments/" +
+                                    formId + "/" + media;
+                            String mediaPath = file.getParent() + "/" + media;
+                            try {
+                                File f = new File(mediaPath);
+                                dft.downloadFile(f, mediaUrl);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 }
+
+                os.flush();
+
+
 
             } finally {
                 if (os != null) {
