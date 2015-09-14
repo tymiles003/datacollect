@@ -511,6 +511,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	private void addAndUpdateEntries() throws Exception {
 
     	if(tr.taskAssignments != null) {
+            int count = 1;
         	for(TaskAssignment ta : tr.taskAssignments) {
 
                 if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
@@ -555,7 +556,11 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	          	  			ManageFormResponse mfr = mf.insertInstance(ta, assignment.assignment_id, source, serverUrl, tr.version);
 	          	  			if(!mfr.isError) {
 	          	  				results.put(ta.task.title, "Created");
+                                publishProgress(ta.task.title, Integer.valueOf(count).toString(), Integer.valueOf(tr.taskAssignments.size())
+                                        .toString());
 	          	  			} else {
+                                publishProgress(ta.task.title + " : Failed", Integer.valueOf(count).toString(), Integer.valueOf(tr.taskAssignments.size())
+                                        .toString());
 	          	  				results.put(ta.task.title, "Creation failed: " + mfr.statusMsg );
 	          	  			}
 
