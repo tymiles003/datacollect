@@ -304,6 +304,7 @@ public class ManageForm {
         values.put(InstanceColumns.T_TITLE, ta.task.title);
         values.put(InstanceColumns.T_ASS_ID, ta.assignment.assignment_id);
         values.put(InstanceColumns.T_TASK_STATUS, ta.assignment.assignment_status);
+		values.put(InstanceColumns.T_REPEAT, ta.task.repeat ? 1 : 0);
         if(ta.task.scheduled_at != null) {
             values.put(InstanceColumns.T_SCHED_START, ta.task.scheduled_at.getTime());
         }
@@ -342,7 +343,7 @@ public class ManageForm {
      *  formPath:   Used to obtain the filename
      *  assignment_id:	    Used to guarantee uniqueness when multiple tasks for the same form are assigned
      */
-    private String getInstancePath(String formPath, long assignmentId) {
+    public String getInstancePath(String formPath, long assignmentId) {
         String instancePath = null;
         
         if(formPath != null) {

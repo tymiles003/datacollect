@@ -115,7 +115,7 @@ public class MainTabsActivity extends TabActivity implements
         
 	    setContentView(R.layout.main_tabs);
 
-	    Resources res = getResources(); // Resource object to get Drawables
+	    Resources res = getResources();  // Resource object to get Drawables
 	    TabHost tabHost = getTabHost();  // The activity TabHost
 	    TabHost.TabSpec spec;  
 	    Intent intent;  

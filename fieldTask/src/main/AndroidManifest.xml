@@ -232,6 +232,10 @@
             android:name="org.odk.collect.android.activities.DrawActivity"
             android:label="@string/app_name" />
 
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyA9C_8FYpFfBansLdEqXl1JU2Mq-M4Bhhw"/>
+
     </application>
 
 </manifest>

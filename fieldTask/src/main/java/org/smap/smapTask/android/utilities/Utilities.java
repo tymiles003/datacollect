@@ -16,6 +16,7 @@ package org.smap.smapTask.android.utilities;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -40,8 +41,10 @@ import com.google.gson.JsonSerializer;
 import com.google.gson.JsonSyntaxException;
 
 import org.odk.collect.android.application.Collect;
+import org.odk.collect.android.database.TaskAssignment;
 import org.odk.collect.android.exception.TaskCancelledException;
 import org.odk.collect.android.preferences.PreferencesActivity;
+import org.odk.collect.android.provider.InstanceProviderAPI;
 import org.odk.collect.android.provider.InstanceProviderAPI.InstanceColumns;
 import org.odk.collect.android.tasks.DownloadFormsTask;
 import org.odk.collect.android.utilities.FileUtils;
@@ -96,7 +99,7 @@ public class Utilities {
 		return source;
 	}
 
-    public static TaskEntry getTaskWithId(long id) {
+    public static TaskEntry getTaskWithIdOrPath(long id, String instancePath) {
 
         TaskEntry entry = null;
 
@@ -108,6 +111,7 @@ public class Utilities {
                 InstanceColumns.T_SCHED_START,
                 InstanceColumns.T_ADDRESS,
                 InstanceColumns.FORM_PATH,
+                InstanceColumns.JR_FORM_ID,
                 InstanceColumns.INSTANCE_FILE_PATH,
                 InstanceColumns.SCHED_LON,
                 InstanceColumns.SCHED_LAT,
@@ -121,6 +125,9 @@ public class Utilities {
         };
 
         String selectClause = InstanceColumns._ID + " = " + id;
+        if(instancePath != null) {
+            selectClause = InstanceColumns.INSTANCE_FILE_PATH + " = '" + instancePath + "'";
+        }
 
 
         final ContentResolver resolver = Collect.getInstance().getContentResolver();
@@ -134,13 +141,15 @@ public class Utilities {
             entry = new TaskEntry();
 
             entry.type = "task";
+            entry.id = c.getLong(c.getColumnIndex(InstanceColumns._ID));
             entry.name = c.getString(c.getColumnIndex(InstanceColumns.T_TITLE));
             entry.taskStatus = c.getString(c.getColumnIndex(InstanceColumns.T_TASK_STATUS));
+            entry.repeat = (c.getInt(c.getColumnIndex(InstanceColumns.T_REPEAT)) > 0);
             entry.taskStart = c.getLong(c.getColumnIndex(InstanceColumns.T_SCHED_START));
             entry.taskAddress = c.getString(c.getColumnIndex(InstanceColumns.T_ADDRESS));
             entry.taskForm = c.getString(c.getColumnIndex(InstanceColumns.FORM_PATH));
+            entry.jrFormId = c.getString(c.getColumnIndex(InstanceColumns.JR_FORM_ID));
             entry.instancePath = c.getString(c.getColumnIndex(InstanceColumns.INSTANCE_FILE_PATH));
-            entry.id = c.getLong(c.getColumnIndex(InstanceColumns._ID));
             entry.schedLon = c.getDouble(c.getColumnIndex(InstanceColumns.SCHED_LON));
             entry.schedLat = c.getDouble(c.getColumnIndex(InstanceColumns.SCHED_LAT));
             entry.actLon = c.getDouble(c.getColumnIndex(InstanceColumns.ACT_LON));
@@ -162,6 +171,36 @@ public class Utilities {
         }
 
         return entry;
+    }
+
+    public static void duplicateTask(String originalInstancePath, String newInstancePath, TaskEntry entry) {
+
+
+        try {
+
+            ContentValues values = new ContentValues();
+            values.put(InstanceColumns.T_TITLE, entry.name);
+            values.put(InstanceColumns.DISPLAY_NAME, entry.name);
+            values.put(InstanceColumns.T_TASK_STATUS, entry.taskStatus);
+            values.put(InstanceColumns.STATUS, entry.taskStatus);
+            values.put(InstanceColumns.T_REPEAT, false);                        // Duplicated task should not be a repeat
+            values.put(InstanceColumns.T_SCHED_START, entry.taskStart);
+            values.put(InstanceColumns.T_ADDRESS, entry.taskAddress);
+            values.put(InstanceColumns.FORM_PATH, entry.taskForm);
+            values.put(InstanceColumns.JR_FORM_ID, entry.jrFormId);
+            values.put(InstanceColumns.JR_VERSION, entry.formVersion);
+            values.put(InstanceColumns.INSTANCE_FILE_PATH, newInstancePath);    // Set the new path
+            values.put(InstanceColumns.SCHED_LON, entry.schedLon);
+            values.put(InstanceColumns.SCHED_LAT, entry.schedLat);
+
+            final ContentResolver resolver = Collect.getInstance().getContentResolver();
+            resolver.insert(InstanceColumns.CONTENT_URI, values);
+
+
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     /**
@@ -325,9 +364,11 @@ public class Utilities {
                 InstanceColumns._ID,
                 InstanceColumns.T_TITLE,
                 InstanceColumns.T_TASK_STATUS,
+                InstanceColumns.T_REPEAT,
                 InstanceColumns.T_SCHED_START,
                 InstanceColumns.T_ADDRESS,
                 InstanceColumns.FORM_PATH,
+                InstanceColumns.JR_FORM_ID,
                 InstanceColumns.JR_VERSION,
                 InstanceColumns.INSTANCE_FILE_PATH,
                 InstanceColumns.SCHED_LON,
@@ -373,9 +414,11 @@ public class Utilities {
                 entry.type = "task";
                 entry.name = c.getString(c.getColumnIndex(InstanceColumns.T_TITLE));
                 entry.taskStatus = c.getString(c.getColumnIndex(InstanceColumns.T_TASK_STATUS));
+                entry.repeat = (c.getInt(c.getColumnIndex(InstanceColumns.T_REPEAT)) > 0);
                 entry.taskStart = c.getLong(c.getColumnIndex(InstanceColumns.T_SCHED_START));
                 entry.taskAddress = c.getString(c.getColumnIndex(InstanceColumns.T_ADDRESS));
                 entry.taskForm = c.getString(c.getColumnIndex(InstanceColumns.FORM_PATH));
+                entry.jrFormId = c.getString(c.getColumnIndex(InstanceColumns.JR_FORM_ID));
                 entry.formVersion = c.getInt(c.getColumnIndex(InstanceColumns.JR_VERSION));
                 entry.instancePath = c.getString(c.getColumnIndex(InstanceColumns.INSTANCE_FILE_PATH));
                 entry.id = c.getLong(c.getColumnIndex(InstanceColumns._ID));
@@ -508,6 +551,27 @@ public class Utilities {
     }
 
     /*
+* Set the status for the provided assignment id
+*/
+    public static void updateParametersForAssignment(long assId, TaskAssignment ta) {
+
+        Uri dbUri =  InstanceColumns.CONTENT_URI;
+
+        String selectClause = InstanceColumns.T_ASS_ID + " = " + assId + " and "
+                + InstanceColumns.SOURCE + " = ?";
+
+
+        String [] selectArgs = {""};
+        selectArgs[0] = Utilities.getSource();
+
+        ContentValues values = new ContentValues();
+        values.put(InstanceColumns.T_REPEAT, ta.task.repeat ? 1 : 0);
+
+        Collect.getInstance().getContentResolver().update(dbUri, values, selectClause, selectArgs);
+
+    }
+
+    /*
      * Return true if the current task status allows it to be rejected
      */
     public static boolean canReject(String currentStatus) {
@@ -542,5 +606,26 @@ public class Utilities {
         return valid;
     }
 
+    /*
+     * Copy instance files to a new location
+     */
+    public static void copyInstanceFiles(String fromInstancePath, String toInstancePath) {
+        String fromFolderPath = fromInstancePath.substring(0, fromInstancePath.lastIndexOf('/'));   // InstancePaths are for the XML files
+        String toFolderPath = toInstancePath.substring(0, toInstancePath.lastIndexOf('/'));   // InstancePaths are for the XML files
+
+        File fromInstanceFolder = new File(fromFolderPath);
+        File toInstanceFolder = new File(toFolderPath);
+        toInstanceFolder.mkdir();
+        File[] instanceFiles = fromInstanceFolder.listFiles();
+        if (instanceFiles != null && instanceFiles.length > 0) {
+            for (File f : instanceFiles) {
+                try {
+                    org.apache.commons.io.FileUtils.moveFileToDirectory(f, toInstanceFolder, true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
 }

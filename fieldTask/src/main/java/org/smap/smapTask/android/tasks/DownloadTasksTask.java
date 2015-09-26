@@ -572,6 +572,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                             Utilities.setStatusForAssignment(assignment.assignment_id, assignment.assignment_status);
                             results.put(ta.task.title, assignment.assignment_status);
 	          	  		}
+                        Utilities.updateParametersForAssignment(assignment.assignment_id, ta);
 	          	  	}
 
         			

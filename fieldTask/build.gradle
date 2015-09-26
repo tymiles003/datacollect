@@ -14,7 +14,7 @@ android {
 
     buildTypes {
         release {
-            runProguard false
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
@@ -40,7 +40,7 @@ android {
         }
         plan {
             applicationId "org.smap.smapTask.android.plan"
-            versionName "3.8-plan"
+            versionName "3.9-plan"
         }
     }
 

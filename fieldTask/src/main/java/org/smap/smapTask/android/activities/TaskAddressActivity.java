@@ -64,7 +64,7 @@ public class TaskAddressActivity extends Activity implements OnClickListener {
         // Get the id of the selected list item
         Bundle bundle = getIntent().getExtras();
 
-        taskEntry = Utilities.getTaskWithId(bundle.getLong("id"));
+        taskEntry = Utilities.getTaskWithIdOrPath(bundle.getLong("id"), null);
 
     	try {
 

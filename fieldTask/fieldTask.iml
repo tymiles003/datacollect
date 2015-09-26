@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module external.linked.project.path="$MODULE_DIR$" external.root.project.path="$MODULE_DIR$/.." external.system.id="GRADLE" external.system.module.group="fieldTask3" external.system.module.version="unspecified" type="JAVA_MODULE" version="4">
+<module external.linked.project.id=":fieldTask" external.linked.project.path="$MODULE_DIR$" external.root.project.path="$MODULE_DIR$/.." external.system.id="GRADLE" external.system.module.group="fieldTask3" external.system.module.version="unspecified" type="JAVA_MODULE" version="4">
   <component name="FacetManager">
     <facet type="android-gradle" name="Android-Gradle">
       <configuration>
@@ -9,11 +9,15 @@
     <facet type="android" name="Android">
       <configuration>
         <option name="SELECTED_BUILD_VARIANT" value="standardDebug" />
+        <option name="SELECTED_TEST_ARTIFACT" value="_android_test_" />
         <option name="ASSEMBLE_TASK_NAME" value="assembleStandardDebug" />
         <option name="COMPILE_JAVA_TASK_NAME" value="compileStandardDebugSources" />
-        <option name="ASSEMBLE_TEST_TASK_NAME" value="assembleStandardDebugTest" />
-        <option name="SOURCE_GEN_TASK_NAME" value="generateStandardDebugSources" />
-        <option name="TEST_SOURCE_GEN_TASK_NAME" value="generateStandardDebugTestSources" />
+        <option name="ASSEMBLE_TEST_TASK_NAME" value="assembleStandardDebugAndroidTest" />
+        <option name="COMPILE_JAVA_TEST_TASK_NAME" value="compileStandardDebugAndroidTestSources" />
+        <afterSyncTasks>
+          <task>generateStandardDebugAndroidTestSources</task>
+          <task>generateStandardDebugSources</task>
+        </afterSyncTasks>
         <option name="ALLOW_USER_CONFIGURATION" value="false" />
         <option name="MANIFEST_FILE_RELATIVE_PATH" value="/src/main/AndroidManifest.xml" />
         <option name="RES_FOLDER_RELATIVE_PATH" value="/src/main/res" />
@@ -22,8 +26,9 @@
       </configuration>
     </facet>
   </component>
-  <component name="NewModuleRootManager" inherit-compiler-output="false">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_6" inherit-compiler-output="false">
     <output url="file://$MODULE_DIR$/build/intermediates/classes/standard/debug" />
+    <output-test url="file://$MODULE_DIR$/build/intermediates/classes/androidTest/standard/debug" />
     <exclude-output />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/build/generated/source/r/standard/debug" isTestSource="false" generated="true" />
@@ -31,7 +36,7 @@
       <sourceFolder url="file://$MODULE_DIR$/build/generated/source/buildConfig/standard/debug" isTestSource="false" generated="true" />
       <sourceFolder url="file://$MODULE_DIR$/build/generated/source/rs/standard/debug" isTestSource="false" generated="true" />
       <sourceFolder url="file://$MODULE_DIR$/build/generated/res/rs/standard/debug" type="java-resource" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/res/generated/standard/debug" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/res/resValues/standard/debug" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/standardDebug/res" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/standardDebug/resources" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/standardDebug/assets" type="java-resource" />
@@ -39,12 +44,12 @@
       <sourceFolder url="file://$MODULE_DIR$/src/standardDebug/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/standardDebug/jni" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/standardDebug/rs" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/r/test/standard/debug" isTestSource="true" generated="true" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/aidl/test/standard/debug" isTestSource="true" generated="true" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/buildConfig/test/standard/debug" isTestSource="true" generated="true" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/rs/test/standard/debug" isTestSource="true" generated="true" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/res/rs/test/standard/debug" type="java-test-resource" />
-      <sourceFolder url="file://$MODULE_DIR$/build/generated/res/generated/test/standard/debug" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/r/androidTest/standard/debug" isTestSource="true" generated="true" />
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/aidl/androidTest/standard/debug" isTestSource="true" generated="true" />
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/buildConfig/androidTest/standard/debug" isTestSource="true" generated="true" />
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/source/rs/androidTest/standard/debug" isTestSource="true" generated="true" />
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/res/rs/androidTest/standard/debug" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/build/generated/res/resValues/androidTest/standard/debug" type="java-test-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/standard/res" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/standard/resources" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/standard/assets" type="java-resource" />
@@ -119,6 +124,8 @@
     <orderEntry type="module" module-name="playservices" exported="" />
     <orderEntry type="module" module-name="MapboxAndroidSDK" exported="" />
     <orderEntry type="module" module-name="oDK14_lib" exported="" />
+    <orderEntry type="library" exported="" name="effects-Google Inc.:Google APIs:19" level="project" />
+    <orderEntry type="library" exported="" name="usb-Google Inc.:Google APIs:19" level="project" />
+    <orderEntry type="library" exported="" name="maps-Google Inc.:Google APIs:19" level="project" />
   </component>
 </module>
-

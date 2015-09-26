@@ -13,6 +13,7 @@ public class Task {
     public String update_id;
 	public String assignment_mode;
 	public Date scheduled_at;
+	public boolean repeat;			// Task can be completed multiple times
 	public String address;			// Key value pairs representing an unstructured address
 	public String status;
 }

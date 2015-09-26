@@ -50,6 +50,7 @@ import android.widget.ListView;
 import org.smap.smapTask.android.R;
 import org.smap.smapTask.android.receivers.LocationChangedReceiver;
 import org.smap.smapTask.android.utilities.Constants;
+import org.smap.smapTask.android.utilities.ManageForm;
 import org.smap.smapTask.android.utilities.Utilities;
 
 /**
@@ -188,6 +189,9 @@ public class MainListActivity extends FragmentActivity  {
 	    	
 	    	if(entry.type.equals("task")) {
 	    		String formPath = Collect.FORMS_PATH + entry.taskForm;
+				if(entry.repeat) {
+					entry.instancePath = duplicateInstance(formPath, entry.instancePath, entry);
+				}
 	    		completeTask(entry.instancePath, formPath, entry.id, entry.taskStatus);
 	    	} else {
 	    		Uri formUri = ContentUris.withAppendedId(FormsColumns.CONTENT_URI, entry.id);
@@ -195,6 +199,25 @@ public class MainListActivity extends FragmentActivity  {
 	    	}
 
 	    }
+
+		/*
+		 * Duplicate the instance
+		 * Call this if the instance repeats
+		 */
+		public String duplicateInstance(String formPath, String originalPath, TaskEntry entry) {
+			String newPath = null;
+
+			// 1. Get a new instance path
+			ManageForm mf = new ManageForm();
+			newPath = mf.getInstancePath(formPath, 0);
+
+			// 2. Duplicate the instance entry and get the new path
+			Utilities.duplicateTask(originalPath, newPath, entry);
+
+			// 3. Copy the instance files
+			Utilities.copyInstanceFiles(originalPath, newPath);
+			return newPath;
+		}
 	 
 		/*
 		 * The user has selected an option to edit / complete a task
