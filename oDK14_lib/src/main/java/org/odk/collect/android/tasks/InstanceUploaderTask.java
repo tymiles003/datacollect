@@ -564,7 +564,14 @@ public class InstanceUploaderTask extends AsyncTask<Long, Integer, InstanceUploa
 	                    	Uri u = Uri.parse(urlString);
 	                    	WebUtils.addCredentials(username, password, u.getHost());
 	                    }
-	                    
+
+                        // Add updateid if this is a non repeating task
+
+                        boolean repeat = (c.getInt(c.getColumnIndex(InstanceColumns.T_REPEAT)) > 0);
+                        String updateid = c.getString(c.getColumnIndex(InstanceColumns.T_UPDATEID));
+                        if(!repeat && updateid != null) {
+                            urlString = urlString + "/" + updateid;
+                        }
 	                    // Smap End
 	                }
 

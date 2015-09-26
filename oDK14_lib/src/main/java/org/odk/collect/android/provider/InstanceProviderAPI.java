@@ -81,6 +81,7 @@ public final class InstanceProviderAPI {
         public static final String T_ASS_ID = "tTaskId";            // Task Id
         public static final String T_TASK_STATUS = "tAssStatus";    // Assignment Status
         public static final String T_REPEAT = "tRepeat";            // Task can be completed multiple times
+        public static final String T_UPDATEID = "tRepeat";          // The unique identifier of the instance to be updated
         public static final String UUID = "uuid";
         // Smap End
 

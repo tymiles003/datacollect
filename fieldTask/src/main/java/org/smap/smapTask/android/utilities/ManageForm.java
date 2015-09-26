@@ -305,6 +305,7 @@ public class ManageForm {
         values.put(InstanceColumns.T_ASS_ID, ta.assignment.assignment_id);
         values.put(InstanceColumns.T_TASK_STATUS, ta.assignment.assignment_status);
 		values.put(InstanceColumns.T_REPEAT, ta.task.repeat ? 1 : 0);
+		values.put(InstanceColumns.T_UPDATEID, ta.task.update_id);
         if(ta.task.scheduled_at != null) {
             values.put(InstanceColumns.T_SCHED_START, ta.task.scheduled_at.getTime());
         }
