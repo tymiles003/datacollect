@@ -180,7 +180,7 @@ public class Utilities {
 
             ContentValues values = new ContentValues();
             values.put(InstanceColumns.T_TITLE, entry.name);
-            values.put(InstanceColumns.DISPLAY_NAME, entry.name);
+            values.put(InstanceColumns.DISPLAY_NAME, entry.displayName);
             values.put(InstanceColumns.T_TASK_STATUS, entry.taskStatus);
             values.put(InstanceColumns.STATUS, entry.taskStatus);
             values.put(InstanceColumns.T_REPEAT, false);                        // Duplicated task should not be a repeat
@@ -363,6 +363,7 @@ public class Utilities {
         String [] proj = {
                 InstanceColumns._ID,
                 InstanceColumns.T_TITLE,
+                InstanceColumns.DISPLAY_NAME,
                 InstanceColumns.T_TASK_STATUS,
                 InstanceColumns.T_REPEAT,
                 InstanceColumns.T_SCHED_START,
@@ -413,6 +414,7 @@ public class Utilities {
 
                 entry.type = "task";
                 entry.name = c.getString(c.getColumnIndex(InstanceColumns.T_TITLE));
+                entry.displayName = c.getString(c.getColumnIndex(InstanceColumns.DISPLAY_NAME));
                 entry.taskStatus = c.getString(c.getColumnIndex(InstanceColumns.T_TASK_STATUS));
                 entry.repeat = (c.getInt(c.getColumnIndex(InstanceColumns.T_REPEAT)) > 0);
                 entry.taskStart = c.getLong(c.getColumnIndex(InstanceColumns.T_SCHED_START));
@@ -620,7 +622,16 @@ public class Utilities {
         if (instanceFiles != null && instanceFiles.length > 0) {
             for (File f : instanceFiles) {
                 try {
-                    org.apache.commons.io.FileUtils.moveFileToDirectory(f, toInstanceFolder, true);
+                    String fileName = f.getName();
+                    if(fileName.endsWith("xml")) {
+                        // Copy xml file to new instance path
+                        File toFile = new File(toInstancePath);
+                        org.apache.commons.io.FileUtils.copyFile(f, toFile, false);
+                    } else {
+                        // Copy attachments to new folder
+                        org.apache.commons.io.FileUtils.copyFileToDirectory(f, toInstanceFolder, false);
+                    }
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
