@@ -26,6 +26,7 @@ public class TaskEntry {
     public String isSynced;
     public long assId;
     public String uuid;
+    public String source;
 
 
 

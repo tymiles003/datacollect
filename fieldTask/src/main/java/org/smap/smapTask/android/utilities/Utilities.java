@@ -192,6 +192,7 @@ public class Utilities {
             values.put(InstanceColumns.INSTANCE_FILE_PATH, newInstancePath);    // Set the new path
             values.put(InstanceColumns.SCHED_LON, entry.schedLon);
             values.put(InstanceColumns.SCHED_LAT, entry.schedLat);
+            values.put(InstanceColumns.SOURCE, entry.source);
 
             final ContentResolver resolver = Collect.getInstance().getContentResolver();
             resolver.insert(InstanceColumns.CONTENT_URI, values);
@@ -379,7 +380,8 @@ public class Utilities {
                 InstanceColumns.T_ACT_FINISH,
                 InstanceColumns.T_IS_SYNC,
                 InstanceColumns.T_ASS_ID,
-                InstanceColumns.UUID
+                InstanceColumns.UUID,
+                InstanceColumns.SOURCE
 
         };
 
@@ -432,6 +434,7 @@ public class Utilities {
                 entry.isSynced = c.getString(c.getColumnIndex(InstanceColumns.T_IS_SYNC));
                 entry.assId = c.getLong(c.getColumnIndex(InstanceColumns.T_ASS_ID));
                 entry.uuid = c.getString(c.getColumnIndex(InstanceColumns.UUID));
+                entry.source = c.getString(c.getColumnIndex(InstanceColumns.SOURCE));
 
                 tasks.add(entry);
                 c.moveToNext();

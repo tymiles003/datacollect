@@ -64,6 +64,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     Marker userLocationMarker = null;
     Icon userLocationIcon = null;
     Icon accepted = null;
+    Icon repeat = null;
     Icon rejected = null;
     Icon complete = null;
     Icon submitted = null;
@@ -81,6 +82,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         // Create icons
         userLocationIcon = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_userlocation)));
         accepted = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_open)));
+        repeat = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_repeat)));
         rejected = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_reject)));
         complete = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_done)));
         submitted = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_submitted)));
@@ -231,7 +233,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
                 LatLng ll = getTaskCoords(t);
                 if (ll != null) {
                     Marker m = new Marker(mv, t.name, t.taskAddress, ll);
-                    m.setIcon(getIcon(t.taskStatus));
+                    m.setIcon(getIcon(t.taskStatus, t.repeat));
                     markers.add(m);
                 }
             }
@@ -422,12 +424,16 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     /*
      * Get the colour to represent the passed in task status
      */
-    private Icon getIcon(String status) {
+    private Icon getIcon(String status, boolean isRepeat) {
 
         if(status.equals(Utilities.STATUS_T_REJECTED) || status.equals(Utilities.STATUS_T_CANCELLED)) {
             return rejected;
         } else if(status.equals(Utilities.STATUS_T_ACCEPTED)) {
-            return accepted;
+            if(isRepeat) {
+                return repeat;
+            } else {
+                return accepted;
+            }
         } else if(status.equals(Utilities.STATUS_T_COMPLETE)) {
             return complete;
         } else if(status.equals(Utilities.STATUS_T_SUBMITTED)) {
