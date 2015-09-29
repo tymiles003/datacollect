@@ -257,7 +257,11 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
 
                     // Smap Start
                     values.put(InstanceColumns.SOURCE, source);
-                    values.put(InstanceColumns.T_TITLE, mInstanceName);
+                    if (mInstanceName != null) {
+                        values.put(InstanceColumns.T_TITLE, mInstanceName);
+                    } else {
+                        values.put(InstanceColumns.T_TITLE, formname);
+                    }
 
                     // Smap End
 
