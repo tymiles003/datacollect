@@ -161,6 +161,11 @@ public class InstanceUploaderTask extends AsyncTask<Long, Integer, InstanceUploa
                                 // ... and possibly to use https instead.
                                 uriRemap.put(u, uNew);
                                 u = uNew;
+                                // Start Smap
+                                String deviceId = new PropertyManager(Collect.getInstance().getApplicationContext())
+                                        .getSingularProperty(PropertyManager.OR_DEVICE_ID_PROPERTY);
+                                u = Uri.parse(u.toString() + "?deviceID=" + URLEncoder.encode(deviceId, "UTF-8"));
+                                // End Smap
                             } else {
                                 // Don't follow a redirection attempt to a different host.
                                 // We can't tell if this is a spoof or not.

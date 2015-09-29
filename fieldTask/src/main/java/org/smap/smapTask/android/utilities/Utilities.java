@@ -91,7 +91,7 @@ public class Utilities {
 				.getDefaultSharedPreferences(Collect.getInstance()
 						.getBaseContext());
 		String serverUrl = settings.getString(
-				PreferencesActivity.KEY_SERVER_URL, null);
+                PreferencesActivity.KEY_SERVER_URL, null);
 		String source = STFileUtils.getSource(serverUrl);
 		
 		
@@ -571,6 +571,7 @@ public class Utilities {
 
         ContentValues values = new ContentValues();
         values.put(InstanceColumns.T_REPEAT, ta.task.repeat ? 1 : 0);
+        values.put(InstanceColumns.T_SCHED_START, ta.task.scheduled_at.getTime());
 
         Collect.getInstance().getContentResolver().update(dbUri, values, selectClause, selectArgs);
 
