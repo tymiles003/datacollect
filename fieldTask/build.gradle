@@ -8,8 +8,8 @@ android {
         applicationId "org.smap.smapTask.android"
         minSdkVersion 9
         targetSdkVersion 9
-        versionCode 1888
-        versionName "3.9"
+        versionCode 1892
+        versionName "3.10"
     }
 
     buildTypes {
@@ -36,11 +36,11 @@ android {
     productFlavors {
         standard {
             applicationId "org.smap.smapTask.android"
-            versionName "3.9"
+            versionName "3.10"
         }
         plan {
             applicationId "org.smap.smapTask.android.plan"
-            versionName "3.9-plan"
+            versionName "3.10-plan"
         }
     }
 
