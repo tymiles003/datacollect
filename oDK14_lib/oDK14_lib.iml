@@ -90,17 +90,17 @@
     </content>
     <orderEntry type="jdk" jdkName="Android 4.4.2 Google APIs" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="regexp-me" level="project" />
-    <orderEntry type="library" exported="" name="joda-time-2.0" level="project" />
-    <orderEntry type="library" exported="" name="support-annotations-21.0.0" level="project" />
-    <orderEntry type="library" exported="" name="support-v4-21.0.0" level="project" />
-    <orderEntry type="library" exported="" name="httpclientandroidlib-4.2.1" level="project" />
-    <orderEntry type="library" exported="" name="apache-mime4j-0.6" level="project" />
     <orderEntry type="library" exported="" name="opencsv-2.3" level="project" />
-    <orderEntry type="library" exported="" name="javarosa-libraries-2014-04-29" level="project" />
-    <orderEntry type="library" exported="" name="kxml3" level="project" />
-    <orderEntry type="library" exported="" name="commons-io-2.4" level="project" />
     <orderEntry type="library" exported="" name="httpmime-4.0" level="project" />
+    <orderEntry type="library" exported="" name="commons-io-2.4" level="project" />
+    <orderEntry type="library" exported="" name="support-v4-21.0.0" level="project" />
+    <orderEntry type="library" exported="" name="regexp-me" level="project" />
+    <orderEntry type="library" exported="" name="javarosa-libraries-2014-04-29" level="project" />
+    <orderEntry type="library" exported="" name="apache-mime4j-0.6" level="project" />
+    <orderEntry type="library" exported="" name="kxml3" level="project" />
+    <orderEntry type="library" exported="" name="joda-time-2.0" level="project" />
+    <orderEntry type="library" exported="" name="httpclientandroidlib-4.2.1" level="project" />
+    <orderEntry type="library" exported="" name="support-annotations-21.0.0" level="project" />
     <orderEntry type="module" module-name="playservices" exported="" />
     <orderEntry type="library" exported="" name="effects-Google Inc.:Google APIs:19" level="project" />
     <orderEntry type="library" exported="" name="usb-Google Inc.:Google APIs:19" level="project" />

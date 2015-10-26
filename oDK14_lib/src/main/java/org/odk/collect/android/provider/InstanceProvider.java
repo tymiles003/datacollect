@@ -157,10 +157,16 @@ public class InstanceProvider extends ContentProvider {
                         InstanceColumns.UUID + " text;");
             }
             if ( oldVersion < 6 ) {
-                db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
-                        InstanceColumns.T_REPEAT + " integer;");
-                db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
-                        InstanceColumns.T_UPDATEID + " text;");
+                try {
+                    db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
+                            InstanceColumns.T_REPEAT + " integer;");
+                    db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
+                            InstanceColumns.T_UPDATEID + " text;");
+                }catch(Exception e) {
+                    // Catch errors, its possible the user upgraded then downgraded
+                    Log.w(t, "Error in upgrading to database version 6");
+                    e.printStackTrace();
+                }
             }
             // Smap End
             Log.w(t, "Successfully upgraded database from version " + initialVersion + " to " + newVersion
