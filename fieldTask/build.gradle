@@ -57,5 +57,5 @@ dependencies {
     compile files('libs/regexp-me.jar')
     compile project(':oDK14_lib')
     compile project(':MapboxAndroidSDK')
-    compile project(':playservices')
+    compile project(':playservices')    
 }
