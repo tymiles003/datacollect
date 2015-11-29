@@ -53,7 +53,8 @@
 
     <uses-sdk
         android:minSdkVersion="9"
-        android:targetSdkVersion="9" />
+        android:targetSdkVersion="9"
+        tools:overrideLibrary="com.mapbox.mapboxsdk" />
 
     <supports-screens
         android:anyDensity="true"

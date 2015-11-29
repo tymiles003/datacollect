@@ -1,15 +1,17 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion "Google Inc.:Google APIs:19"
+    compileSdkVersion 23
     buildToolsVersion "21.0.2"
+
+    useLibrary 'org.apache.http.legacy'
 
     defaultConfig {
         applicationId "org.smap.smapTask.android"
         minSdkVersion 9
         targetSdkVersion 9
-        versionCode 1892
-        versionName "3.10"
+        versionCode 1893
+        versionName "3.11"
     }
 
     buildTypes {
@@ -36,19 +38,23 @@ android {
     productFlavors {
         standard {
             applicationId "org.smap.smapTask.android"
-            versionName "3.10"
+            versionName "3.11"
         }
         plan {
             applicationId "org.smap.smapTask.android.plan"
-            versionName "3.10-plan"
+            versionName "3.11-plan"
         }
     }
 
 }
 
+repositories {
+    mavenCentral()
+    maven { url "http://oss.sonatype.org/content/repositories/snapshots/" }
+}
 
 dependencies {
-    compile 'com.android.support:support-v4:21.0.0'
+    compile 'com.android.support:support-v4:23.0.0'
     //compile files('libs/android_maps_lib-1.1.1.jar')
     compile files('libs/apache-mime4j-0.6.jar')
     compile files('libs/gson-2.2.2.jar')
@@ -56,6 +62,12 @@ dependencies {
     compile files('libs/joda-time-2.0.jar')
     compile files('libs/regexp-me.jar')
     compile project(':oDK14_lib')
-    compile project(':MapboxAndroidSDK')
-    compile project(':playservices')    
+    //compile project(':MapboxAndroidSDK')
+    compile project(':playservices')
+    //compile ('com.mapbox.mapboxsdk:mapbox-android-sdk:2.1.0@aar'){
+    //    transitive=true
+    //}
+    compile ('com.mapbox.mapboxsdk:mapbox-android-sdk:0.7.5-SNAPSHOT@aar'){
+        transitive=true
+    }
 }
