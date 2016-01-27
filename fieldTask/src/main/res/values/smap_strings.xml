@@ -46,4 +46,7 @@
     <string name="smap_taskMap">Task Map</string>
     <string name="smap_zoom_data">Zoom to Tasks </string>
     <string name="smap_project">Project </string>
+    <string name="smap_NFC_not_available">NFC not available</string>
+    <string name="smap_NFC_not_enabled">NFC is not enabled</string>
+    <string name="smap_NFC_is_available">NFC is available</string>
 </resources>

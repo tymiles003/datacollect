@@ -7,7 +7,7 @@
 		android:summary="@string/click_to_web">
 		<intent
 			android:action="android.intent.action.VIEW"
-			android:data="http://code.google.com/p/smap-suite/" />
+			android:data="@string/app_url" />
 	</PreferenceScreen>
 	<PreferenceCategory android:title="@string/server_preferences">
 		<EditTextPreference

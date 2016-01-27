@@ -68,6 +68,8 @@ import android.widget.TabWidget;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import android.nfc.NfcAdapter;	// NFC
+
 public class MainTabsActivity extends TabActivity implements 
 		TaskDownloaderListener, 
 		InstanceUploaderListener,
@@ -90,6 +92,7 @@ public class MainTabsActivity extends TabActivity implements
     private static final int MENU_GETTASKS = Menu.FIRST + 5;
     private static final int MENU_GETFORMS = Menu.FIRST + 6;
 
+	private NfcAdapter mNfcAdapter;		// NFC
     private String mProgressMsg;
     private String mAlertMsg;
     private ProgressDialog mProgressDialog;  
@@ -127,6 +130,27 @@ public class MainTabsActivity extends TabActivity implements
 	    intent = new Intent().setClass(this, MainListActivity.class);    
 	    spec = tabHost.newTabSpec("taskList").setIndicator(getString(R.string.smap_taskList)).setContent(intent);
 	    tabHost.addTab(spec);
+
+		/*
+		 * NFC
+		 */
+		mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
+		if (mNfcAdapter == null) {
+			Toast.makeText(
+					MainTabsActivity.this,
+					getString(R.string.smap_NFC_not_available),
+					Toast.LENGTH_SHORT).show();
+		} else if(!mNfcAdapter.isEnabled()) {
+			Toast.makeText(
+					MainTabsActivity.this,
+					getString(R.string.smap_NFC_not_enabled),
+					Toast.LENGTH_SHORT).show();
+		} else {
+			Toast.makeText(
+					MainTabsActivity.this,
+					getString(R.string.smap_NFC_is_available),
+					Toast.LENGTH_SHORT).show();
+		}
 
 	    /*
 	     * Initialise a Map tab
@@ -534,5 +558,19 @@ public class MainTabsActivity extends TabActivity implements
         super.onStop();
 
     }
+
+	@Override
+	protected void onResume() {
+
+		super.onResume();
+		setupNFCDispatch(this, mNfcAdapter);		// NFC
+	}
+
+	@Override
+	protected void onPause() {
+
+		super.onResume();
+		setupNFCDispatch(this, mNfcAdapter);		// NFC
+	}
 
 }

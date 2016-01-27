@@ -8,8 +8,8 @@ android {
 
     defaultConfig {
         applicationId "org.smap.smapTask.android"
-        minSdkVersion 9
-        targetSdkVersion 9
+        minSdkVersion 10
+        targetSdkVersion 23
         versionCode 1893
         versionName "3.11"
     }
@@ -43,6 +43,12 @@ android {
         plan {
             applicationId "org.smap.smapTask.android.plan"
             versionName "3.11-plan"
+        }
+        kontrolid {
+            applicationId "org.smap.smapTask.android.kontrolid"
+            versionName "3.11-kontrolid"
+            minSdkVersion 10
+            targetSdkVersion 23
         }
     }
 
