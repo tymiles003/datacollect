@@ -35,15 +35,19 @@ import org.odk.collect.android.utilities.CompatibilityUtils;
 import org.smap.smapTask.android.R;
 import org.smap.smapTask.android.listeners.TaskDownloaderListener;
 import org.smap.smapTask.android.tasks.DownloadTasksTask;
+import org.smap.smapTask.android.tasks.NdefReaderTask;
 import org.smap.smapTask.android.utilities.TraceUtilities;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.app.TabActivity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Color;
@@ -51,6 +55,8 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.nfc.Tag;
+import android.nfc.tech.Ndef;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.InputType;
@@ -93,6 +99,8 @@ public class MainTabsActivity extends TabActivity implements
     private static final int MENU_GETFORMS = Menu.FIRST + 6;
 
 	private NfcAdapter mNfcAdapter;		// NFC
+	public static final String MIME_TEXT_PLAIN = "text/plain";	// NFC
+
     private String mProgressMsg;
     private String mAlertMsg;
     private ProgressDialog mProgressDialog;  
@@ -569,8 +577,76 @@ public class MainTabsActivity extends TabActivity implements
 	@Override
 	protected void onPause() {
 
-		super.onResume();
-		setupNFCDispatch(this, mNfcAdapter);		// NFC
+		super.onPause();
+		stopNFCDispatch(this, mNfcAdapter);		// NFC
 	}
 
+	/**
+	 * @param activity The corresponding {@link Activity} requesting the foreground dispatch.
+	 * @param adapter The {@link NfcAdapter} used for the foreground dispatch.
+	 */
+	public static void setupNFCDispatch(final Activity activity, NfcAdapter adapter) {
+		final Intent intent = new Intent(activity.getApplicationContext(), activity.getClass());
+		intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+		final PendingIntent pendingIntent = PendingIntent.getActivity(activity.getApplicationContext(), 0, intent, 0);
+
+		IntentFilter[] filters = new IntentFilter[1];
+		String[][] techList = new String[][]{};
+
+		// Notice that this is the same filter as in our manifest.
+		filters[0] = new IntentFilter();
+		filters[0].addAction(NfcAdapter.ACTION_TECH_DISCOVERED);
+		filters[0].addCategory(Intent.CATEGORY_DEFAULT);
+		try {
+			filters[0].addDataType("text/plain");
+		} catch (IntentFilter.MalformedMimeTypeException e) {
+			throw new RuntimeException("Check your mime type.");
+		}
+
+		adapter.enableForegroundDispatch(activity, pendingIntent, filters, techList);
+	}
+
+	/**
+	 * @param activity The corresponding {@link Activity} requesting to stop the foreground dispatch.
+	 * @param adapter The {@link NfcAdapter} used for the foreground dispatch.
+	 */
+	public static void stopNFCDispatch(final Activity activity, NfcAdapter adapter) {
+		adapter.disableForegroundDispatch(activity);
+	}
+
+	@Override
+	protected void onNewIntent(Intent intent) {
+		handleIntent(intent);
+	}
+
+	private void handleIntent(Intent intent) {
+
+		String action = intent.getAction();
+		if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
+
+			String type = intent.getType();
+			if (MIME_TEXT_PLAIN.equals(type)) {
+
+				Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+				new NdefReaderTask().execute(tag);
+
+			} else {
+				Log.d("NFC", "Wrong mime type: " + type);
+			}
+		} else if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(action)) {
+
+			// In case we would still use the Tech Discovered Intent
+			Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+			String[] techList = tag.getTechList();
+			String searchedTech = Ndef.class.getName();
+
+			for (String tech : techList) {
+				if (searchedTech.equals(tech)) {
+					new NdefReaderTask().execute(tag);
+					break;
+				}
+			}
+		}
+	}
 }
