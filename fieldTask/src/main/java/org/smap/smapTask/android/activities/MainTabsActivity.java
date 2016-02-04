@@ -33,6 +33,7 @@ import org.odk.collect.android.preferences.AdminPreferencesActivity;
 import org.odk.collect.android.preferences.PreferencesActivity;
 import org.odk.collect.android.utilities.CompatibilityUtils;
 import org.smap.smapTask.android.R;
+import org.smap.smapTask.android.listeners.NFCListener;
 import org.smap.smapTask.android.listeners.TaskDownloaderListener;
 import org.smap.smapTask.android.tasks.DownloadTasksTask;
 import org.smap.smapTask.android.tasks.NdefReaderTask;
@@ -77,7 +78,8 @@ import android.widget.Toast;
 import android.nfc.NfcAdapter;	// NFC
 
 public class MainTabsActivity extends TabActivity implements 
-		TaskDownloaderListener, 
+		TaskDownloaderListener,
+		NFCListener,
 		InstanceUploaderListener,
 		FormDownloaderListener{
 	
@@ -100,6 +102,7 @@ public class MainTabsActivity extends TabActivity implements
 
 	private NfcAdapter mNfcAdapter;		// NFC
 	public static final String MIME_TEXT_PLAIN = "text/plain";	// NFC
+	public NdefReaderTask mReadNFC;
 
     private String mProgressMsg;
     private String mAlertMsg;
@@ -389,7 +392,6 @@ public class MainTabsActivity extends TabActivity implements
     /*
      * (non-Javadoc)
      * @see android.app.Activity#onActivityResult(int, int, android.content.Intent)
-     * Debug code used in development of new Intents
      */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
@@ -604,7 +606,8 @@ public class MainTabsActivity extends TabActivity implements
 			throw new RuntimeException("Check your mime type.");
 		}
 
-		adapter.enableForegroundDispatch(activity, pendingIntent, filters, techList);
+		//adapter.enableForegroundDispatch(activity, pendingIntent, filters, techList);
+		adapter.enableForegroundDispatch(activity, pendingIntent, null, null);
 	}
 
 	/**
@@ -620,33 +623,26 @@ public class MainTabsActivity extends TabActivity implements
 		handleIntent(intent);
 	}
 
+	/*
+	 * NFC detected
+	 */
 	private void handleIntent(Intent intent) {
 
+		Log.i("FT Tag", "tag discovered");
 		String action = intent.getAction();
-		if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
+		Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
 
-			String type = intent.getType();
-			if (MIME_TEXT_PLAIN.equals(type)) {
+		mReadNFC = new NdefReaderTask();
+		mReadNFC.setDownloaderListener(this, mContext);
+		mReadNFC.execute(tag);
 
-				Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
-				new NdefReaderTask().execute(tag);
+	}
 
-			} else {
-				Log.d("NFC", "Wrong mime type: " + type);
-			}
-		} else if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(action)) {
-
-			// In case we would still use the Tech Discovered Intent
-			Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
-			String[] techList = tag.getTechList();
-			String searchedTech = Ndef.class.getName();
-
-			for (String tech : techList) {
-				if (searchedTech.equals(tech)) {
-					new NdefReaderTask().execute(tag);
-					break;
-				}
-			}
-		}
+	@Override
+	public void readComplete(String result) {
+		Toast.makeText(
+				MainTabsActivity.this,
+				result,
+				Toast.LENGTH_SHORT).show();
 	}
 }

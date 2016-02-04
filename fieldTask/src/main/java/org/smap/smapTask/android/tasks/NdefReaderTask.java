@@ -1,5 +1,7 @@
 package org.smap.smapTask.android.tasks;
 
+import android.content.Context;
+import android.content.Intent;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.Tag;
@@ -7,7 +9,11 @@ import android.nfc.tech.Ndef;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import org.smap.smapTask.android.listeners.NFCListener;
+import org.smap.smapTask.android.listeners.TaskDownloaderListener;
+
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
@@ -15,68 +21,30 @@ import java.util.Arrays;
  */
 public class NdefReaderTask extends AsyncTask<Tag, Void, String> {
 
+    public NFCListener mStateListener;
+
     @Override
     protected String doInBackground(Tag... params) {
         Tag tag = params[0];
 
-        Ndef ndef = Ndef.get(tag);
-        if (ndef == null) {
-            // NDEF is not supported by this Tag.
-            return null;
-        }
+        byte [] b = tag.getId();
+        String tag_id = String.format("%0" + (b.length * 2) + "X", new BigInteger(1,b));
 
-        NdefMessage ndefMessage = ndef.getCachedNdefMessage();
+        Log.i("FT Tag: ", tag_id);
 
-        NdefRecord[] records = ndefMessage.getRecords();
-        for (NdefRecord ndefRecord : records) {
-            if (ndefRecord.getTnf() == NdefRecord.TNF_WELL_KNOWN && Arrays.equals(ndefRecord.getType(), NdefRecord.RTD_TEXT)) {
-                try {
-                    return readText(ndefRecord);
-                } catch (UnsupportedEncodingException e) {
-                    Log.e("NFC", "Unsupported Encoding", e);
-                }
-            }
-        }
-
-        return null;
+        return tag_id;
     }
 
-    private String readText(NdefRecord record) throws UnsupportedEncodingException {
-        /*
-         * See NFC forum specification for "Text Record Type Definition" at 3.2.1
-         *
-         * http://www.nfc-forum.org/specs/
-         *
-         * bit_7 defines encoding
-         * bit_6 reserved for future use, must be 0
-         * bit_5..0 length of IANA language code
-         */
-
-        byte[] payload = record.getPayload();
-
-        // Get the Text Encoding
-        String textEncoding = null;
-        if((payload[0] & 128) == 0) {
-            textEncoding = "UTF-8";
-        } else {
-            textEncoding = "UTF-16";
+    public void setDownloaderListener(NFCListener sl, Context context) {
+        synchronized (this) {
+            mStateListener = sl;
         }
-
-        // Get the Language Code
-        int languageCodeLength = payload[0] & 0063;
-
-        // String languageCode = new String(payload, 1, languageCodeLength, "US-ASCII");
-        // e.g. "en"
-
-        // Get the Text
-        return new String(payload, languageCodeLength + 1, payload.length - languageCodeLength - 1, textEncoding);
     }
 
     @Override
     protected void onPostExecute(String result) {
-        if (result != null) {
-            Log.i("NFC", "Read content: " + result);
-
+        if (mStateListener != null) {
+            mStateListener.readComplete(result);
         }
     }
 }

@@ -325,7 +325,11 @@ public class MainListActivity extends FragmentActivity  {
          *  However it may be useful if we were just recording location of survey
          */
         if (locationManager.getAllProviders().contains(LocationManager.GPS_PROVIDER)) {     // Fix issue with errors on devices without GPS
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Constants.GPS_INTERVAL, Constants.GPS_DISTANCE, locationListenerPendingIntent);
+            try {
+				locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Constants.GPS_INTERVAL, Constants.GPS_DISTANCE, locationListenerPendingIntent);
+			} catch (SecurityException e) {
+				// Permission not granted
+			}
         }
     }
 
