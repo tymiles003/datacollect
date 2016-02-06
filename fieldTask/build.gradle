@@ -48,7 +48,7 @@ android {
             applicationId "org.smap.smapTask.android.kontrolid"
             versionName "3.11-kontrolid"
             minSdkVersion 10
-            targetSdkVersion 23
+            targetSdkVersion 19
         }
     }
 
