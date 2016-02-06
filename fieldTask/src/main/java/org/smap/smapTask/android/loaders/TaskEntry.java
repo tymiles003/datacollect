@@ -27,6 +27,7 @@ public class TaskEntry {
     public long assId;
     public String uuid;
     public String source;
+    public String locationTrigger;
 
 
 

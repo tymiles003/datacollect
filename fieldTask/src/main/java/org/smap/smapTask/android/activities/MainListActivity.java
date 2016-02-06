@@ -27,9 +27,11 @@ import org.odk.collect.android.application.Collect;
 
 import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.location.LocationManager;
 import android.net.Uri;
@@ -46,6 +48,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.smap.smapTask.android.R;
 import org.smap.smapTask.android.receivers.LocationChangedReceiver;
@@ -66,6 +69,9 @@ public class MainListActivity extends FragmentActivity  {
 
     private LocationManager locationManager;
     protected PendingIntent locationListenerPendingIntent;
+    private static MainTabsActivity tabsActivity;
+    private MainListListener listener = null;
+    boolean listenerRegistered = false;
 	
 	
 	 @Override
@@ -77,12 +83,15 @@ public class MainListActivity extends FragmentActivity  {
          if (fm.findFragmentById(android.R.id.content) == null) {
              TaskListFragment list = new TaskListFragment();
              fm.beginTransaction().add(android.R.id.content, list).commit();
+             listener = new MainListListener(list);
          }
 
          // Setup the location update Pending Intents
          locationManager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
          Intent activeIntent = new Intent(this, LocationChangedReceiver.class);
          locationListenerPendingIntent = PendingIntent.getBroadcast(this, 1000, activeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+         tabsActivity = (MainTabsActivity) getParent();
      }
 
 	
@@ -132,6 +141,7 @@ public class MainListActivity extends FragmentActivity  {
 	    @Override
 	    public void onLoadFinished(Loader<List<TaskEntry>> loader, List<TaskEntry> data) {
 	    	mAdapter.setData(data);
+            tabsActivity.setLocationTriggers(data);      // NFC and geofence triggers
 
 	    	if (isResumed()) {
 	    		setListShown(true);
@@ -144,9 +154,7 @@ public class MainListActivity extends FragmentActivity  {
 	    public void onLoaderReset(Loader<List<TaskEntry>> loader) {
 	      mAdapter.setData(null);
 	    }
-	    
-	    
-	    
+
 	    
 	    @Override
 	    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -188,11 +196,7 @@ public class MainListActivity extends FragmentActivity  {
 	
 	    	
 	    	if(entry.type.equals("task")) {
-	    		String formPath = Collect.FORMS_PATH + entry.taskForm;
-				if(entry.repeat) {
-					entry.instancePath = duplicateInstance(formPath, entry.instancePath, entry);
-				}
-	    		completeTask(entry.instancePath, formPath, entry.id, entry.taskStatus);
+	    		completeTask(entry);
 	    	} else {
 	    		Uri formUri = ContentUris.withAppendedId(FormsColumns.CONTENT_URI, entry.id);
 	    		startActivity(new Intent(Intent.ACTION_EDIT, formUri));
@@ -222,8 +226,17 @@ public class MainListActivity extends FragmentActivity  {
 		/*
 		 * The user has selected an option to edit / complete a task
 		 */
-		public void completeTask(String instancePath, String formPath, long taskId, String status) {
-		
+		public void completeTask(TaskEntry entry) {
+
+            String formPath = Collect.FORMS_PATH + entry.taskForm;
+            String instancePath = entry.instancePath;
+            long taskId = entry.id;
+            String status = entry.taskStatus;
+
+            if(entry.repeat) {
+                entry.instancePath = duplicateInstance(formPath, entry.instancePath, entry);
+            }
+
 			// set the adhoc location
 			boolean canComplete = false;
 			try {
@@ -285,13 +298,24 @@ public class MainListActivity extends FragmentActivity  {
 
     @Override
     protected void onResume() {
+
         super.onResume();
+
+        if (!listenerRegistered) {
+            registerReceiver(listener, new IntentFilter("startTask"));
+            listenerRegistered = true;
+        }
     }
 
     @Override
     public void onPause() {
         dismissDialogs();
         super.onPause();
+
+        if (listenerRegistered) {
+            unregisterReceiver(listener);
+            listenerRegistered = false;
+        }
     }
 
     @Override
@@ -346,6 +370,32 @@ public class MainListActivity extends FragmentActivity  {
     }
 
 
+    }
+
+    protected class MainListListener extends BroadcastReceiver {
+
+        private TaskListFragment mList = null;
+
+        public MainListListener(TaskListFragment list) {
+            mList = list;
+        }
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            if (intent.getAction().equals("startTask")) {
+
+                int position =  intent.getIntExtra("position", -1);
+                if(position >= 0) {
+                    TaskEntry entry = (TaskEntry) mList.getListAdapter().getItem(position);
+
+                    mList.completeTask(entry);
+                }
+                Toast.makeText(
+                        MainListActivity.this,
+                        "Better start a task: " + position,
+                        Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
 

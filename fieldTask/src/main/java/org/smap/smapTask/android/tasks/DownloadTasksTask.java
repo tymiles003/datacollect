@@ -521,7 +521,8 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         			
     				Log.i(getClass().getSimpleName(), "Task: " + assignment.assignment_id + " Status:" +
     						assignment.assignment_status + " Mode:" + ta.task.assignment_mode +
-    						" Address: " + ta.task.address + 
+    						" Address: " + ta.task.address +
+                            " NFC: " + ta.task.location_trigger +
     						" Form: " + ta.task.form_id + " version: " + ta.task.form_version + 
     						" Type: " + ta.task.type + "Assignee: " + assignment.assignee + "Username: " + username);
             		

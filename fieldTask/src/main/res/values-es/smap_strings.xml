@@ -50,5 +50,7 @@
   <string name="smap_NFC_not_available">NFC no disponible en dispositivo</string>
   <string name="smap_NFC_not_enabled">NFC no esta habilitado - Habilite en Ajustes del dispositivo</string>
   <string name="smap_NFC_is_available">NFC esta disponible</string>
+  <string name="smap_no_tasks_NFC">No tasks are started by NFC tags</string>
+  <string name="smap_no_matching_tasks_NFC">No tasks match this NFC : %1$s</string>
 
 </resources>

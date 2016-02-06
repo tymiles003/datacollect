@@ -82,7 +82,6 @@ public class InstanceUploaderTask extends AsyncTask<Long, Integer, InstanceUploa
      * @param id
      * @param instanceFilePath
      * @param toUpdate - Instance URL for recording status update.
-     * @param httpclient - client connection
      * @param localContext - context (e.g., credentials, cookies) for client connection
      * @param uriRemap - mapping of Uris to avoid redirects on subsequent invocations
      * @return false if credentials are required and we should terminate immediately.
@@ -571,7 +570,6 @@ public class InstanceUploaderTask extends AsyncTask<Long, Integer, InstanceUploa
 	                    }
 
                         // Add updateid if this is a non repeating task
-
                         boolean repeat = (c.getInt(c.getColumnIndex(InstanceColumns.T_REPEAT)) > 0);
                         String updateid = c.getString(c.getColumnIndex(InstanceColumns.T_UPDATEID));
                         if(!repeat && updateid != null) {

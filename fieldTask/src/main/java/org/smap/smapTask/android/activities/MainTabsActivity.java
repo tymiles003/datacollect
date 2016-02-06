@@ -20,8 +20,10 @@
 
 package org.smap.smapTask.android.activities;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import org.odk.collect.android.activities.FormDownloadList;
@@ -31,13 +33,15 @@ import org.odk.collect.android.listeners.InstanceUploaderListener;
 import org.odk.collect.android.logic.FormDetails;
 import org.odk.collect.android.preferences.AdminPreferencesActivity;
 import org.odk.collect.android.preferences.PreferencesActivity;
+import org.odk.collect.android.provider.FormsProviderAPI;
 import org.odk.collect.android.utilities.CompatibilityUtils;
 import org.smap.smapTask.android.R;
 import org.smap.smapTask.android.listeners.NFCListener;
 import org.smap.smapTask.android.listeners.TaskDownloaderListener;
+import org.smap.smapTask.android.loaders.TaskEntry;
+import org.smap.smapTask.android.taskModel.NfcTrigger;
 import org.smap.smapTask.android.tasks.DownloadTasksTask;
 import org.smap.smapTask.android.tasks.NdefReaderTask;
-import org.smap.smapTask.android.utilities.TraceUtilities;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -45,6 +49,7 @@ import android.app.Dialog;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.app.TabActivity;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -52,12 +57,8 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Color;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.net.Uri;
 import android.nfc.Tag;
-import android.nfc.tech.Ndef;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.InputType;
@@ -103,6 +104,7 @@ public class MainTabsActivity extends TabActivity implements
 	private NfcAdapter mNfcAdapter;		// NFC
 	public static final String MIME_TEXT_PLAIN = "text/plain";	// NFC
 	public NdefReaderTask mReadNFC;
+    public ArrayList<NfcTrigger> nfcTriggers;   // nfcTriggers (geofence should have separate list)
 
     private String mProgressMsg;
     private String mAlertMsg;
@@ -142,27 +144,6 @@ public class MainTabsActivity extends TabActivity implements
 	    spec = tabHost.newTabSpec("taskList").setIndicator(getString(R.string.smap_taskList)).setContent(intent);
 	    tabHost.addTab(spec);
 
-		/*
-		 * NFC
-		 */
-		mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
-		if (mNfcAdapter == null) {
-			Toast.makeText(
-					MainTabsActivity.this,
-					getString(R.string.smap_NFC_not_available),
-					Toast.LENGTH_SHORT).show();
-		} else if(!mNfcAdapter.isEnabled()) {
-			Toast.makeText(
-					MainTabsActivity.this,
-					getString(R.string.smap_NFC_not_enabled),
-					Toast.LENGTH_SHORT).show();
-		} else {
-			Toast.makeText(
-					MainTabsActivity.this,
-					getString(R.string.smap_NFC_is_available),
-					Toast.LENGTH_SHORT).show();
-		}
-
 	    /*
 	     * Initialise a Map tab
 	     */
@@ -192,6 +173,28 @@ public class MainTabsActivity extends TabActivity implements
 			mTVDF.setTextColor(Color.WHITE);
 			mTVDF.setPadding(0, 0, 0, 6);
 		}
+
+        /*
+		 * NFC
+		 */
+        mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        if (mNfcAdapter == null) {
+            Toast.makeText(
+                    MainTabsActivity.this,
+                    getString(R.string.smap_NFC_not_available),
+                    Toast.LENGTH_SHORT).show();
+        } else if(!mNfcAdapter.isEnabled()) {
+            Toast.makeText(
+                    MainTabsActivity.this,
+                    getString(R.string.smap_NFC_not_enabled),
+                    Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(
+                    MainTabsActivity.this,
+                    getString(R.string.smap_NFC_is_available),
+                    Toast.LENGTH_SHORT).show();
+        }
+
 
     }
 	
@@ -620,29 +623,77 @@ public class MainTabsActivity extends TabActivity implements
 
 	@Override
 	protected void onNewIntent(Intent intent) {
-		handleIntent(intent);
+		handleNFCIntent(intent);
 	}
 
 	/*
 	 * NFC detected
 	 */
-	private void handleIntent(Intent intent) {
+	private void handleNFCIntent(Intent intent) {
 
-		Log.i("FT Tag", "tag discovered");
-		String action = intent.getAction();
-		Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+        if(nfcTriggers != null && nfcTriggers.size() > 0) {
+            Log.i("FT Tag", "tag discovered");
+            String action = intent.getAction();
+            Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
 
-		mReadNFC = new NdefReaderTask();
-		mReadNFC.setDownloaderListener(this, mContext);
-		mReadNFC.execute(tag);
+            mReadNFC = new NdefReaderTask();
+            mReadNFC.setDownloaderListener(this, mContext);
+            mReadNFC.execute(tag);
+        } else {
+            Toast.makeText(
+                    MainTabsActivity.this,
+                    R.string.smap_no_tasks_NFC,
+                    Toast.LENGTH_SHORT).show();
+        }
 
 	}
 
 	@Override
 	public void readComplete(String result) {
-		Toast.makeText(
-				MainTabsActivity.this,
-				result,
-				Toast.LENGTH_SHORT).show();
+
+        boolean foundTask = false;
+
+        if(nfcTriggers != null) {
+            for(NfcTrigger trigger : nfcTriggers) {
+                if(trigger.uid.equals(result)) {
+                    foundTask = true;
+
+                    Intent i = new Intent();
+                    i.setAction("startTask");
+                    i.putExtra("position", trigger.position);
+                    sendBroadcast(i);
+
+                    break;
+                }
+            }
+        }
+        if(!foundTask) {
+            Toast.makeText(
+                    MainTabsActivity.this,
+                    getString(R.string.smap_no_matching_tasks_NFC, result),
+                    Toast.LENGTH_SHORT).show();
+        }
 	}
+
+    /*
+     * Manage location triggers
+     */
+    public void setLocationTriggers(List<TaskEntry> data) {
+
+        /*
+         * Set NFC triggers
+         */
+        nfcTriggers = new ArrayList<NfcTrigger> ();
+        int position = 0;
+        for (TaskEntry t : data) {
+            if(t.type.equals("task") && t.locationTrigger != null && t.locationTrigger.trim().length() > 0) {
+                nfcTriggers.add(new NfcTrigger(t.id, t.locationTrigger, position));
+            }
+            position++;
+        }
+
+        /*
+         * TODO set geofence triggers
+         */
+    }
 }

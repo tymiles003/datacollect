@@ -82,6 +82,7 @@ public final class InstanceProviderAPI {
         public static final String T_TASK_STATUS = "tAssStatus";    // Assignment Status
         public static final String T_REPEAT = "tRepeat";            // Task can be completed multiple times
         public static final String T_UPDATEID = "tUpdateId";          // The unique identifier of the instance to be updated
+        public static final String T_LOCATION_TRIGGER = "tLocationTrigger";  // An NFC UID or Geofence that will trigger the task
         public static final String UUID = "uuid";
         // Smap End
 

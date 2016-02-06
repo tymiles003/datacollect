@@ -249,17 +249,7 @@ public class ManageForm {
                              + instancePath + " " + e.getMessage();
                      return mfResponse;
                  }
-                 /*
-                 DownloadFormsTask dft = new DownloadFormsTask();
-	             try {
-	             dft.downloadFile(f, initialDataURL);
-	             } catch (Exception e) {
-	            	 e.printStackTrace();
-	         		 mfResponse.isError = true;
-	            	 mfResponse.statusMsg = "Unable to download initial data from " + initialDataURL + " into file: " + instancePath;
-	         		 return mfResponse;
-	             }
-	             */
+
 	         }
 
             if(ta.task.title == null) {
@@ -306,6 +296,7 @@ public class ManageForm {
         values.put(InstanceColumns.T_TASK_STATUS, ta.assignment.assignment_status);
 		values.put(InstanceColumns.T_REPEAT, ta.task.repeat ? 1 : 0);
 		values.put(InstanceColumns.T_UPDATEID, ta.task.update_id);
+		values.put(InstanceColumns.T_LOCATION_TRIGGER, ta.task.location_trigger);
         if(ta.task.scheduled_at != null) {
             values.put(InstanceColumns.T_SCHED_START, ta.task.scheduled_at.getTime());
         }

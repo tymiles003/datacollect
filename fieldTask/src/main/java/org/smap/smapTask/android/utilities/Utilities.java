@@ -193,6 +193,7 @@ public class Utilities {
             values.put(InstanceColumns.SCHED_LON, entry.schedLon);
             values.put(InstanceColumns.SCHED_LAT, entry.schedLat);
             values.put(InstanceColumns.SOURCE, entry.source);
+            values.put(InstanceColumns.T_LOCATION_TRIGGER, entry.locationTrigger);
 
             final ContentResolver resolver = Collect.getInstance().getContentResolver();
             resolver.insert(InstanceColumns.CONTENT_URI, values);
@@ -381,7 +382,8 @@ public class Utilities {
                 InstanceColumns.T_IS_SYNC,
                 InstanceColumns.T_ASS_ID,
                 InstanceColumns.UUID,
-                InstanceColumns.SOURCE
+                InstanceColumns.SOURCE,
+                InstanceColumns.T_LOCATION_TRIGGER
 
         };
 
@@ -435,6 +437,7 @@ public class Utilities {
                 entry.assId = c.getLong(c.getColumnIndex(InstanceColumns.T_ASS_ID));
                 entry.uuid = c.getString(c.getColumnIndex(InstanceColumns.UUID));
                 entry.source = c.getString(c.getColumnIndex(InstanceColumns.SOURCE));
+                entry.locationTrigger = c.getString(c.getColumnIndex(InstanceColumns.T_LOCATION_TRIGGER));
 
                 tasks.add(entry);
                 c.moveToNext();

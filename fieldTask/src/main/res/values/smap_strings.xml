@@ -49,4 +49,6 @@
     <string name="smap_NFC_not_available">NFC not available</string>
     <string name="smap_NFC_not_enabled">NFC is not enabled</string>
     <string name="smap_NFC_is_available">NFC is available</string>
+    <string name="smap_no_tasks_NFC">No tasks are started by NFC tags</string>
+    <string name="smap_no_matching_tasks_NFC">No tasks match this NFC  : %1$s</string>
 </resources>
