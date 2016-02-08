@@ -559,8 +559,8 @@ public class Utilities {
     }
 
     /*
-* Set the status for the provided assignment id
-*/
+     * Set the status for the provided assignment id
+     */
     public static void updateParametersForAssignment(long assId, TaskAssignment ta) {
 
         Uri dbUri =  InstanceColumns.CONTENT_URI;
