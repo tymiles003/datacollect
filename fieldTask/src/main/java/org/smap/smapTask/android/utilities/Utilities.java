@@ -183,7 +183,7 @@ public class Utilities {
             values.put(InstanceColumns.DISPLAY_NAME, entry.displayName);
             values.put(InstanceColumns.T_TASK_STATUS, entry.taskStatus);
             values.put(InstanceColumns.STATUS, entry.taskStatus);
-            values.put(InstanceColumns.T_REPEAT, false);                        // Duplicated task should not be a repeat
+            values.put(InstanceColumns.T_REPEAT, true);     // Duplicated task should also be a repeat
             values.put(InstanceColumns.T_SCHED_START, entry.taskStart);
             values.put(InstanceColumns.T_ADDRESS, entry.taskAddress);
             values.put(InstanceColumns.FORM_PATH, entry.taskForm);
@@ -595,6 +595,7 @@ public class Utilities {
      * Return true if the current task status allows it to be completed
      */
     public static boolean canComplete(String currentStatus) {
+
         boolean valid = false;
         if(currentStatus.equals(STATUS_T_ACCEPTED)) {
             valid = true;

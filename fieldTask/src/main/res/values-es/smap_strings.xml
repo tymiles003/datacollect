@@ -52,5 +52,8 @@
   <string name="smap_NFC_is_available">NFC esta disponible</string>
   <string name="smap_no_tasks_NFC">No tasks are started by NFC tags</string>
   <string name="smap_no_matching_tasks_NFC">No tasks match this NFC : %1$s</string>
+  <string name="smap_starting_task_from_NFC">Starting task from NFC  : %1$s</string>
+  <string name="smap_must_start_from_nfc">This task must be started by swiping an NFC</string>
+
 
 </resources>

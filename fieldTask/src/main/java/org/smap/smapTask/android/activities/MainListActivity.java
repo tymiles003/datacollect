@@ -193,10 +193,16 @@ public class MainListActivity extends FragmentActivity  {
 	    public void onListItemClick(ListView listView, View view, int position, long id) {
 	 	       
 	    	TaskEntry entry = (TaskEntry) getListAdapter().getItem(position);
-	
-	    	
+
 	    	if(entry.type.equals("task")) {
-	    		completeTask(entry);
+                if(entry.locationTrigger != null) {
+                    Toast.makeText(
+                            tabsActivity,
+                            getString(R.string.smap_must_start_from_nfc),
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    completeTask(entry);
+                }
 	    	} else {
 	    		Uri formUri = ContentUris.withAppendedId(FormsColumns.CONTENT_URI, entry.id);
 	    		startActivity(new Intent(Intent.ACTION_EDIT, formUri));
@@ -390,10 +396,6 @@ public class MainListActivity extends FragmentActivity  {
 
                     mList.completeTask(entry);
                 }
-                Toast.makeText(
-                        MainListActivity.this,
-                        "Better start a task: " + position,
-                        Toast.LENGTH_SHORT).show();
             }
         }
     }

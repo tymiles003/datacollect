@@ -42,6 +42,7 @@ import org.smap.smapTask.android.loaders.TaskEntry;
 import org.smap.smapTask.android.taskModel.NfcTrigger;
 import org.smap.smapTask.android.tasks.DownloadTasksTask;
 import org.smap.smapTask.android.tasks.NdefReaderTask;
+import org.smap.smapTask.android.utilities.Utilities;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -663,6 +664,11 @@ public class MainTabsActivity extends TabActivity implements
                     i.putExtra("position", trigger.position);
                     sendBroadcast(i);
 
+                    Toast.makeText(
+                            MainTabsActivity.this,
+                            getString(R.string.smap_starting_task_from_NFC, result),
+                            Toast.LENGTH_SHORT).show();
+
                     break;
                 }
             }
@@ -686,7 +692,8 @@ public class MainTabsActivity extends TabActivity implements
         nfcTriggers = new ArrayList<NfcTrigger> ();
         int position = 0;
         for (TaskEntry t : data) {
-            if(t.type.equals("task") && t.locationTrigger != null && t.locationTrigger.trim().length() > 0) {
+            if(t.type.equals("task") && t.locationTrigger != null && t.locationTrigger.trim().length() > 0
+                    && t.taskStatus.equals(Utilities.STATUS_T_ACCEPTED)) {
                 nfcTriggers.add(new NfcTrigger(t.id, t.locationTrigger, position));
             }
             position++;
