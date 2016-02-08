@@ -6,6 +6,6 @@ env:
 
 android:
   components:
-  - build-tools-21.0.2
+  - build-tools-23.0.2
 
 script: ./gradlew build
