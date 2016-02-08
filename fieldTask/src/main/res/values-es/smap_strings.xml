@@ -50,10 +50,11 @@
   <string name="smap_NFC_not_available">NFC no disponible en dispositivo</string>
   <string name="smap_NFC_not_enabled">NFC no esta habilitado - Habilite en Ajustes del dispositivo</string>
   <string name="smap_NFC_is_available">NFC esta disponible</string>
-  <string name="smap_no_tasks_NFC">No tasks are started by NFC tags</string>
-  <string name="smap_no_matching_tasks_NFC">No tasks match this NFC : %1$s</string>
-  <string name="smap_starting_task_from_NFC">Starting task from NFC  : %1$s</string>
-  <string name="smap_must_start_from_nfc">This task must be started by swiping an NFC</string>
+  <string name="smap_no_tasks_NFC">Ninguna tarea requiere lectura de tags NFC</string>
+  <string name="smap_no_matching_tasks_NFC">Ninguna tarea corresponde al tag NFC leído : %1$s</string>
+  <string name="smap_starting_task_from_NFC">Activando tarea con tag NFC  : %1$s</string>
+  <string name="smap_must_start_from_nfc">Esta tarea requiere lectura de tag NFC - Favor acerque el celular al tag</string>
+
 
 
 </resources>
