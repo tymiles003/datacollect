@@ -66,8 +66,10 @@ public class TaskListArrayAdapter extends ArrayAdapter<TaskEntry> {
     		icon.setImageResource(R.drawable.ic_form);
     	} else if (item.taskStatus != null) {
     		if(item.taskStatus.equals(Utilities.STATUS_T_ACCEPTED)) {
-				if(item.locationTrigger != null) {
+				if(item.locationTrigger != null && !item.repeat) {
                     icon.setImageResource(R.drawable.ic_task_triggered);
+                } else if (item.locationTrigger != null && item.repeat) {
+                    icon.setImageResource(R.drawable.ic_task_triggered_repeat);
                 } else if(item.repeat) {
 					icon.setImageResource(R.drawable.ic_task_repeat);
 				} else {
