@@ -284,6 +284,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                 if(tr.settings !=null ) {
                     SharedPreferences.Editor editor = settings.edit();
                     editor.putBoolean(PreferencesActivity.KEY_STORE_USER_TRAIL, tr.settings.ft_send_trail);
+                    editor.putBoolean(PreferencesActivity.KEY_STORE_LOCATION_TRIGGER, tr.settings.ft_location_trigger);
                     editor.commit();
                 }
 

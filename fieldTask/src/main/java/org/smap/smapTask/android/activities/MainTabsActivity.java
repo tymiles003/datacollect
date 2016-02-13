@@ -66,6 +66,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.nfc.Tag;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
@@ -128,6 +129,7 @@ public class MainTabsActivity extends TabActivity implements
     boolean listenerRegistered = false;
     private static List<TaskEntry> mTasks = null;
     private static List<TaskEntry> mMapTasks = null;
+    private static SharedPreferences settings = null;
     
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
@@ -192,22 +194,28 @@ public class MainTabsActivity extends TabActivity implements
         /*
 		 * NFC
 		 */
-        mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
-        if (mNfcAdapter == null) {
-            Toast.makeText(
-                    MainTabsActivity.this,
-                    getString(R.string.smap_NFC_not_available),
-                    Toast.LENGTH_SHORT).show();
-        } else if(!mNfcAdapter.isEnabled()) {
-            Toast.makeText(
-                    MainTabsActivity.this,
-                    getString(R.string.smap_NFC_not_enabled),
-                    Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(
-                    MainTabsActivity.this,
-                    getString(R.string.smap_NFC_is_available),
-                    Toast.LENGTH_SHORT).show();
+        if (settings == null) {
+            settings = PreferenceManager.getDefaultSharedPreferences(this);
+        }
+
+        if (settings.getBoolean(PreferencesActivity.KEY_STORE_USER_TRAIL, true)) {
+            mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
+            if (mNfcAdapter == null) {
+                Toast.makeText(
+                        MainTabsActivity.this,
+                        getString(R.string.smap_NFC_not_available),
+                        Toast.LENGTH_SHORT).show();
+            } else if (!mNfcAdapter.isEnabled()) {
+                Toast.makeText(
+                        MainTabsActivity.this,
+                        getString(R.string.smap_NFC_not_enabled),
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(
+                        MainTabsActivity.this,
+                        getString(R.string.smap_NFC_is_available),
+                        Toast.LENGTH_SHORT).show();
+            }
         }
 
 
@@ -233,29 +241,29 @@ public class MainTabsActivity extends TabActivity implements
 						MenuItem.SHOW_AS_ACTION_IF_ROOM);
 		
 		CompatibilityUtils.setShowAsAction(
-				menu.add(0, MENU_GETTASKS, 1, R.string.smap_get_tasks).setIcon(
-						android.R.drawable.ic_menu_rotate),
-						MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                menu.add(0, MENU_GETTASKS, 1, R.string.smap_get_tasks).setIcon(
+                        android.R.drawable.ic_menu_rotate),
+                MenuItem.SHOW_AS_ACTION_IF_ROOM);
 		
 		CompatibilityUtils.setShowAsAction(
-				menu.add(0, MENU_PREFERENCES, 2, R.string.server_preferences).setIcon(
-						android.R.drawable.ic_menu_preferences),
-						MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                menu.add(0, MENU_PREFERENCES, 2, R.string.server_preferences).setIcon(
+                        android.R.drawable.ic_menu_preferences),
+                MenuItem.SHOW_AS_ACTION_IF_ROOM);
 		
 		CompatibilityUtils.setShowAsAction(
-				menu.add(0, MENU_GETFORMS, 3, R.string.get_forms).setIcon(
-						android.R.drawable.ic_input_add),
-						MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                menu.add(0, MENU_GETFORMS, 3, R.string.get_forms).setIcon(
+                        android.R.drawable.ic_input_add),
+                MenuItem.SHOW_AS_ACTION_IF_ROOM);
 		
 		CompatibilityUtils.setShowAsAction(
-				menu.add(0, MENU_SENDDATA, 4, R.string.send_data).setIcon(
-						android.R.drawable.ic_menu_send),
-						MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                menu.add(0, MENU_SENDDATA, 4, R.string.send_data).setIcon(
+                        android.R.drawable.ic_menu_send),
+                MenuItem.SHOW_AS_ACTION_IF_ROOM);
 		
 		CompatibilityUtils.setShowAsAction(
-				menu.add(0, MENU_MANAGEFILES, 5, R.string.manage_files).setIcon(
-						android.R.drawable.ic_delete),
-				MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                menu.add(0, MENU_MANAGEFILES, 5, R.string.manage_files).setIcon(
+                        android.R.drawable.ic_delete),
+                MenuItem.SHOW_AS_ACTION_IF_ROOM);
 	
         return true;
     }
@@ -590,6 +598,7 @@ public class MainTabsActivity extends TabActivity implements
 	protected void onResume() {
 
 		super.onResume();
+
 		setupNFCDispatch(this, mNfcAdapter);		// NFC
         if (!listenerRegistered) {
             IntentFilter filter = new IntentFilter();
@@ -604,7 +613,8 @@ public class MainTabsActivity extends TabActivity implements
 	protected void onPause() {
 
 		super.onPause();
-		stopNFCDispatch(this, mNfcAdapter);		// NFC
+
+        stopNFCDispatch(this, mNfcAdapter);        // NFC
         if (listenerRegistered) {
             unregisterReceiver(listener);
             listenerRegistered = false;
@@ -616,26 +626,34 @@ public class MainTabsActivity extends TabActivity implements
 	 * @param adapter The {@link NfcAdapter} used for the foreground dispatch.
 	 */
 	public static void setupNFCDispatch(final Activity activity, NfcAdapter adapter) {
-		final Intent intent = new Intent(activity.getApplicationContext(), activity.getClass());
-		intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
-		final PendingIntent pendingIntent = PendingIntent.getActivity(activity.getApplicationContext(), 0, intent, 0);
+        if (settings == null) {
+            settings = PreferenceManager.getDefaultSharedPreferences(activity);
+        }
 
-		IntentFilter[] filters = new IntentFilter[1];
-		String[][] techList = new String[][]{};
+        if (settings.getBoolean(PreferencesActivity.KEY_STORE_USER_TRAIL, true)) {
+            final Intent intent = new Intent(activity.getApplicationContext(), activity.getClass());
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
-		// Notice that this is the same filter as in our manifest.
-		filters[0] = new IntentFilter();
-		filters[0].addAction(NfcAdapter.ACTION_TECH_DISCOVERED);
-		filters[0].addCategory(Intent.CATEGORY_DEFAULT);
-		try {
-			filters[0].addDataType("text/plain");
-		} catch (IntentFilter.MalformedMimeTypeException e) {
-			throw new RuntimeException("Check your mime type.");
-		}
+            final PendingIntent pendingIntent = PendingIntent.getActivity(activity.getApplicationContext(), 0, intent, 0);
 
-		//adapter.enableForegroundDispatch(activity, pendingIntent, filters, techList);
-		adapter.enableForegroundDispatch(activity, pendingIntent, null, null);
+            IntentFilter[] filters = new IntentFilter[1];
+            String[][] techList = new String[][]{};
+
+            // Notice that this is the same filter as in our manifest.
+            filters[0] = new IntentFilter();
+            filters[0].addAction(NfcAdapter.ACTION_TECH_DISCOVERED);
+            filters[0].addCategory(Intent.CATEGORY_DEFAULT);
+            try {
+                filters[0].addDataType("text/plain");
+            } catch (IntentFilter.MalformedMimeTypeException e) {
+                throw new RuntimeException("Check your mime type.");
+            }
+
+
+            //adapter.enableForegroundDispatch(activity, pendingIntent, filters, techList);
+            adapter.enableForegroundDispatch(activity, pendingIntent, null, null);
+        }
 	}
 
 	/**
@@ -643,7 +661,10 @@ public class MainTabsActivity extends TabActivity implements
 	 * @param adapter The {@link NfcAdapter} used for the foreground dispatch.
 	 */
 	public static void stopNFCDispatch(final Activity activity, NfcAdapter adapter) {
-		adapter.disableForegroundDispatch(activity);
+
+        if (adapter != null) {
+            adapter.disableForegroundDispatch(activity);
+        }
 	}
 
 	@Override
