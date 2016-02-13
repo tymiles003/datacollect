@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.odk.collect.android.activities.FormDownloadList;
+import org.odk.collect.android.activities.FormEntryActivity;
 import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.listeners.FormDownloaderListener;
 import org.odk.collect.android.listeners.InstanceUploaderListener;
@@ -34,6 +35,7 @@ import org.odk.collect.android.logic.FormDetails;
 import org.odk.collect.android.preferences.AdminPreferencesActivity;
 import org.odk.collect.android.preferences.PreferencesActivity;
 import org.odk.collect.android.provider.FormsProviderAPI;
+import org.odk.collect.android.provider.InstanceProviderAPI;
 import org.odk.collect.android.utilities.CompatibilityUtils;
 import org.smap.smapTask.android.R;
 import org.smap.smapTask.android.listeners.NFCListener;
@@ -42,6 +44,7 @@ import org.smap.smapTask.android.loaders.TaskEntry;
 import org.smap.smapTask.android.taskModel.NfcTrigger;
 import org.smap.smapTask.android.tasks.DownloadTasksTask;
 import org.smap.smapTask.android.tasks.NdefReaderTask;
+import org.smap.smapTask.android.utilities.ManageForm;
 import org.smap.smapTask.android.utilities.Utilities;
 
 import android.app.Activity;
@@ -50,6 +53,7 @@ import android.app.Dialog;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.app.TabActivity;
+import android.content.BroadcastReceiver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -57,6 +61,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.nfc.Tag;
@@ -84,7 +89,8 @@ public class MainTabsActivity extends TabActivity implements
 		NFCListener,
 		InstanceUploaderListener,
 		FormDownloaderListener{
-	
+
+    private static final String TAG = "MainTabsActivity";
     private AlertDialog mAlertDialog;
     private static final int PROGRESS_DIALOG = 1;
     private static final int ALERT_DIALOG = 2;
@@ -117,6 +123,11 @@ public class MainTabsActivity extends TabActivity implements
 	
 	private TextView mTVFF;
 	private TextView mTVDF;
+
+    private MainTabsListener listener = null;
+    boolean listenerRegistered = false;
+    private static List<TaskEntry> mTasks = null;
+    private static List<TaskEntry> mMapTasks = null;
     
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
@@ -145,10 +156,13 @@ public class MainTabsActivity extends TabActivity implements
 	    spec = tabHost.newTabSpec("taskList").setIndicator(getString(R.string.smap_taskList)).setContent(intent);
 	    tabHost.addTab(spec);
 
+        // Add listener
+        listener = new MainTabsListener(this);
+
 	    /*
 	     * Initialise a Map tab
 	     */
-        Log.i("trial", "Creating Maps Activity");
+        Log.i(TAG, "Creating Maps Activity");
 	    intent = new Intent().setClass(this, MapsActivity.class);
 	    spec = tabHost.newTabSpec("taskMap").setIndicator(getString(R.string.smap_taskMap)).setContent(intent);
 	    tabHost.addTab(spec);
@@ -348,8 +362,7 @@ public class MainTabsActivity extends TabActivity implements
 	 */
 	public void taskDownloadingComplete(HashMap<String, String> result) {
 		
-		Log.i("taskDownloadingComplete", "Complete");
-    	Log.i("++++taskDownloadingComplete", "Send intent");
+		Log.i(TAG, "Complete - Send intent");
 
         // Refresh task list
     	Intent intent = new Intent("refresh");
@@ -578,6 +591,13 @@ public class MainTabsActivity extends TabActivity implements
 
 		super.onResume();
 		setupNFCDispatch(this, mNfcAdapter);		// NFC
+        if (!listenerRegistered) {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction("startTask");
+            filter.addAction("startMapTask");
+            registerReceiver(listener, filter);
+            listenerRegistered = true;
+        }
 	}
 
 	@Override
@@ -585,6 +605,10 @@ public class MainTabsActivity extends TabActivity implements
 
 		super.onPause();
 		stopNFCDispatch(this, mNfcAdapter);		// NFC
+        if (listenerRegistered) {
+            unregisterReceiver(listener);
+            listenerRegistered = false;
+        }
 	}
 
 	/**
@@ -633,7 +657,7 @@ public class MainTabsActivity extends TabActivity implements
 	private void handleNFCIntent(Intent intent) {
 
         if(nfcTriggers != null && nfcTriggers.size() > 0) {
-            Log.i("FT Tag", "tag discovered");
+            Log.i(TAG, "tag discovered");
             String action = intent.getAction();
             Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
 
@@ -690,6 +714,7 @@ public class MainTabsActivity extends TabActivity implements
          * Set NFC triggers
          */
         nfcTriggers = new ArrayList<NfcTrigger> ();
+        mTasks = data;
         int position = 0;
         for (TaskEntry t : data) {
             if(t.type.equals("task") && t.locationTrigger != null && t.locationTrigger.trim().length() > 0
@@ -702,5 +727,125 @@ public class MainTabsActivity extends TabActivity implements
         /*
          * TODO set geofence triggers
          */
+    }
+
+    /*
+ * Manage location triggers
+ */
+    public void setMapTasks(List<TaskEntry> data) {
+
+        mMapTasks = data;
+    }
+
+    /*
+ * The user has selected an option to edit / complete a task
+ */
+    public void completeTask(TaskEntry entry) {
+
+        String formPath = Collect.FORMS_PATH + entry.taskForm;
+        String instancePath = entry.instancePath;
+        long taskId = entry.id;
+        String status = entry.taskStatus;
+
+        Log.i(TAG, "Complete task" + entry.id + " : " + entry.name + " : " + entry.taskStatus);
+
+        if(entry.repeat) {
+            entry.instancePath = duplicateInstance(formPath, entry.instancePath, entry);
+        }
+
+        // set the adhoc location
+        boolean canComplete = false;
+        try {
+            canComplete = Utilities.canComplete(status);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Return if the user is not allowed to update this task
+        if(!canComplete) {
+            return;
+        }
+
+        // Get the provider URI of the instance
+        String where = InstanceProviderAPI.InstanceColumns.INSTANCE_FILE_PATH + "=?";
+        String[] whereArgs = {
+                instancePath
+        };
+
+        Cursor cInstanceProvider = Collect.getInstance().getContentResolver().query(InstanceProviderAPI.InstanceColumns.CONTENT_URI,
+                null, where, whereArgs, null);
+
+        if(cInstanceProvider.getCount() != 1) {
+            Log.e("MainListActivity:completeTask", "Unique instance not found: count is:" +
+                    cInstanceProvider.getCount());
+        } else {
+            cInstanceProvider.moveToFirst();
+            Uri instanceUri = ContentUris.withAppendedId(InstanceProviderAPI.InstanceColumns.CONTENT_URI,
+                    cInstanceProvider.getLong(
+                            cInstanceProvider.getColumnIndex(InstanceProviderAPI.InstanceColumns._ID)));
+            // Start activity to complete form
+            Intent i = new Intent(Intent.ACTION_EDIT, instanceUri);
+
+            i.putExtra(FormEntryActivity.KEY_FORMPATH, formPath);	// TODO Don't think this is needed
+            i.putExtra(FormEntryActivity.KEY_TASK, taskId);
+            if(instancePath != null) {	// TODO Don't think this is needed
+                i.putExtra(FormEntryActivity.KEY_INSTANCEPATH, instancePath);
+            }
+            startActivity(i);
+        }
+        cInstanceProvider.close();
+
+    }
+
+
+    /*
+     * Duplicate the instance
+     * Call this if the instance repeats
+     */
+    public String duplicateInstance(String formPath, String originalPath, TaskEntry entry) {
+        String newPath = null;
+
+        // 1. Get a new instance path
+        ManageForm mf = new ManageForm();
+        newPath = mf.getInstancePath(formPath, 0);
+
+        // 2. Duplicate the instance entry and get the new path
+        Utilities.duplicateTask(originalPath, newPath, entry);
+
+        // 3. Copy the instance files
+        Utilities.copyInstanceFiles(originalPath, newPath);
+        return newPath;
+    }
+
+    protected class MainTabsListener extends BroadcastReceiver {
+
+        private MainTabsActivity mActivity = null;
+
+        public MainTabsListener(MainTabsActivity activity) {
+            mActivity = activity;
+        }
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            Log.i(TAG, "Intent received: " + intent.getAction());
+
+            if (intent.getAction().equals("startTask")) {
+
+                int position =  intent.getIntExtra("position", -1);
+                if(position >= 0) {
+                    TaskEntry entry = (TaskEntry) mTasks.get(position);
+
+                    mActivity.completeTask(entry);
+                }
+            } else if (intent.getAction().equals("startMapTask")) {
+
+                int position =  intent.getIntExtra("position", -1);
+                if(position >= 0) {
+                    TaskEntry entry = (TaskEntry) mMapTasks.get(position);
+
+                    mActivity.completeTask(entry);
+                }
+            }
+        }
     }
 }
