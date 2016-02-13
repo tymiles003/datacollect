@@ -194,30 +194,30 @@ public class MainTabsActivity extends TabActivity implements
         /*
 		 * NFC
 		 */
-        if (settings == null) {
-            settings = PreferenceManager.getDefaultSharedPreferences(this);
-        }
+        mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        /*
+         // Success no need to report on it
 
-        if (settings.getBoolean(PreferencesActivity.KEY_STORE_USER_TRAIL, true)) {
-            mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
-            if (mNfcAdapter == null) {
-                Toast.makeText(
-                        MainTabsActivity.this,
-                        getString(R.string.smap_NFC_not_available),
-                        Toast.LENGTH_SHORT).show();
-            } else if (!mNfcAdapter.isEnabled()) {
-                Toast.makeText(
-                        MainTabsActivity.this,
-                        getString(R.string.smap_NFC_not_enabled),
-                        Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(
-                        MainTabsActivity.this,
-                        getString(R.string.smap_NFC_is_available),
-                        Toast.LENGTH_SHORT).show();
-            }
-        }
+        if (mNfcAdapter == null) {
+            Toast.makeText(
+                    MainTabsActivity.this,
+                    getString(R.string.smap_NFC_not_available),
+                    Toast.LENGTH_SHORT).show();
+        } else if (!mNfcAdapter.isEnabled()) {
+            Toast.makeText(
+                    MainTabsActivity.this,
+                    getString(R.string.smap_NFC_not_enabled),
+                    Toast.LENGTH_SHORT).show();
+        } else {
 
+
+            Toast.makeText(
+                    MainTabsActivity.this,
+                    getString(R.string.smap_NFC_is_available),
+                    Toast.LENGTH_SHORT).show();
+
+        }
+        */
 
     }
 	
@@ -631,7 +631,7 @@ public class MainTabsActivity extends TabActivity implements
             settings = PreferenceManager.getDefaultSharedPreferences(activity);
         }
 
-        if (settings.getBoolean(PreferencesActivity.KEY_STORE_USER_TRAIL, true)) {
+        if (settings.getBoolean(PreferencesActivity.KEY_STORE_LOCATION_TRIGGER, true)) {
             final Intent intent = new Intent(activity.getApplicationContext(), activity.getClass());
             intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
