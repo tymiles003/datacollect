@@ -73,6 +73,8 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     Icon rejected = null;
     Icon complete = null;
     Icon submitted = null;
+    Icon triggered = null;
+    Icon triggered_repeat = null;
 
     private static MainTabsActivity mainTabsActivity;
 
@@ -97,7 +99,8 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         rejected = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_reject)));
         complete = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_done)));
         submitted = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_submitted)));
-
+        triggered = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_triggered)));
+        triggered_repeat = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_triggered_repeat)));
         // Set Default Map Type
         replaceMapView("mapquest");
 
@@ -247,7 +250,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
                 LatLng ll = getTaskCoords(t);
                 if (ll != null) {
                     Marker m = new Marker(mv, t.name, t.taskAddress, ll);
-                    m.setIcon(getIcon(t.taskStatus, t.repeat));
+                    m.setIcon(getIcon(t.taskStatus, t.repeat, t.locationTrigger != null));
 
                     markers.add(m);
                     markerMap.put(m, index);
@@ -441,12 +444,16 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     /*
      * Get the colour to represent the passed in task status
      */
-    private Icon getIcon(String status, boolean isRepeat) {
+    private Icon getIcon(String status, boolean isRepeat, boolean hasTrigger) {
 
         if(status.equals(Utilities.STATUS_T_REJECTED) || status.equals(Utilities.STATUS_T_CANCELLED)) {
             return rejected;
         } else if(status.equals(Utilities.STATUS_T_ACCEPTED)) {
-            if(isRepeat) {
+            if(hasTrigger && !isRepeat) {
+                return triggered;
+            } else if (hasTrigger && isRepeat) {
+               return triggered_repeat;
+            } else if(isRepeat) {
                 return repeat;
             } else {
                 return accepted;
