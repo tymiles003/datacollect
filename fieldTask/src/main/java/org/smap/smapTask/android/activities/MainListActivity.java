@@ -138,7 +138,7 @@ public class MainListActivity extends FragmentActivity  {
 	    @Override
 	    public void onLoadFinished(Loader<List<TaskEntry>> loader, List<TaskEntry> data) {
 	    	mAdapter.setData(data);
-            tabsActivity.setLocationTriggers(data);      // NFC and geofence triggers
+            tabsActivity.setLocationTriggers(data, false);      // NFC and geofence triggers
 
 	    	if (isResumed()) {
 	    		setListShown(true);

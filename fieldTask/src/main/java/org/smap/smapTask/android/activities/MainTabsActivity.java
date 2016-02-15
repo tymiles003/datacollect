@@ -112,7 +112,8 @@ public class MainTabsActivity extends TabActivity implements
 	private NfcAdapter mNfcAdapter;		// NFC
 	public static final String MIME_TEXT_PLAIN = "text/plain";	// NFC
 	public NdefReaderTask mReadNFC;
-    public ArrayList<NfcTrigger> nfcTriggers;   // nfcTriggers (geofence should have separate list)
+    public ArrayList<NfcTrigger> nfcTriggersList;   // nfcTriggers (geofence should have separate list)
+    public ArrayList<NfcTrigger> nfcTriggersMap;    // nfcTriggers (geofence should have separate list)
 
     private String mProgressMsg;
     private String mAlertMsg;
@@ -130,6 +131,7 @@ public class MainTabsActivity extends TabActivity implements
     private static List<TaskEntry> mTasks = null;
     private static List<TaskEntry> mMapTasks = null;
     private static SharedPreferences settings = null;
+    private TabHost tabHost = null;
     
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
@@ -146,7 +148,7 @@ public class MainTabsActivity extends TabActivity implements
 	    setContentView(R.layout.main_tabs);
 
 	    Resources res = getResources();  // Resource object to get Drawables
-	    TabHost tabHost = getTabHost();  // The activity TabHost
+	    tabHost = getTabHost();  // The activity TabHost
 	    TabHost.TabSpec spec;  
 	    Intent intent;  
 
@@ -677,7 +679,7 @@ public class MainTabsActivity extends TabActivity implements
 	 */
 	private void handleNFCIntent(Intent intent) {
 
-        if(nfcTriggers != null && nfcTriggers.size() > 0) {
+        if(nfcTriggersList != null && nfcTriggersList.size() > 0) {
             Log.i(TAG, "tag discovered");
             String action = intent.getAction();
             Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
@@ -698,14 +700,28 @@ public class MainTabsActivity extends TabActivity implements
 	public void readComplete(String result) {
 
         boolean foundTask = false;
+        ArrayList<NfcTrigger> triggers = null;
+        String tab = tabHost.getCurrentTabTag();
 
-        if(nfcTriggers != null) {
-            for(NfcTrigger trigger : nfcTriggers) {
+        boolean isMapTab  = tab.equals("taskMap");
+        if(isMapTab) {
+            triggers = nfcTriggersMap;
+        } else {
+            triggers = nfcTriggersList;
+        }
+
+
+        if(triggers != null) {
+            for(NfcTrigger trigger : triggers) {
                 if(trigger.uid.equals(result)) {
                     foundTask = true;
 
                     Intent i = new Intent();
-                    i.setAction("startTask");
+                    if(isMapTab) {
+                        i.setAction("startMapTask");
+                    } else {
+                        i.setAction("startTask");
+                    }
                     i.putExtra("position", trigger.position);
                     sendBroadcast(i);
 
@@ -727,20 +743,38 @@ public class MainTabsActivity extends TabActivity implements
 	}
 
     /*
+     * Get the tasks shown on the map
+     */
+    public List<TaskEntry> getMapTasks() {
+        return mMapTasks;
+    }
+
+    /*
      * Manage location triggers
      */
-    public void setLocationTriggers(List<TaskEntry> data) {
+    public void setLocationTriggers(List<TaskEntry> data, boolean map) {
 
+        // Need to maintain two lists of tasks as the position in the task list is different for maps than for the list view
+        ArrayList<NfcTrigger> triggers = null;
+
+        if(map) {
+            mMapTasks = data;
+            nfcTriggersMap = new ArrayList<NfcTrigger> ();
+            triggers = nfcTriggersMap;
+        } else {
+            mTasks = data;
+            nfcTriggersList = new ArrayList<NfcTrigger> ();
+            triggers = nfcTriggersList;
+        }
         /*
          * Set NFC triggers
          */
-        nfcTriggers = new ArrayList<NfcTrigger> ();
-        mTasks = data;
+
         int position = 0;
         for (TaskEntry t : data) {
             if(t.type.equals("task") && t.locationTrigger != null && t.locationTrigger.trim().length() > 0
                     && t.taskStatus.equals(Utilities.STATUS_T_ACCEPTED)) {
-                nfcTriggers.add(new NfcTrigger(t.id, t.locationTrigger, position));
+                triggers.add(new NfcTrigger(t.id, t.locationTrigger, position));
             }
             position++;
         }
@@ -748,14 +782,6 @@ public class MainTabsActivity extends TabActivity implements
         /*
          * TODO set geofence triggers
          */
-    }
-
-    /*
- * Manage location triggers
- */
-    public void setMapTasks(List<TaskEntry> data) {
-
-        mMapTasks = data;
     }
 
     /*
@@ -865,6 +891,7 @@ public class MainTabsActivity extends TabActivity implements
                     TaskEntry entry = (TaskEntry) mMapTasks.get(position);
 
                     mActivity.completeTask(entry);
+
                 }
             }
         }

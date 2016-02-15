@@ -126,7 +126,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
     @Override
     public void onLoadFinished(Loader<MapEntry> loader, MapEntry data) {
-        mainTabsActivity.setMapTasks(data.tasks);
+        mainTabsActivity.setLocationTriggers(data.tasks, true);
         showTasks(data.tasks);
         showPoints(data.points);
         zoomToData(false);
@@ -530,13 +530,25 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
             if(iPos != null) {
 
                 int position = iPos;
+                List<TaskEntry> mapTasks = mainTabsActivity.getMapTasks();
+                TaskEntry entry = mapTasks.get(position);
 
+                if(entry.locationTrigger != null) {
+                    Toast.makeText(
+                            getActivity(),
+                            getString(R.string.smap_must_start_from_nfc),
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    mainTabsActivity.completeTask(entry);
+                }
+                /*
                 Intent i = new Intent();
                 i.setAction("startMapTask");
                 i.putExtra("position", position);
                 getActivity().getParent().sendBroadcast(i);
 
                 Log.i(TAG, "Intent sent: " + position);
+                */
             }
 
             return true;
