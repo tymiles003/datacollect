@@ -32,7 +32,12 @@ import org.smap.smapTask.android.utilities.KeyValueJsonFns;
 import org.smap.smapTask.android.utilities.Utilities;
 
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
+import android.util.Log;
 
 import org.smap.smapTask.android.loaders.TaskEntry;
 
@@ -40,18 +45,20 @@ public class TaskListArrayAdapter extends ArrayAdapter<TaskEntry> {
     
     private int mLayout;
     LayoutInflater mInflater;
+    static String TAG = "TaskListArrayAdapter";
 	
     public TaskListArrayAdapter(Context context) {
 		super(context, R.layout.main_list);
 		mLayout = R.layout.task_row;
-		mInflater = LayoutInflater.from(context);	
+		mInflater = LayoutInflater.from(context);
 	}
+
     
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
 
     	View view;
-        DateFormat dFormat = DateFormat.getDateTimeInstance();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
     	
     	if (convertView == null) {
     		view = mInflater.inflate(mLayout, parent, false);
@@ -96,11 +103,16 @@ public class TaskListArrayAdapter extends ArrayAdapter<TaskEntry> {
                 taskStartText.setText(getContext().getString(R.string.smap_project) + ": " + item.project);
 	    	} else {
                 String line2 = null;
+                long theTime = 0;
                 if(item.taskStatus.equals(Utilities.STATUS_T_COMPLETE) || item.taskStatus.equals(Utilities.STATUS_T_SUBMITTED)) {
-                    line2 = dFormat.format(item.actFinish);
+                    theTime = item.actFinish;
                 } else if (item.taskStart != 0) {
-                    line2 = dFormat.format(item.taskStart);
+                    theTime = item.taskStart;
                 }
+
+                df.setTimeZone(TimeZone.getDefault());
+                line2 = df.format(theTime);
+
                 String addressText = KeyValueJsonFns.getValues(item.taskAddress);
                 if(addressText != null) {
                     line2 += " " + addressText;

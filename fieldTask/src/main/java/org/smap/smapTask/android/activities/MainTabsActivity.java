@@ -601,7 +601,10 @@ public class MainTabsActivity extends TabActivity implements
 
 		super.onResume();
 
-		setupNFCDispatch(this, mNfcAdapter);		// NFC
+        if(mNfcAdapter != null) {
+            setupNFCDispatch(this, mNfcAdapter);        // NFC
+        }
+
         if (!listenerRegistered) {
             IntentFilter filter = new IntentFilter();
             filter.addAction("startTask");
@@ -616,7 +619,10 @@ public class MainTabsActivity extends TabActivity implements
 
 		super.onPause();
 
-        stopNFCDispatch(this, mNfcAdapter);        // NFC
+        if(mNfcAdapter != null) {
+            stopNFCDispatch(this, mNfcAdapter);        // NFC
+        }
+
         if (listenerRegistered) {
             unregisterReceiver(listener);
             listenerRegistered = false;

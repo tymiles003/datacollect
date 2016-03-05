@@ -12,7 +12,7 @@ public class TaskEntry {
     public String displayName;
     public String project;
     public String ident;
-    public long taskStart;
+    public long taskStart;          // Scheduled time of task
     public String taskAddress;
     public String taskForm;
     public String jrFormId;
