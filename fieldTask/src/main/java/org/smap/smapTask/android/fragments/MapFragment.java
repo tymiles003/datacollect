@@ -15,11 +15,12 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.Toast;
 
-import com.mapbox.mapboxsdk.api.ILatLng;
 import com.mapbox.mapboxsdk.geometry.BoundingBox;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.overlay.Icon;
@@ -35,9 +36,12 @@ import com.mapbox.mapboxsdk.views.MapView;
 import com.mapbox.mapboxsdk.views.util.TilesLoadedListener;
 
 import org.smap.smapTask.android.R;
+import org.smap.smapTask.android.activities.MainListActivity;
+import org.smap.smapTask.android.activities.MainTabsActivity;
 import org.smap.smapTask.android.utilities.Utilities;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.smap.smapTask.android.loaders.MapDataLoader;
@@ -50,12 +54,13 @@ import static org.smap.smapTask.android.R.drawable;
 public class MapFragment extends Fragment implements LoaderManager.LoaderCallbacks<MapEntry>
 {
 
-
+    private static final String TAG = "MapFragment";
     PathOverlay po = null;
     private PointEntry lastPathPoint;
 
     ItemizedIconOverlay markerOverlay = null;
     ArrayList<Marker> markers = null;
+    HashMap<Marker, Integer> markerMap = null;
     private double tasksNorth;
     private double tasksSouth;
     private double tasksEast;
@@ -68,9 +73,17 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     Icon rejected = null;
     Icon complete = null;
     Icon submitted = null;
+    Icon triggered = null;
+    Icon triggered_repeat = null;
+
+    private static MainTabsActivity mainTabsActivity;
 
     private MapView mv;
     private static final int MAP_LOADER_ID = 2;
+
+    public void setTabsActivity(MainTabsActivity activity) {
+        mainTabsActivity = activity;
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -86,7 +99,8 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         rejected = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_reject)));
         complete = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_done)));
         submitted = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_submitted)));
-
+        triggered = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_triggered)));
+        triggered_repeat = new Icon(new BitmapDrawable(getResources(),BitmapFactory.decodeResource(getResources(), drawable.ic_task_triggered_repeat)));
         // Set Default Map Type
         replaceMapView("mapquest");
 
@@ -112,6 +126,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
     @Override
     public void onLoadFinished(Loader<MapEntry> loader, MapEntry data) {
+        mainTabsActivity.setLocationTriggers(data.tasks, true);
         showTasks(data.tasks);
         showPoints(data.points);
         zoomToData(false);
@@ -176,7 +191,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         mv.setMaxZoomLevel(mv.getTileProvider().getMaximumZoomLevel());
         mv.setCenter(mv.getTileProvider().getCenterCoordinate());
         mv.setZoom(0);
-        Log.d("MainActivity", "zoomToBoundingBox " + box.toString());
+        Log.d(TAG, "zoomToBoundingBox " + box.toString());
         //        mv.zoomToBoundingBox(box);
     }
 
@@ -221,6 +236,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         tasksWest = 180.0;
 
         markers = new ArrayList<Marker> ();
+        markerMap = new HashMap<Marker, Integer> ();
 
         // Add the user location
         if(userLocationMarker != null) {
@@ -228,15 +244,19 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         }
 
         // Add the tasks to the marker array
+        int index = 0;
         for(TaskEntry t : data) {
             if(t.type.equals("task")) {
                 LatLng ll = getTaskCoords(t);
                 if (ll != null) {
                     Marker m = new Marker(mv, t.name, t.taskAddress, ll);
-                    m.setIcon(getIcon(t.taskStatus, t.repeat));
+                    m.setIcon(getIcon(t.taskStatus, t.repeat, t.locationTrigger != null));
+
                     markers.add(m);
+                    markerMap.put(m, index);
                 }
             }
+            index++;
         }
 
         // Remove any existing markers
@@ -265,10 +285,10 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
     private void showPoints(List<PointEntry> data) {
         if(po == null) {
-            Log.i("showPoint", "====== po null");
+            Log.i(TAG, "====== po null");
             addPathOverlay();
         } else {
-            Log.i("showPoint", "====== Removed all points");
+            Log.i(TAG, "====== Removed all points");
             po.removeAllPoints();
             mv.removeOverlay(po);
             addPathOverlay();
@@ -288,7 +308,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
 
 
     public void setUserLocation(Location location, boolean recordLocation) {
-        Log.i("MapFragment", "setUserLocation()");
+        Log.i(TAG, "setUserLocation()");
 
         if(location != null) {
             LatLng point = new LatLng(location.getLatitude(), location.getLongitude());
@@ -424,12 +444,16 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
     /*
      * Get the colour to represent the passed in task status
      */
-    private Icon getIcon(String status, boolean isRepeat) {
+    private Icon getIcon(String status, boolean isRepeat, boolean hasTrigger) {
 
         if(status.equals(Utilities.STATUS_T_REJECTED) || status.equals(Utilities.STATUS_T_CANCELLED)) {
             return rejected;
         } else if(status.equals(Utilities.STATUS_T_ACCEPTED)) {
-            if(isRepeat) {
+            if(hasTrigger && !isRepeat) {
+                return triggered;
+            } else if (hasTrigger && isRepeat) {
+               return triggered_repeat;
+            } else if(isRepeat) {
                 return repeat;
             } else {
                 return accepted;
@@ -439,7 +463,7 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
         } else if(status.equals(Utilities.STATUS_T_SUBMITTED)) {
             return submitted;
         } else {
-            Log.i("MapFragment", "Unknown task status: " + status);
+            Log.i(TAG, "Unknown task status: " + status);
             return accepted;
         }
     }
@@ -489,13 +513,43 @@ public class MapFragment extends Fragment implements LoaderManager.LoaderCallbac
             = new ItemizedIconOverlay.OnItemGestureListener<Marker>(){
 
         @Override
-        public boolean onItemLongPress(int arg0, Marker arg1) {
-            // TODO Auto-generated method stub
-            return false;
+        public boolean onItemLongPress(int arg0, Marker item) {
+            return processTouch(item);
         }
 
         @Override
         public boolean onItemSingleTapUp(int index, Marker item) {
+            return processTouch(item);
+        }
+
+        public boolean processTouch(Marker item) {
+
+            Integer iPos = markerMap.get(item);
+
+            Log.i(TAG, "process Touch");
+            if(iPos != null) {
+
+                int position = iPos;
+                List<TaskEntry> mapTasks = mainTabsActivity.getMapTasks();
+                TaskEntry entry = mapTasks.get(position);
+
+                if(entry.locationTrigger != null) {
+                    Toast.makeText(
+                            getActivity(),
+                            getString(R.string.smap_must_start_from_nfc),
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    mainTabsActivity.completeTask(entry);
+                }
+                /*
+                Intent i = new Intent();
+                i.setAction("startMapTask");
+                i.putExtra("position", position);
+                getActivity().getParent().sendBroadcast(i);
+
+                Log.i(TAG, "Intent sent: " + position);
+                */
+            }
 
             return true;
         }

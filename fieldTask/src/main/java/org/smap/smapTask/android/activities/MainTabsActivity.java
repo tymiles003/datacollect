@@ -20,38 +20,53 @@
 
 package org.smap.smapTask.android.activities;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import org.odk.collect.android.activities.FormDownloadList;
+import org.odk.collect.android.activities.FormEntryActivity;
 import org.odk.collect.android.application.Collect;
 import org.odk.collect.android.listeners.FormDownloaderListener;
 import org.odk.collect.android.listeners.InstanceUploaderListener;
 import org.odk.collect.android.logic.FormDetails;
 import org.odk.collect.android.preferences.AdminPreferencesActivity;
 import org.odk.collect.android.preferences.PreferencesActivity;
+import org.odk.collect.android.provider.FormsProviderAPI;
+import org.odk.collect.android.provider.InstanceProviderAPI;
 import org.odk.collect.android.utilities.CompatibilityUtils;
 import org.smap.smapTask.android.R;
+import org.smap.smapTask.android.listeners.NFCListener;
 import org.smap.smapTask.android.listeners.TaskDownloaderListener;
+import org.smap.smapTask.android.loaders.TaskEntry;
+import org.smap.smapTask.android.taskModel.NfcTrigger;
 import org.smap.smapTask.android.tasks.DownloadTasksTask;
-import org.smap.smapTask.android.utilities.TraceUtilities;
+import org.smap.smapTask.android.tasks.NdefReaderTask;
+import org.smap.smapTask.android.utilities.ManageForm;
+import org.smap.smapTask.android.utilities.Utilities;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.app.TabActivity;
+import android.content.BroadcastReceiver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.graphics.Color;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.net.Uri;
+import android.nfc.Tag;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
@@ -68,11 +83,15 @@ import android.widget.TabWidget;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import android.nfc.NfcAdapter;	// NFC
+
 public class MainTabsActivity extends TabActivity implements 
-		TaskDownloaderListener, 
+		TaskDownloaderListener,
+		NFCListener,
 		InstanceUploaderListener,
 		FormDownloaderListener{
-	
+
+    private static final String TAG = "MainTabsActivity";
     private AlertDialog mAlertDialog;
     private static final int PROGRESS_DIALOG = 1;
     private static final int ALERT_DIALOG = 2;
@@ -90,6 +109,12 @@ public class MainTabsActivity extends TabActivity implements
     private static final int MENU_GETTASKS = Menu.FIRST + 5;
     private static final int MENU_GETFORMS = Menu.FIRST + 6;
 
+	private NfcAdapter mNfcAdapter;		// NFC
+	public static final String MIME_TEXT_PLAIN = "text/plain";	// NFC
+	public NdefReaderTask mReadNFC;
+    public ArrayList<NfcTrigger> nfcTriggersList;   // nfcTriggers (geofence should have separate list)
+    public ArrayList<NfcTrigger> nfcTriggersMap;    // nfcTriggers (geofence should have separate list)
+
     private String mProgressMsg;
     private String mAlertMsg;
     private ProgressDialog mProgressDialog;  
@@ -100,6 +125,13 @@ public class MainTabsActivity extends TabActivity implements
 	
 	private TextView mTVFF;
 	private TextView mTVDF;
+
+    private MainTabsListener listener = null;
+    boolean listenerRegistered = false;
+    private static List<TaskEntry> mTasks = null;
+    private static List<TaskEntry> mMapTasks = null;
+    private static SharedPreferences settings = null;
+    private TabHost tabHost = null;
     
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
@@ -116,7 +148,7 @@ public class MainTabsActivity extends TabActivity implements
 	    setContentView(R.layout.main_tabs);
 
 	    Resources res = getResources();  // Resource object to get Drawables
-	    TabHost tabHost = getTabHost();  // The activity TabHost
+	    tabHost = getTabHost();  // The activity TabHost
 	    TabHost.TabSpec spec;  
 	    Intent intent;  
 
@@ -128,10 +160,13 @@ public class MainTabsActivity extends TabActivity implements
 	    spec = tabHost.newTabSpec("taskList").setIndicator(getString(R.string.smap_taskList)).setContent(intent);
 	    tabHost.addTab(spec);
 
+        // Add listener
+        listener = new MainTabsListener(this);
+
 	    /*
 	     * Initialise a Map tab
 	     */
-        Log.i("trial", "Creating Maps Activity");
+        Log.i(TAG, "Creating Maps Activity");
 	    intent = new Intent().setClass(this, MapsActivity.class);
 	    spec = tabHost.newTabSpec("taskMap").setIndicator(getString(R.string.smap_taskMap)).setContent(intent);
 	    tabHost.addTab(spec);
@@ -158,6 +193,34 @@ public class MainTabsActivity extends TabActivity implements
 			mTVDF.setPadding(0, 0, 0, 6);
 		}
 
+        /*
+		 * NFC
+		 */
+        mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        /*
+         // Success no need to report on it
+
+        if (mNfcAdapter == null) {
+            Toast.makeText(
+                    MainTabsActivity.this,
+                    getString(R.string.smap_NFC_not_available),
+                    Toast.LENGTH_SHORT).show();
+        } else if (!mNfcAdapter.isEnabled()) {
+            Toast.makeText(
+                    MainTabsActivity.this,
+                    getString(R.string.smap_NFC_not_enabled),
+                    Toast.LENGTH_SHORT).show();
+        } else {
+
+
+            Toast.makeText(
+                    MainTabsActivity.this,
+                    getString(R.string.smap_NFC_is_available),
+                    Toast.LENGTH_SHORT).show();
+
+        }
+        */
+
     }
 	
 	private TextView getTextViewChild(ViewGroup viewGroup) {
@@ -180,29 +243,29 @@ public class MainTabsActivity extends TabActivity implements
 						MenuItem.SHOW_AS_ACTION_IF_ROOM);
 		
 		CompatibilityUtils.setShowAsAction(
-				menu.add(0, MENU_GETTASKS, 1, R.string.smap_get_tasks).setIcon(
-						android.R.drawable.ic_menu_rotate),
-						MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                menu.add(0, MENU_GETTASKS, 1, R.string.smap_get_tasks).setIcon(
+                        android.R.drawable.ic_menu_rotate),
+                MenuItem.SHOW_AS_ACTION_IF_ROOM);
 		
 		CompatibilityUtils.setShowAsAction(
-				menu.add(0, MENU_PREFERENCES, 2, R.string.server_preferences).setIcon(
-						android.R.drawable.ic_menu_preferences),
-						MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                menu.add(0, MENU_PREFERENCES, 2, R.string.server_preferences).setIcon(
+                        android.R.drawable.ic_menu_preferences),
+                MenuItem.SHOW_AS_ACTION_IF_ROOM);
 		
 		CompatibilityUtils.setShowAsAction(
-				menu.add(0, MENU_GETFORMS, 3, R.string.get_forms).setIcon(
-						android.R.drawable.ic_input_add),
-						MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                menu.add(0, MENU_GETFORMS, 3, R.string.get_forms).setIcon(
+                        android.R.drawable.ic_input_add),
+                MenuItem.SHOW_AS_ACTION_IF_ROOM);
 		
 		CompatibilityUtils.setShowAsAction(
-				menu.add(0, MENU_SENDDATA, 4, R.string.send_data).setIcon(
-						android.R.drawable.ic_menu_send),
-						MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                menu.add(0, MENU_SENDDATA, 4, R.string.send_data).setIcon(
+                        android.R.drawable.ic_menu_send),
+                MenuItem.SHOW_AS_ACTION_IF_ROOM);
 		
 		CompatibilityUtils.setShowAsAction(
-				menu.add(0, MENU_MANAGEFILES, 5, R.string.manage_files).setIcon(
-						android.R.drawable.ic_delete),
-				MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                menu.add(0, MENU_MANAGEFILES, 5, R.string.manage_files).setIcon(
+                        android.R.drawable.ic_delete),
+                MenuItem.SHOW_AS_ACTION_IF_ROOM);
 	
         return true;
     }
@@ -309,8 +372,7 @@ public class MainTabsActivity extends TabActivity implements
 	 */
 	public void taskDownloadingComplete(HashMap<String, String> result) {
 		
-		Log.i("taskDownloadingComplete", "Complete");
-    	Log.i("++++taskDownloadingComplete", "Send intent");
+		Log.i(TAG, "Complete - Send intent");
 
         // Refresh task list
     	Intent intent = new Intent("refresh");
@@ -357,7 +419,6 @@ public class MainTabsActivity extends TabActivity implements
     /*
      * (non-Javadoc)
      * @see android.app.Activity#onActivityResult(int, int, android.content.Intent)
-     * Debug code used in development of new Intents
      */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
@@ -535,4 +596,310 @@ public class MainTabsActivity extends TabActivity implements
 
     }
 
+	@Override
+	protected void onResume() {
+
+		super.onResume();
+
+        if(mNfcAdapter != null) {
+            setupNFCDispatch(this, mNfcAdapter);        // NFC
+        }
+
+        if (!listenerRegistered) {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction("startTask");
+            filter.addAction("startMapTask");
+            registerReceiver(listener, filter);
+            listenerRegistered = true;
+        }
+	}
+
+	@Override
+	protected void onPause() {
+
+		super.onPause();
+
+        if(mNfcAdapter != null) {
+            stopNFCDispatch(this, mNfcAdapter);        // NFC
+        }
+
+        if (listenerRegistered) {
+            unregisterReceiver(listener);
+            listenerRegistered = false;
+        }
+	}
+
+	/**
+	 * @param activity The corresponding {@link Activity} requesting the foreground dispatch.
+	 * @param adapter The {@link NfcAdapter} used for the foreground dispatch.
+	 */
+	public static void setupNFCDispatch(final Activity activity, NfcAdapter adapter) {
+
+        if (settings == null) {
+            settings = PreferenceManager.getDefaultSharedPreferences(activity);
+        }
+
+        if (settings.getBoolean(PreferencesActivity.KEY_STORE_LOCATION_TRIGGER, true)) {
+            final Intent intent = new Intent(activity.getApplicationContext(), activity.getClass());
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+            final PendingIntent pendingIntent = PendingIntent.getActivity(activity.getApplicationContext(), 0, intent, 0);
+
+            IntentFilter[] filters = new IntentFilter[1];
+            String[][] techList = new String[][]{};
+
+            // Notice that this is the same filter as in our manifest.
+            filters[0] = new IntentFilter();
+            filters[0].addAction(NfcAdapter.ACTION_TECH_DISCOVERED);
+            filters[0].addCategory(Intent.CATEGORY_DEFAULT);
+            try {
+                filters[0].addDataType("text/plain");
+            } catch (IntentFilter.MalformedMimeTypeException e) {
+                throw new RuntimeException("Check your mime type.");
+            }
+
+
+            //adapter.enableForegroundDispatch(activity, pendingIntent, filters, techList);
+            adapter.enableForegroundDispatch(activity, pendingIntent, null, null);
+        }
+	}
+
+	/**
+	 * @param activity The corresponding {@link Activity} requesting to stop the foreground dispatch.
+	 * @param adapter The {@link NfcAdapter} used for the foreground dispatch.
+	 */
+	public static void stopNFCDispatch(final Activity activity, NfcAdapter adapter) {
+
+        if (adapter != null) {
+            adapter.disableForegroundDispatch(activity);
+        }
+	}
+
+	@Override
+	protected void onNewIntent(Intent intent) {
+		handleNFCIntent(intent);
+	}
+
+	/*
+	 * NFC detected
+	 */
+	private void handleNFCIntent(Intent intent) {
+
+        if(nfcTriggersList != null && nfcTriggersList.size() > 0) {
+            Log.i(TAG, "tag discovered");
+            String action = intent.getAction();
+            Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+
+            mReadNFC = new NdefReaderTask();
+            mReadNFC.setDownloaderListener(this, mContext);
+            mReadNFC.execute(tag);
+        } else {
+            Toast.makeText(
+                    MainTabsActivity.this,
+                    R.string.smap_no_tasks_NFC,
+                    Toast.LENGTH_SHORT).show();
+        }
+
+	}
+
+	@Override
+	public void readComplete(String result) {
+
+        boolean foundTask = false;
+        ArrayList<NfcTrigger> triggers = null;
+        String tab = tabHost.getCurrentTabTag();
+
+        boolean isMapTab  = tab.equals("taskMap");
+        if(isMapTab) {
+            triggers = nfcTriggersMap;
+        } else {
+            triggers = nfcTriggersList;
+        }
+
+
+        if(triggers != null) {
+            for(NfcTrigger trigger : triggers) {
+                if(trigger.uid.equals(result)) {
+                    foundTask = true;
+
+                    Intent i = new Intent();
+                    if(isMapTab) {
+                        i.setAction("startMapTask");
+                    } else {
+                        i.setAction("startTask");
+                    }
+                    i.putExtra("position", trigger.position);
+                    sendBroadcast(i);
+
+                    Toast.makeText(
+                            MainTabsActivity.this,
+                            getString(R.string.smap_starting_task_from_NFC, result),
+                            Toast.LENGTH_SHORT).show();
+
+                    break;
+                }
+            }
+        }
+        if(!foundTask) {
+            Toast.makeText(
+                    MainTabsActivity.this,
+                    getString(R.string.smap_no_matching_tasks_NFC, result),
+                    Toast.LENGTH_SHORT).show();
+        }
+	}
+
+    /*
+     * Get the tasks shown on the map
+     */
+    public List<TaskEntry> getMapTasks() {
+        return mMapTasks;
+    }
+
+    /*
+     * Manage location triggers
+     */
+    public void setLocationTriggers(List<TaskEntry> data, boolean map) {
+
+        // Need to maintain two lists of tasks as the position in the task list is different for maps than for the list view
+        ArrayList<NfcTrigger> triggers = null;
+
+        if(map) {
+            mMapTasks = data;
+            nfcTriggersMap = new ArrayList<NfcTrigger> ();
+            triggers = nfcTriggersMap;
+        } else {
+            mTasks = data;
+            nfcTriggersList = new ArrayList<NfcTrigger> ();
+            triggers = nfcTriggersList;
+        }
+        /*
+         * Set NFC triggers
+         */
+
+        int position = 0;
+        for (TaskEntry t : data) {
+            if(t.type.equals("task") && t.locationTrigger != null && t.locationTrigger.trim().length() > 0
+                    && t.taskStatus.equals(Utilities.STATUS_T_ACCEPTED)) {
+                triggers.add(new NfcTrigger(t.id, t.locationTrigger, position));
+            }
+            position++;
+        }
+
+        /*
+         * TODO set geofence triggers
+         */
+    }
+
+    /*
+ * The user has selected an option to edit / complete a task
+ */
+    public void completeTask(TaskEntry entry) {
+
+        String formPath = Collect.FORMS_PATH + entry.taskForm;
+        String instancePath = entry.instancePath;
+        long taskId = entry.id;
+        String status = entry.taskStatus;
+
+        Log.i(TAG, "Complete task" + entry.id + " : " + entry.name + " : " + entry.taskStatus);
+
+        if(entry.repeat) {
+            entry.instancePath = duplicateInstance(formPath, entry.instancePath, entry);
+        }
+
+        // set the adhoc location
+        boolean canComplete = false;
+        try {
+            canComplete = Utilities.canComplete(status);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Return if the user is not allowed to update this task
+        if(!canComplete) {
+            return;
+        }
+
+        // Get the provider URI of the instance
+        String where = InstanceProviderAPI.InstanceColumns.INSTANCE_FILE_PATH + "=?";
+        String[] whereArgs = {
+                instancePath
+        };
+
+        Cursor cInstanceProvider = Collect.getInstance().getContentResolver().query(InstanceProviderAPI.InstanceColumns.CONTENT_URI,
+                null, where, whereArgs, null);
+
+        if(cInstanceProvider.getCount() != 1) {
+            Log.e("MainListActivity:completeTask", "Unique instance not found: count is:" +
+                    cInstanceProvider.getCount());
+        } else {
+            cInstanceProvider.moveToFirst();
+            Uri instanceUri = ContentUris.withAppendedId(InstanceProviderAPI.InstanceColumns.CONTENT_URI,
+                    cInstanceProvider.getLong(
+                            cInstanceProvider.getColumnIndex(InstanceProviderAPI.InstanceColumns._ID)));
+            // Start activity to complete form
+            Intent i = new Intent(Intent.ACTION_EDIT, instanceUri);
+
+            i.putExtra(FormEntryActivity.KEY_FORMPATH, formPath);	// TODO Don't think this is needed
+            i.putExtra(FormEntryActivity.KEY_TASK, taskId);
+            if(instancePath != null) {	// TODO Don't think this is needed
+                i.putExtra(FormEntryActivity.KEY_INSTANCEPATH, instancePath);
+            }
+            startActivity(i);
+        }
+        cInstanceProvider.close();
+
+    }
+
+
+    /*
+     * Duplicate the instance
+     * Call this if the instance repeats
+     */
+    public String duplicateInstance(String formPath, String originalPath, TaskEntry entry) {
+        String newPath = null;
+
+        // 1. Get a new instance path
+        ManageForm mf = new ManageForm();
+        newPath = mf.getInstancePath(formPath, 0);
+
+        // 2. Duplicate the instance entry and get the new path
+        Utilities.duplicateTask(originalPath, newPath, entry);
+
+        // 3. Copy the instance files
+        Utilities.copyInstanceFiles(originalPath, newPath);
+        return newPath;
+    }
+
+    protected class MainTabsListener extends BroadcastReceiver {
+
+        private MainTabsActivity mActivity = null;
+
+        public MainTabsListener(MainTabsActivity activity) {
+            mActivity = activity;
+        }
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            Log.i(TAG, "Intent received: " + intent.getAction());
+
+            if (intent.getAction().equals("startTask")) {
+
+                int position =  intent.getIntExtra("position", -1);
+                if(position >= 0) {
+                    TaskEntry entry = (TaskEntry) mTasks.get(position);
+
+                    mActivity.completeTask(entry);
+                }
+            } else if (intent.getAction().equals("startMapTask")) {
+
+                int position =  intent.getIntExtra("position", -1);
+                if(position >= 0) {
+                    TaskEntry entry = (TaskEntry) mMapTasks.get(position);
+
+                    mActivity.completeTask(entry);
+
+                }
+            }
+        }
+    }
 }

@@ -183,7 +183,7 @@ public class Utilities {
             values.put(InstanceColumns.DISPLAY_NAME, entry.displayName);
             values.put(InstanceColumns.T_TASK_STATUS, entry.taskStatus);
             values.put(InstanceColumns.STATUS, entry.taskStatus);
-            values.put(InstanceColumns.T_REPEAT, false);                        // Duplicated task should not be a repeat
+            values.put(InstanceColumns.T_REPEAT, true);     // Duplicated task should also be a repeat
             values.put(InstanceColumns.T_SCHED_START, entry.taskStart);
             values.put(InstanceColumns.T_ADDRESS, entry.taskAddress);
             values.put(InstanceColumns.FORM_PATH, entry.taskForm);
@@ -193,6 +193,7 @@ public class Utilities {
             values.put(InstanceColumns.SCHED_LON, entry.schedLon);
             values.put(InstanceColumns.SCHED_LAT, entry.schedLat);
             values.put(InstanceColumns.SOURCE, entry.source);
+            values.put(InstanceColumns.T_LOCATION_TRIGGER, entry.locationTrigger);
 
             final ContentResolver resolver = Collect.getInstance().getContentResolver();
             resolver.insert(InstanceColumns.CONTENT_URI, values);
@@ -381,7 +382,8 @@ public class Utilities {
                 InstanceColumns.T_IS_SYNC,
                 InstanceColumns.T_ASS_ID,
                 InstanceColumns.UUID,
-                InstanceColumns.SOURCE
+                InstanceColumns.SOURCE,
+                InstanceColumns.T_LOCATION_TRIGGER
 
         };
 
@@ -435,6 +437,7 @@ public class Utilities {
                 entry.assId = c.getLong(c.getColumnIndex(InstanceColumns.T_ASS_ID));
                 entry.uuid = c.getString(c.getColumnIndex(InstanceColumns.UUID));
                 entry.source = c.getString(c.getColumnIndex(InstanceColumns.SOURCE));
+                entry.locationTrigger = c.getString(c.getColumnIndex(InstanceColumns.T_LOCATION_TRIGGER));
 
                 tasks.add(entry);
                 c.moveToNext();
@@ -556,8 +559,8 @@ public class Utilities {
     }
 
     /*
-* Set the status for the provided assignment id
-*/
+     * Set the status for the provided assignment id
+     */
     public static void updateParametersForAssignment(long assId, TaskAssignment ta) {
 
         Uri dbUri =  InstanceColumns.CONTENT_URI;
@@ -572,6 +575,7 @@ public class Utilities {
         ContentValues values = new ContentValues();
         values.put(InstanceColumns.T_REPEAT, ta.task.repeat ? 1 : 0);
         values.put(InstanceColumns.T_SCHED_START, ta.task.scheduled_at.getTime());
+        values.put(InstanceColumns.T_LOCATION_TRIGGER, ta.task.location_trigger);
 
         Collect.getInstance().getContentResolver().update(dbUri, values, selectClause, selectArgs);
 
@@ -592,6 +596,7 @@ public class Utilities {
      * Return true if the current task status allows it to be completed
      */
     public static boolean canComplete(String currentStatus) {
+
         boolean valid = false;
         if(currentStatus.equals(STATUS_T_ACCEPTED)) {
             valid = true;

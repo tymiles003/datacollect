@@ -46,7 +46,7 @@ public class InstanceProvider extends ContentProvider {
     private static final String t = "InstancesProvider";
 
     private static final String DATABASE_NAME = "instances.db";
-    private static final int DATABASE_VERSION = 6;		// smap
+    private static final int DATABASE_VERSION = 7;		// smap
     private static final String INSTANCES_TABLE_NAME = "instances";
 
     private static HashMap<String, String> sInstancesProjectionMap;
@@ -94,6 +94,7 @@ public class InstanceProvider extends ContentProvider {
                + InstanceColumns.T_TASK_STATUS + " text, "		// smap
                + InstanceColumns.T_REPEAT + " integer, "		// smap
                + InstanceColumns.T_UPDATEID + " text, "		    // smap
+               + InstanceColumns.T_LOCATION_TRIGGER + " text, " // smap
                + InstanceColumns.UUID + " text, "		        // smap
                + InstanceColumns.STATUS + " text not null, "
                + InstanceColumns.LAST_STATUS_CHANGE_DATE + " date not null, "
@@ -165,6 +166,16 @@ public class InstanceProvider extends ContentProvider {
                 }catch(Exception e) {
                     // Catch errors, its possible the user upgraded then downgraded
                     Log.w(t, "Error in upgrading to database version 6");
+                    e.printStackTrace();
+                }
+            }
+            if ( oldVersion < 7 ) {
+                try {
+                    db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
+                            InstanceColumns.T_LOCATION_TRIGGER + " text;");
+                }catch(Exception e) {
+                    // Catch errors, its possible the user upgraded then downgraded
+                    Log.w(t, "Error in upgrading to database version 7");
                     e.printStackTrace();
                 }
             }
@@ -475,6 +486,7 @@ public class InstanceProvider extends ContentProvider {
         sInstancesProjectionMap.put(InstanceColumns.STATUS, InstanceColumns.STATUS);
         sInstancesProjectionMap.put(InstanceColumns.T_REPEAT, InstanceColumns.T_REPEAT);
         sInstancesProjectionMap.put(InstanceColumns.T_UPDATEID, InstanceColumns.T_UPDATEID);
+        sInstancesProjectionMap.put(InstanceColumns.T_LOCATION_TRIGGER, InstanceColumns.T_LOCATION_TRIGGER);
         sInstancesProjectionMap.put(InstanceColumns.LAST_STATUS_CHANGE_DATE, InstanceColumns.LAST_STATUS_CHANGE_DATE);
         sInstancesProjectionMap.put(InstanceColumns.DISPLAY_SUBTEXT, InstanceColumns.DISPLAY_SUBTEXT);
         sInstancesProjectionMap.put(InstanceColumns.SOURCE, InstanceColumns.SOURCE);                // smap

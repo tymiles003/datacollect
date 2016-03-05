@@ -14,6 +14,7 @@
 
 package org.smap.smapTask.android.activities;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.smap.smapTask.android.loaders.TaskLoader;
@@ -27,9 +28,11 @@ import org.odk.collect.android.application.Collect;
 
 import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.location.LocationManager;
 import android.net.Uri;
@@ -46,6 +49,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.smap.smapTask.android.R;
 import org.smap.smapTask.android.receivers.LocationChangedReceiver;
@@ -66,8 +70,8 @@ public class MainListActivity extends FragmentActivity  {
 
     private LocationManager locationManager;
     protected PendingIntent locationListenerPendingIntent;
-	
-	
+    private static MainTabsActivity tabsActivity;
+
 	 @Override
 	  public void onCreate(Bundle savedInstanceState) {
          super.onCreate(savedInstanceState);
@@ -83,6 +87,8 @@ public class MainListActivity extends FragmentActivity  {
          locationManager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
          Intent activeIntent = new Intent(this, LocationChangedReceiver.class);
          locationListenerPendingIntent = PendingIntent.getBroadcast(this, 1000, activeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+         tabsActivity = (MainTabsActivity) getParent();
      }
 
 	
@@ -132,6 +138,7 @@ public class MainListActivity extends FragmentActivity  {
 	    @Override
 	    public void onLoadFinished(Loader<List<TaskEntry>> loader, List<TaskEntry> data) {
 	    	mAdapter.setData(data);
+            tabsActivity.setLocationTriggers(data, false);      // NFC and geofence triggers
 
 	    	if (isResumed()) {
 	    		setListShown(true);
@@ -144,9 +151,7 @@ public class MainListActivity extends FragmentActivity  {
 	    public void onLoaderReset(Loader<List<TaskEntry>> loader) {
 	      mAdapter.setData(null);
 	    }
-	    
-	    
-	    
+
 	    
 	    @Override
 	    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -185,14 +190,16 @@ public class MainListActivity extends FragmentActivity  {
 	    public void onListItemClick(ListView listView, View view, int position, long id) {
 	 	       
 	    	TaskEntry entry = (TaskEntry) getListAdapter().getItem(position);
-	
-	    	
+
 	    	if(entry.type.equals("task")) {
-	    		String formPath = Collect.FORMS_PATH + entry.taskForm;
-				if(entry.repeat) {
-					entry.instancePath = duplicateInstance(formPath, entry.instancePath, entry);
-				}
-	    		completeTask(entry.instancePath, formPath, entry.id, entry.taskStatus);
+                if(entry.locationTrigger != null) {
+                    Toast.makeText(
+                            tabsActivity,
+                            getString(R.string.smap_must_start_from_nfc),
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    tabsActivity.completeTask(entry);
+                }
 	    	} else {
 	    		Uri formUri = ContentUris.withAppendedId(FormsColumns.CONTENT_URI, entry.id);
 	    		startActivity(new Intent(Intent.ACTION_EDIT, formUri));
@@ -200,73 +207,6 @@ public class MainListActivity extends FragmentActivity  {
 
 	    }
 
-		/*
-		 * Duplicate the instance
-		 * Call this if the instance repeats
-		 */
-		public String duplicateInstance(String formPath, String originalPath, TaskEntry entry) {
-			String newPath = null;
-
-			// 1. Get a new instance path
-			ManageForm mf = new ManageForm();
-			newPath = mf.getInstancePath(formPath, 0);
-
-			// 2. Duplicate the instance entry and get the new path
-			Utilities.duplicateTask(originalPath, newPath, entry);
-
-			// 3. Copy the instance files
-			Utilities.copyInstanceFiles(originalPath, newPath);
-			return newPath;
-		}
-	 
-		/*
-		 * The user has selected an option to edit / complete a task
-		 */
-		public void completeTask(String instancePath, String formPath, long taskId, String status) {
-		
-			// set the adhoc location
-			boolean canComplete = false;
-			try {
-				canComplete = Utilities.canComplete(status);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			
-			// Return if the user is not allowed to update this task
-			if(!canComplete) {
-				return;
-			}
-			
-			// Get the provider URI of the instance 
-	        String where = InstanceColumns.INSTANCE_FILE_PATH + "=?";
-	        String[] whereArgs = {
-	            instancePath
-	        };
-	       
-			Cursor cInstanceProvider = Collect.getInstance().getContentResolver().query(InstanceColumns.CONTENT_URI, 
-					null, where, whereArgs, null);
-			
-			if(cInstanceProvider.getCount() != 1) {
-				Log.e("MainListActivity:completeTask", "Unique instance not found: count is:" + 
-						cInstanceProvider.getCount());
-			} else {
-				cInstanceProvider.moveToFirst();
-				Uri instanceUri = ContentUris.withAppendedId(InstanceColumns.CONTENT_URI,
-		                cInstanceProvider.getLong(
-		                cInstanceProvider.getColumnIndex(InstanceColumns._ID)));
-				// Start activity to complete form
-				Intent i = new Intent(Intent.ACTION_EDIT, instanceUri);
-	
-				i.putExtra(FormEntryActivity.KEY_FORMPATH, formPath);	// TODO Don't think this is needed
-				i.putExtra(FormEntryActivity.KEY_TASK, taskId);			
-				if(instancePath != null) {	// TODO Don't think this is needed
-					i.putExtra(FormEntryActivity.KEY_INSTANCEPATH, instancePath);           
-				}
-				startActivity(i);
-			} 
-			cInstanceProvider.close();
-			
-		}
 
 	 }
 
@@ -285,6 +225,7 @@ public class MainListActivity extends FragmentActivity  {
 
     @Override
     protected void onResume() {
+
         super.onResume();
     }
 
@@ -325,7 +266,11 @@ public class MainListActivity extends FragmentActivity  {
          *  However it may be useful if we were just recording location of survey
          */
         if (locationManager.getAllProviders().contains(LocationManager.GPS_PROVIDER)) {     // Fix issue with errors on devices without GPS
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Constants.GPS_INTERVAL, Constants.GPS_DISTANCE, locationListenerPendingIntent);
+            try {
+				locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Constants.GPS_INTERVAL, Constants.GPS_DISTANCE, locationListenerPendingIntent);
+			} catch (SecurityException e) {
+				// Permission not granted
+			}
         }
     }
 

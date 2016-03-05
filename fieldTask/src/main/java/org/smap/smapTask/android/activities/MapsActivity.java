@@ -60,6 +60,7 @@ public class MapsActivity extends FragmentActivity  {
         FragmentManager fm = getSupportFragmentManager();
         if (fm.findFragmentById(R.id.map_content_frame) == null) {
             map = new MapFragment();
+            map.setTabsActivity((MainTabsActivity) getParent());
             fm.beginTransaction().add(android.R.id.content, map).commit();
 
             // Listen for new locations

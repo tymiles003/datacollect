@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.smap.smapTask.android.listeners.TaskDownloaderListener;
 import org.smap.smapTask.android.loaders.PointEntry;
@@ -87,7 +88,8 @@ import org.smap.smapTask.android.loaders.TaskEntry;
  * @author Neil Penman (neilpenman@gmail.com)
  */
 public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, String>> {
-    
+
+    static String TAG = "DownloadTasksTask";
 	private TaskDownloaderListener mStateListener;
 	HashMap<String, String> results = null;
     SharedPreferences settings = null;
@@ -133,13 +135,17 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         public Date deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
             SimpleDateFormat sdfOld = new SimpleDateFormat("dd/MM/yyyy hh:mm");
             SimpleDateFormat sdfNew = new SimpleDateFormat("yyyy-MM-dd hh:mm");
+            sdfOld.setTimeZone(TimeZone.getTimeZone("UTC"));
+            sdfNew.setTimeZone(TimeZone.getTimeZone("UTC"));
             Date date = null;
             try {
+                Log.i(TAG, "Date string primitive: " + json.getAsJsonPrimitive().getAsString());
                 try {
                     date = sdfNew.parse(json.getAsJsonPrimitive().getAsString());
                 } catch (Exception e) {
                     date = sdfOld.parse(json.getAsJsonPrimitive().getAsString());
                 }
+                Log.i(TAG, "Parsed date: " + date.getTime());
                 return date;
             } catch (ParseException e) {
                 e.printStackTrace();
@@ -271,8 +277,6 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                 }
 
                 // De-serialise
-                //gson = new GsonBuilder().setDateFormat("dd/MM/yyyy hh:mm").create();    // old date format replace with next line or solution that handles both
-                //gson = new GsonBuilder().setDateFormat("yyyy-MM-dd hh:mm").create();
                 GsonBuilder gb = new GsonBuilder().registerTypeAdapter(Date.class, new DateDeserializer());
                 gson = gb.create();
                 Reader isReader = new InputStreamReader(is);
@@ -284,6 +288,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                 if(tr.settings !=null ) {
                     SharedPreferences.Editor editor = settings.edit();
                     editor.putBoolean(PreferencesActivity.KEY_STORE_USER_TRAIL, tr.settings.ft_send_trail);
+                    editor.putBoolean(PreferencesActivity.KEY_STORE_LOCATION_TRIGGER, tr.settings.ft_location_trigger);
                     editor.commit();
                 }
 
@@ -521,7 +526,8 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         			
     				Log.i(getClass().getSimpleName(), "Task: " + assignment.assignment_id + " Status:" +
     						assignment.assignment_status + " Mode:" + ta.task.assignment_mode +
-    						" Address: " + ta.task.address + 
+    						" Address: " + ta.task.address +
+                            " NFC: " + ta.task.location_trigger +
     						" Form: " + ta.task.form_id + " version: " + ta.task.form_version + 
     						" Type: " + ta.task.type + "Assignee: " + assignment.assignee + "Username: " + username);
             		

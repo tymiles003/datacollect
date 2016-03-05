@@ -98,6 +98,7 @@ public class PreferencesActivity extends PreferenceActivity implements
 	public static final String KEY_CONSTRAINT_BEHAVIOR = "constraint_behavior";
 
     public static final String KEY_STORE_USER_TRAIL = "smap_gps_trail";       // smap
+    public static final String KEY_STORE_LOCATION_TRIGGER = "smap_location_trigger";       // smap
 
 	private PreferenceScreen mSplashPathPreference;
 	private EditTextPreference mSubmissionUrlPreference;
@@ -112,7 +113,8 @@ public class PreferencesActivity extends PreferenceActivity implements
 
 	private CheckBoxPreference mAutosendWifiPreference;
 	private CheckBoxPreference mAutosendNetworkPreference;
-    private CheckBoxPreference mStoreUserTrailPreference;             // smap
+    private CheckBoxPreference mStoreUserTrailPreference;                       // smap
+    private CheckBoxPreference mStoreUserLocationTriggerPreference;             // smap
 	private ListPreference mProtocolPreference;
 
 	@Override

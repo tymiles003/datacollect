@@ -12,13 +12,21 @@
  * the License.
  */
 
+/*
+ * Class to store NFC trigger
+ */
 package org.smap.smapTask.android.taskModel;
 
-/**
- * Created by neilpenman on 14/11/2014.
- */
-public class FieldTaskSettings {
-    public boolean ft_delete_submitted;
-    public boolean ft_send_trail;
-    public boolean ft_location_trigger;
+import org.smap.smapTask.android.loaders.TaskEntry;
+
+public class NfcTrigger {
+	public String uid;
+	public long tId;
+    public int position;
+
+    public NfcTrigger(long tId, String uid, int position) {
+        this.uid = uid;
+        this.tId = tId;
+        this.position = position;
+    }
 }
