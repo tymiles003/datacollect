@@ -59,8 +59,9 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
     private Boolean mMarkCompleted;
     private Uri mUri;
     private String mInstanceName;
-    private long mTaskId;		// ---------- SMAP
-    private String mFormPath;	// ---------- SMAP
+    private long mTaskId;		    // ---------- SMAP
+    private String mFormPath;	    // ---------- SMAP
+    private String mSurveyNotes;	// ---------- SMAP
 
     public static final int SAVED = 500;
     public static final int SAVE_ERROR = 501;
@@ -70,13 +71,14 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
 
 
     public SaveToDiskTask(Uri uri, Boolean saveAndExit, Boolean markCompleted, String updatedName,
-    		long taskId, String formPath) {		// SMAP added assignment_id, formPath
+    		long taskId, String formPath, String surveyNotes) {		// SMAP added assignment_id, formPath
         mUri = uri;
         mSave = saveAndExit;
         mMarkCompleted = markCompleted;
         mInstanceName = updatedName;
         mTaskId = taskId;  // SMAP
         mFormPath = formPath; // SMAP
+        mSurveyNotes = surveyNotes; // Smap
     }
 
 
@@ -193,6 +195,7 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
 
         values.put(InstanceColumns.T_ACT_FINISH, Calendar.getInstance().getTime().getTime());
         values.put(InstanceColumns.T_IS_SYNC, InstanceProviderAPI.STATUS_SYNC_NO);
+        values.put(InstanceColumns.T_SURVEY_NOTES, mSurveyNotes);
         // Smap End
 
         // update this whether or not the status is complete...

@@ -1758,9 +1758,17 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 			return false;
 		}
 
+        // Smap start
+        String surveyNotes = null;
+        FormController formController = Collect.getInstance().getFormController();
+        if(formController != null) {
+            surveyNotes = formController.getSurveyNotes();
+        }
+        // Smap end
+
         synchronized (saveDialogLock) {
 		    mSaveToDiskTask = new SaveToDiskTask(getIntent().getData(), exit,
-					complete, updatedSaveName, mTaskId, mFormPath); 	// SMAP added mTaskId, mFormPath
+					complete, updatedSaveName, mTaskId, mFormPath, surveyNotes); 	// SMAP added mTaskId, mFormPath, surveyNotes
 	    	mSaveToDiskTask.setFormSavedListener(this);
 		    showDialog(SAVING_DIALOG);
             // show dialog before we execute...

@@ -844,7 +844,7 @@ public class MainTabsActivity extends TabActivity implements
 
             i.putExtra(FormEntryActivity.KEY_FORMPATH, formPath);	// TODO Don't think this is needed
             i.putExtra(FormEntryActivity.KEY_TASK, taskId);
-            i.putExtra(FormEntryActivity.KEY_SURVEY_NOTES, "Some notes");
+            i.putExtra(FormEntryActivity.KEY_SURVEY_NOTES, surveyNotes);
             if(instancePath != null) {	// TODO Don't think this is needed
                 i.putExtra(FormEntryActivity.KEY_INSTANCEPATH, instancePath);
             }

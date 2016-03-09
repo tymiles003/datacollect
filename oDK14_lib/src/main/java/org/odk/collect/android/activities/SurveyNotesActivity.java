@@ -52,7 +52,7 @@ public class SurveyNotesActivity extends Activity {
         setContentView(R.layout.survey_note);
 
         final Button sb = (Button) findViewById(R.id.save_button);
-        sb.setOnClickListener(new  View.OnClickListener() {
+        sb.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 FormController formController = Collect.getInstance().getFormController();
                 EditText editText = (EditText) findViewById(R.id.survey_notes);
@@ -82,15 +82,25 @@ public class SurveyNotesActivity extends Activity {
         }
         if(notes == null) {
             notes = "";
-        } else {
-            notes += "\n";
         }
-        if(qname.length() > 0) {
-            notes += "[" + qname + "] ";
+
+        if(qname.length() > 0 && !notes.contains(qname) && notes.length() > 0) {
+            notes += "\n\n[" + qname + "]\n";
+        } else if(qname.length() > 0 && !notes.contains(qname)) {
+            notes += "[" + qname + "]\n";
         }
 
         editText.setText(notes, TextView.BufferType.EDITABLE);
-        editText.setSelection(editText.getText().length());
+        int offset = notes.indexOf("[" + qname + "]") + qname.length() + 2;
+        int nextComment = notes.indexOf('[', offset);
+        int cursorLocn;
+        if(nextComment >= 0) {
+            cursorLocn = nextComment - 1;
+        } else {
+            cursorLocn = notes.length();
+        }
+
+        editText.setSelection(cursorLocn);
     }
 
     @Override
