@@ -238,7 +238,6 @@ public class Collect extends Application {
         location = l;
     }
 
-    // Smap start, set and get location
     public Location getLocation() {
         return location;
     }

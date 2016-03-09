@@ -795,6 +795,7 @@ public class MainTabsActivity extends TabActivity implements
  */
     public void completeTask(TaskEntry entry) {
 
+        String surveyNotes = null;
         String formPath = Collect.FORMS_PATH + entry.taskForm;
         String instancePath = entry.instancePath;
         long taskId = entry.id;
@@ -836,11 +837,14 @@ public class MainTabsActivity extends TabActivity implements
             Uri instanceUri = ContentUris.withAppendedId(InstanceProviderAPI.InstanceColumns.CONTENT_URI,
                     cInstanceProvider.getLong(
                             cInstanceProvider.getColumnIndex(InstanceProviderAPI.InstanceColumns._ID)));
+            surveyNotes = cInstanceProvider.getString(
+                    cInstanceProvider.getColumnIndex(InstanceProviderAPI.InstanceColumns.T_SURVEY_NOTES));
             // Start activity to complete form
             Intent i = new Intent(Intent.ACTION_EDIT, instanceUri);
 
             i.putExtra(FormEntryActivity.KEY_FORMPATH, formPath);	// TODO Don't think this is needed
             i.putExtra(FormEntryActivity.KEY_TASK, taskId);
+            i.putExtra(FormEntryActivity.KEY_SURVEY_NOTES, "Some notes");
             if(instancePath != null) {	// TODO Don't think this is needed
                 i.putExtra(FormEntryActivity.KEY_INSTANCEPATH, instancePath);
             }

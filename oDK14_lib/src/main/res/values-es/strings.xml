@@ -130,6 +130,7 @@
   <string name="username">Nombre del Usuario</string>
   <string name="view_hierarchy">Ir a la Pregunta</string>
   <string name="general_preferences">Cambiar la configuración</string>
+  <string name="smap_add_comment">añadir comentarios</string>
   <string name="click_to_web">Toque para visitar http://opendatakit.org</string>
   <string name="client">Interfaz de usuario</string>
   <string name="show_splash">Mostar la pantalla inicial</string>

@@ -2,7 +2,7 @@ apply plugin: 'android-library'
 
 android {
     compileSdkVersion "Google Inc.:Google APIs:19"
-    buildToolsVersion "21.0.2"
+    buildToolsVersion '23.0.2'
 
     defaultConfig {
         // applicationId "org.odk.collect.android"

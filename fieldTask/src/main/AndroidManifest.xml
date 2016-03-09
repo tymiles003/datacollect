@@ -176,6 +176,10 @@
         <activity
             android:name="org.odk.collect.android.activities.FormHierarchyActivity"
             android:label="@string/app_name" />
+        <!-- Smap -->
+        <activity
+            android:name="org.odk.collect.android.activities.SurveyNotesActivity"
+            android:label="@string/app_name" />
         <activity
             android:name="org.odk.collect.android.activities.GeoPointActivity"
             android:label="@string/app_name" />

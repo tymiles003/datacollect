@@ -87,7 +87,13 @@ public class InstanceUploaderTask extends AsyncTask<Long, Integer, InstanceUploa
      * @return false if credentials are required and we should terminate immediately.
      */
     private boolean uploadOneSubmission(String urlString, String id, String instanceFilePath,
-    			Uri toUpdate, HttpContext localContext, Map<Uri, Uri> uriRemap, Outcome outcome, String status) {		// smap add status
+    			                        Uri toUpdate,
+                                        HttpContext localContext,
+                                        Map<Uri, Uri> uriRemap,
+                                        Outcome outcome,
+                                        String status,
+                                        String location_trigger,
+                                        String survey_notes) {		// smap add status
 
     	Collect.getInstance().getActivityLogger().logAction(this, urlString, instanceFilePath);
 
@@ -444,6 +450,25 @@ public class InstanceUploaderTask extends AsyncTask<Long, Integer, InstanceUploa
                     }
                 }
             }
+
+            // Start Smap - Add the location trigger and comments if they exist
+            if(location_trigger != null) {
+                try {
+                    StringBody sb = new StringBody(location_trigger, Charset.forName("UTF-8"));
+                    entity.addPart("location_trigger", sb);
+                } catch (Exception e) {
+                    e.printStackTrace(); // never happens...
+                }
+            }
+            if(survey_notes != null) {
+                try {
+                    StringBody sb = new StringBody(survey_notes, Charset.forName("UTF-8"));
+                    entity.addPart("survey_notes", sb);
+                } catch (Exception e) {
+                    e.printStackTrace(); // never happens...
+                }
+            }
+            // End Smap
             
             httppost.setEntity(entity);
 
@@ -578,15 +603,21 @@ public class InstanceUploaderTask extends AsyncTask<Long, Integer, InstanceUploa
 	                    // Smap End
 	                }
 
-	                // add the deviceID to the request...
+                    // Smap start get smap specific data values to send to the server
 	                String status = c.getString(c.getColumnIndex(InstanceColumns.STATUS));	// smap get status
+                    String location_trigger = c.getString(c.getColumnIndex(InstanceColumns.T_LOCATION_TRIGGER));	// smap get location trigger
+                    String survey_notes = c.getString(c.getColumnIndex(InstanceColumns.T_SURVEY_NOTES));	// smap get survey notes
+                    // smap end
+
+                    // add the deviceID to the request...
 	                try {
 						urlString += "?deviceID=" + URLEncoder.encode(deviceId, "UTF-8");
 					} catch (UnsupportedEncodingException e) {
 						// unreachable...
 					}
 
-	                if ( !uploadOneSubmission(urlString, id, instance, toUpdate, localContext, uriRemap, outcome, status) ) {	// smap add status
+	                if ( !uploadOneSubmission(urlString, id, instance, toUpdate, localContext, uriRemap, outcome,
+                            status, location_trigger, survey_notes) ) {	// smap add status
 	                	return outcome; // get credentials...
 	                }
 	            }
