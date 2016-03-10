@@ -62,6 +62,7 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
     private long mTaskId;		    // ---------- SMAP
     private String mFormPath;	    // ---------- SMAP
     private String mSurveyNotes;	// ---------- SMAP
+    private boolean mCanUpdate = true;  // Smap
 
     public static final int SAVED = 500;
     public static final int SAVE_ERROR = 501;
@@ -71,7 +72,7 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
 
 
     public SaveToDiskTask(Uri uri, Boolean saveAndExit, Boolean markCompleted, String updatedName,
-    		long taskId, String formPath, String surveyNotes) {		// SMAP added assignment_id, formPath
+    		long taskId, String formPath, String surveyNotes, boolean canUpdate) {		// SMAP added assignment_id, formPath
         mUri = uri;
         mSave = saveAndExit;
         mMarkCompleted = markCompleted;
@@ -79,6 +80,7 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
         mTaskId = taskId;  // SMAP
         mFormPath = formPath; // SMAP
         mSurveyNotes = surveyNotes; // Smap
+        mCanUpdate = canUpdate; // Smap
     }
 
 
@@ -134,7 +136,7 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
     	}
 
         try {
-    	    exportData(mMarkCompleted);
+    	    exportData(mMarkCompleted, mCanUpdate);
 
             // attempt to remove any scratch file
             File shadowInstance = savepointFile(formController.getInstancePath());
@@ -143,6 +145,7 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
             }
 
             saveResult.setSaveResult(mSave ? SAVED_AND_EXIT : SAVED);
+
         } catch (Exception e) {
             Log.e(t, e.getMessage(), e);
 
@@ -153,48 +156,56 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
         return saveResult;
     }
 
-    private void updateInstanceDatabase(boolean incomplete, boolean canEditAfterCompleted) {
+    private void updateInstanceDatabase(boolean incomplete, boolean canEditAfterCompleted, boolean canUpdate) {
 
     	String source = null;
         FormController formController = Collect.getInstance().getFormController();
 
         // Update the instance database...
         ContentValues values = new ContentValues();
-        if (mInstanceName != null) {
+        if (canUpdate && mInstanceName != null) {
             values.put(InstanceColumns.DISPLAY_NAME, mInstanceName);
         }
-        if (incomplete || !mMarkCompleted) {
-            values.put(InstanceColumns.STATUS, InstanceProviderAPI.STATUS_INCOMPLETE);
-        } else {
-            values.put(InstanceColumns.STATUS, InstanceProviderAPI.STATUS_COMPLETE);
+        if(canUpdate) {
+            if (incomplete || !mMarkCompleted) {
+                values.put(InstanceColumns.STATUS, InstanceProviderAPI.STATUS_INCOMPLETE);
+            } else {
+                values.put(InstanceColumns.STATUS, InstanceProviderAPI.STATUS_COMPLETE);
+            }
         }
 
         // Smap Start
-        if(mMarkCompleted) {
-            values.put(InstanceColumns.T_TASK_STATUS, "complete");
-        } else {
-            values.put(InstanceColumns.T_TASK_STATUS, "accepted");
+        if(canUpdate) {
+            if (mMarkCompleted) {
+                values.put(InstanceColumns.T_TASK_STATUS, "complete");
+            } else {
+                values.put(InstanceColumns.T_TASK_STATUS, "accepted");
+            }
         }
 
         // Add uuid
-        values.put(InstanceColumns.UUID, formController.getSubmissionMetadata().instanceId);
+        if(canUpdate) {
+            values.put(InstanceColumns.UUID, formController.getSubmissionMetadata().instanceId);
+        }
 
         // Add actual location
-        Location location = Collect.getInstance().getLocation();
-        double lon = 0.0;
-        double lat = 0.0;
-        if(location != null) {
-            Log.i("saveToDiskTask", "Setting location");
-            lon = location.getLongitude();
-            lat = location.getLatitude();
-        } else {
-            Log.i("saveToDiskTask", "Location is null");
-        }
-        values.put(InstanceColumns.ACT_LON, lon);
-        values.put(InstanceColumns.ACT_LAT, lat);
+        if(canUpdate) {
+            Location location = Collect.getInstance().getLocation();
+            double lon = 0.0;
+            double lat = 0.0;
+            if (location != null) {
+                Log.i("saveToDiskTask", "Setting location");
+                lon = location.getLongitude();
+                lat = location.getLatitude();
+            } else {
+                Log.i("saveToDiskTask", "Location is null");
+            }
+            values.put(InstanceColumns.ACT_LON, lon);
+            values.put(InstanceColumns.ACT_LAT, lat);
 
-        values.put(InstanceColumns.T_ACT_FINISH, Calendar.getInstance().getTime().getTime());
-        values.put(InstanceColumns.T_IS_SYNC, InstanceProviderAPI.STATUS_SYNC_NO);
+            values.put(InstanceColumns.T_ACT_FINISH, Calendar.getInstance().getTime().getTime());
+            values.put(InstanceColumns.T_IS_SYNC, InstanceProviderAPI.STATUS_SYNC_NO);
+        }
         values.put(InstanceColumns.T_SURVEY_NOTES, mSurveyNotes);
         // Smap End
 
@@ -280,7 +291,6 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
 
         Intent intent = new Intent("refresh");      // Smap
         LocalBroadcastManager.getInstance(Collect.getInstance()).sendBroadcast(intent); // Smap
-        //updateSmapTaskStatus(source);	// SMAP
     }
     
     /**
@@ -302,7 +312,7 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
      * @param markCompleted
      * @return
      */
-    private void exportData(boolean markCompleted) throws IOException, EncryptionException {
+    private void exportData(boolean markCompleted, boolean canUpdate) throws IOException, EncryptionException {
         FormController formController = Collect.getInstance().getFormController();
 
         publishProgress(Collect.getInstance().getString(R.string.survey_saving_collecting_message));
@@ -312,16 +322,17 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
         String instancePath = formController.getInstancePath().getAbsolutePath();
 
         publishProgress(Collect.getInstance().getString(R.string.survey_saving_saving_message));
-
-        exportXmlFile(payload, instancePath);
+        if(canUpdate) {
+            exportXmlFile(payload, instancePath);
+        }
 
         // update the mUri. We have exported the reloadable instance, so update status...
         // Since we saved a reloadable instance, it is flagged as re-openable so that if any error
         // occurs during the packaging of the data for the server fails (e.g., encryption),
         // we can still reopen the filled-out form and re-save it at a later time.
-        updateInstanceDatabase(true, true);
+        updateInstanceDatabase(true, true, canUpdate);
 
-        if ( markCompleted ) {
+        if ( markCompleted && canUpdate ) {
             // now see if the packaging of the data for the server would make it
         	// non-reopenable (e.g., encryption or send an SMS or other fraction of the form).
             boolean canEditAfterCompleted = formController.isSubmissionEntireForm();
@@ -367,7 +378,7 @@ public class SaveToDiskTask extends AsyncTask<Void, String, SaveResult> {
             // 2. Overwrite the instanceXml with the submission.xml
             //    and remove the plaintext attachments if encrypting
 
-            updateInstanceDatabase(false, canEditAfterCompleted);
+            updateInstanceDatabase(false, canEditAfterCompleted, canUpdate);
 
 	        if (  !canEditAfterCompleted ) {
 	            // AT THIS POINT, there is no going back.  We are committed

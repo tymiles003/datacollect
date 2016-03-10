@@ -54,7 +54,7 @@
   <string name="smap_no_matching_tasks_NFC">Ninguna tarea corresponde al tag NFC leído : %1$s</string>
   <string name="smap_starting_task_from_NFC">Activando tarea con tag NFC  : %1$s</string>
   <string name="smap_must_start_from_nfc">Esta tarea requiere lectura de tag NFC - Favor acerque el celular al tag</string>
-
+  <string name="read_only">This task is complete and only its comments can be changed</string>
 
 
 </resources>

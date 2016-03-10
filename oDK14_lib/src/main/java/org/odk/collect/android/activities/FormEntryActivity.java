@@ -158,8 +158,10 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 	public static final String KEY_ERROR = "error";
     public static final String KEY_TASK = "task";		// SMAP
     public static final String KEY_SURVEY_NOTES = "surveyNotes";		// SMAP
+    public static final String KEY_CAN_UPDATE = "canUpdate";		// SMAP
     private long mTaskId;								// SMAP
     private String mSurveyNotes = null;                 // SMAP
+    private boolean mCanUpdate = true;                 // SMAP
 
 	// Identifies the gp of the form used to launch form entry
 	public static final String KEY_FORMPATH = "formpath";
@@ -517,6 +519,7 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 
                 mTaskId = intent.getLongExtra(KEY_TASK, -1);	         // smap
                 mSurveyNotes = intent.getStringExtra(KEY_SURVEY_NOTES);  // smap
+                mCanUpdate = intent.getBooleanExtra(KEY_CAN_UPDATE, true);  // smap
                 Log.i("FormEntryActivity", "Got survey notes: " + mSurveyNotes);
 				mFormLoaderTask = new FormLoaderTask(instancePath, null, null);
 				Collect.getInstance().getActivityLogger()
@@ -1226,7 +1229,7 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 				FormEntryCaption[] groups = formController
 						.getGroupsForCurrentIndex();
 				odkv = new ODKView(this, formController.getQuestionPrompts(),
-						groups, advancingPage);
+						groups, advancingPage, formController.getCanUpdate());
 				Log.i(t,
 						"created view for group "
 								+ (groups.length > 0 ? groups[groups.length - 1]
@@ -1768,7 +1771,7 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 
         synchronized (saveDialogLock) {
 		    mSaveToDiskTask = new SaveToDiskTask(getIntent().getData(), exit,
-					complete, updatedSaveName, mTaskId, mFormPath, surveyNotes); 	// SMAP added mTaskId, mFormPath, surveyNotes
+					complete, updatedSaveName, mTaskId, mFormPath, surveyNotes, mCanUpdate); 	// SMAP added mTaskId, mFormPath, surveyNotes
 	    	mSaveToDiskTask.setFormSavedListener(this);
 		    showDialog(SAVING_DIALOG);
             // show dialog before we execute...
@@ -2395,6 +2398,7 @@ public class FormEntryActivity extends Activity implements AnimationListener,
         Collect.getInstance().setExternalDataManager(task.getExternalDataManager());
 
         formController.setSurveyNotes(mSurveyNotes);        // Smap
+        formController.setCanUpdate(mCanUpdate);
 
         // Set the language if one has already been set in the past
 		String[] languageTest = formController.getLanguages();

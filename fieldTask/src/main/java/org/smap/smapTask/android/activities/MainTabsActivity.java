@@ -808,16 +808,19 @@ public class MainTabsActivity extends TabActivity implements
         }
 
         // set the adhoc location
-        boolean canComplete = false;
+        boolean canUpdate = false;
         try {
-            canComplete = Utilities.canComplete(status);
+            canUpdate = Utilities.canComplete(status);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        // Return if the user is not allowed to update this task
-        if(!canComplete) {
-            return;
+        // Show a message if this task is read only
+        if(!canUpdate) {
+            Toast.makeText(
+                    MainTabsActivity.this,
+                    getString(R.string.read_only),
+                    Toast.LENGTH_SHORT).show();
         }
 
         // Get the provider URI of the instance
@@ -845,6 +848,7 @@ public class MainTabsActivity extends TabActivity implements
             i.putExtra(FormEntryActivity.KEY_FORMPATH, formPath);	// TODO Don't think this is needed
             i.putExtra(FormEntryActivity.KEY_TASK, taskId);
             i.putExtra(FormEntryActivity.KEY_SURVEY_NOTES, surveyNotes);
+            i.putExtra(FormEntryActivity.KEY_CAN_UPDATE, canUpdate);
             if(instancePath != null) {	// TODO Don't think this is needed
                 i.putExtra(FormEntryActivity.KEY_INSTANCEPATH, instancePath);
             }

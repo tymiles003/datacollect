@@ -53,4 +53,5 @@
     <string name="smap_no_matching_tasks_NFC">No tasks match this NFC  : %1$s</string>
     <string name="smap_starting_task_from_NFC">Starting task from NFC  : %1$s</string>
     <string name="smap_must_start_from_nfc">This task must be started by swiping an NFC</string>
+    <string name="read_only">This task is complete and only its comments can be changed</string>
 </resources>

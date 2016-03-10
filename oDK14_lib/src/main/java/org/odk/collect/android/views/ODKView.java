@@ -70,7 +70,7 @@ public class ODKView extends ScrollView implements OnLongClickListener {
     public final static String FIELD_LIST = "field-list";
 
     public ODKView(Context context, final FormEntryPrompt[] questionPrompts,
-            FormEntryCaption[] groups, boolean advancingPage) {
+            FormEntryCaption[] groups, boolean advancingPage, boolean canUpdate) {
         super(context);
 
         widgets = new ArrayList<QuestionWidget>();
@@ -91,6 +91,12 @@ public class ODKView extends ScrollView implements OnLongClickListener {
 
         // when the grouped fields are populated by an external app, this will get true.
         boolean readOnlyOverride = false;
+
+        // Smap set read only if this is a completed task
+        if(!canUpdate) {
+            readOnlyOverride = true;
+        }
+        // Smap
 
         // get the group we are showing -- it will be the last of the groups in the groups list
         if (groups != null && groups.length > 0) {

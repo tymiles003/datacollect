@@ -606,7 +606,7 @@ public class Utilities {
     }
 
     /*
-     * Return true if the current task status allows it to be completed
+     * Return true if the current task status allows it to be accepted
      */
     public static boolean canAccept(String currentStatus) {
         boolean valid = false;
