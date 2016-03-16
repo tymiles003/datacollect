@@ -50,7 +50,7 @@ public class SelectOneWidget extends QuestionWidget implements
 	Vector<SelectChoice> mItems; // may take a while to compute
 	ArrayList<RadioButton> buttons;
 
-	public SelectOneWidget(Context context, FormEntryPrompt prompt) {
+	public SelectOneWidget(Context context, FormEntryPrompt prompt, boolean readOnlyOverride) {  // smap - add readOnlyOverride
 		super(context, prompt);
 
         // SurveyCTO-added support for dynamic select content (from .csv files)
@@ -77,7 +77,7 @@ public class SelectOneWidget extends QuestionWidget implements
 				r.setTextSize(TypedValue.COMPLEX_UNIT_DIP, mAnswerFontsize);
 				r.setTag(Integer.valueOf(i));
 				r.setId(QuestionWidget.newUniqueId());
-				r.setEnabled(!prompt.isReadOnly());
+				r.setEnabled(!prompt.isReadOnly() && !readOnlyOverride);        // smap - add read only override
 				r.setFocusable(!prompt.isReadOnly());
 
 				buttons.add(r);

@@ -197,8 +197,6 @@ public class MainTabsActivity extends TabActivity implements
 		 * NFC
 		 */
         mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
-        /*
-         // Success no need to report on it
 
         if (mNfcAdapter == null) {
             Toast.makeText(
@@ -219,7 +217,6 @@ public class MainTabsActivity extends TabActivity implements
                     Toast.LENGTH_SHORT).show();
 
         }
-        */
 
     }
 	

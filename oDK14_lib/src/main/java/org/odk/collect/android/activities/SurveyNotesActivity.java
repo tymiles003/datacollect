@@ -85,13 +85,13 @@ public class SurveyNotesActivity extends Activity {
         }
 
         if(qname.length() > 0 && !notes.contains(qname) && notes.length() > 0) {
-            notes += "\n\n[" + qname + "]\n";
+            notes += "\n\r\n\r[" + qname + "]\n\r";
         } else if(qname.length() > 0 && !notes.contains(qname)) {
-            notes += "[" + qname + "]\n";
+            notes += "[" + qname + "]\n\r";
         }
 
         editText.setText(notes, TextView.BufferType.EDITABLE);
-        int offset = notes.indexOf("[" + qname + "]") + qname.length() + 2;
+        int offset = notes.indexOf("[" + qname + "]") + qname.length() + 4;
         int nextComment = notes.indexOf('[', offset);
         int cursorLocn;
         if(nextComment >= 0) {

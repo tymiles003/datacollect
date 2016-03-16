@@ -166,7 +166,7 @@ public class WidgetFactory {
                 } else if (appearance.equals("label")) {
                     questionWidget = new LabelWidget(context, fep);
                 } else {
-                    questionWidget = new SelectOneWidget(context, fep);
+                    questionWidget = new SelectOneWidget(context, fep, readOnlyOverride);   // smap - add readOnlyOverride
                 }
                 break;
             case Constants.CONTROL_SELECT_MULTI:
@@ -196,7 +196,7 @@ public class WidgetFactory {
                 } else if (appearance.startsWith("label")) {
                     questionWidget = new LabelWidget(context, fep);
                 } else {
-                    questionWidget = new SelectMultiWidget(context, fep);
+                    questionWidget = new SelectMultiWidget(context, fep,  readOnlyOverride);
                 }
                 break;
             case Constants.CONTROL_TRIGGER:
