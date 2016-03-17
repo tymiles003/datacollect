@@ -67,6 +67,9 @@ public class FormController {
     public static final boolean STEP_INTO_GROUP = true;
     public static final boolean STEP_OVER_GROUP = false;
 
+    public String surveyNotes = null;       // smap
+    public boolean canUpdate = true;        // smap
+
     /**
      * OpenRosa metadata tag names.
      */
@@ -255,7 +258,7 @@ public class FormController {
     }
 
     public String getBindAttribute( String attributeNamespace, String attributeName) {
-    	return getBindAttribute( getFormIndex(), attributeNamespace, attributeName );
+    	return getBindAttribute(getFormIndex(), attributeNamespace, attributeName);
     }
 
     public String getBindAttribute(FormIndex idx, String attributeNamespace, String attributeName) {
@@ -812,9 +815,7 @@ public class FormController {
 
 
     /**
-     * Creates a new repeated instance of the group referenced by the current FormIndex.
-     *
-     * @param questionIndex
+     * Creates a new repeated instance of the group referenced by the current FormIndex
      */
     public void newRepeat() {
         mFormEntryController.newRepeat();
@@ -1217,5 +1218,23 @@ public class FormController {
 
         return new InstanceMetadata(instanceId,instanceName);
     }
+
+    // Start Smap
+    public void setSurveyNotes(String notes) {
+        surveyNotes = notes;
+    }
+
+    public String getSurveyNotes() {
+        return surveyNotes;
+    }
+
+    public void setCanUpdate(boolean v) {
+        canUpdate = v;
+    }
+
+    public boolean getCanUpdate() {
+        return canUpdate;
+    }
+    // End Smap
 
 }

@@ -14,20 +14,23 @@
 
 package org.smap.smapTask.android.taskModel;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
 import org.odk.collect.android.database.TaskAssignment;
+import org.smap.smapTask.android.loaders.PointEntry;
 
 public class TaskResponse {
 
 	public String message;
 	public String status;
+    public int version;     // Manage progressive enhancement of this service by incrementing version
 	public String deviceId;
 	@SerializedName("data")
 	public List<TaskAssignment> taskAssignments;
 	public List<FormLocator> forms;
     public FieldTaskSettings settings;
     public List<TaskCompletionInfo> taskCompletionInfo;
-    public List<UserTrail> userTrail;
+    public ArrayList<PointEntry> userTrail;
 }

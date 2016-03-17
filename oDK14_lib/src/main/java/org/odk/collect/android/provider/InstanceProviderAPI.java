@@ -78,8 +78,12 @@ public final class InstanceProviderAPI {
         public static final String T_GEOM = "tGeom";                // Full geometry for location of task
         public static final String T_GEOM_TYPE = "tGeomType";       // Geometry type; Polygon, linestring, point
         public static final String T_IS_SYNC = "tIsSync";           // Set if the instance has been synced
-        public static final String T_TASK_ID = "tTaskId";            // Task Id
+        public static final String T_ASS_ID = "tTaskId";            // Task Id
         public static final String T_TASK_STATUS = "tAssStatus";    // Assignment Status
+        public static final String T_REPEAT = "tRepeat";            // Task can be completed multiple times
+        public static final String T_UPDATEID = "tUpdateId";          // The unique identifier of the instance to be updated
+        public static final String T_LOCATION_TRIGGER = "tLocationTrigger";  // An NFC UID or Geofence that will trigger the task
+        public static final String T_SURVEY_NOTES = "tSurveyNotes";  // Any notes added to the assessment outside of the form itself
         public static final String UUID = "uuid";
         // Smap End
 

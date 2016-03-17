@@ -17,18 +17,24 @@ package org.smap.smapTask.android.tasks;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.reflect.Type;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.smap.smapTask.android.listeners.TaskDownloaderListener;
+import org.smap.smapTask.android.loaders.PointEntry;
 import org.smap.smapTask.android.taskModel.FormLocator;
 import org.smap.smapTask.android.taskModel.TaskCompletionInfo;
 import org.smap.smapTask.android.taskModel.TaskResponse;
 import org.smap.smapTask.android.utilities.ManageForm;
 import org.smap.smapTask.android.utilities.ManageForm.ManageFormDetails;
 import org.smap.smapTask.android.utilities.ManageFormResponse;
+import org.smap.smapTask.android.utilities.TraceUtilities;
 import org.smap.smapTask.android.utilities.Utilities;
 
 import org.apache.http.HttpEntity;
@@ -58,6 +64,12 @@ import org.odk.collect.android.tasks.InstanceUploaderTask.Outcome;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import com.google.gson.JsonSyntaxException;
 
 import android.content.ContentResolver;
@@ -68,7 +80,7 @@ import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import loaders.TaskEntry;
+import org.smap.smapTask.android.loaders.TaskEntry;
 
 /**
  * Background task for downloading tasks 
@@ -76,7 +88,8 @@ import loaders.TaskEntry;
  * @author Neil Penman (neilpenman@gmail.com)
  */
 public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, String>> {
-    
+
+    static String TAG = "DownloadTasksTask";
 	private TaskDownloaderListener mStateListener;
 	HashMap<String, String> results = null;
     SharedPreferences settings = null;
@@ -115,8 +128,34 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 		}
 	}
 
-	
-	@Override
+    /*
+     * Add a custom date parser as old versions of the server will send an invalid date format
+     */
+    public class DateDeserializer implements JsonDeserializer<Date> {
+        public Date deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
+            SimpleDateFormat sdfOld = new SimpleDateFormat("dd/MM/yyyy hh:mm");
+            SimpleDateFormat sdfNew = new SimpleDateFormat("yyyy-MM-dd hh:mm");
+            sdfOld.setTimeZone(TimeZone.getTimeZone("UTC"));
+            sdfNew.setTimeZone(TimeZone.getTimeZone("UTC"));
+            Date date = null;
+            try {
+                Log.i(TAG, "Date string primitive: " + json.getAsJsonPrimitive().getAsString());
+                try {
+                    date = sdfNew.parse(json.getAsJsonPrimitive().getAsString());
+                } catch (Exception e) {
+                    date = sdfOld.parse(json.getAsJsonPrimitive().getAsString());
+                }
+                Log.i(TAG, "Parsed date: " + date.getTime());
+                return date;
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            return date;
+        }
+    }
+
+
+    @Override
     protected HashMap<String, String> doInBackground(Void... values) {
 	
 		results = new HashMap<String,String>();
@@ -179,18 +218,8 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	        try {
 
                 /*
-                 * Submit any completed forms
-                 */
-                Outcome submitOutcome = submitCompletedForms();
-                if(submitOutcome != null) {
-                    for (String key : submitOutcome.mResults.keySet()) {
-                        results.put(key, submitOutcome.mResults.get(key));
-                    }
-                }
-
-                /*
-                 * Delete tasks which were cancelled on the server and then updated on
-                 * the phone during the last refresh
+                 * Delete tasks which were cancelled on the phone and and
+                 *  have been synchronised with the server
                  */
                 count = Utilities.deleteTasksWithStatus(Utilities.STATUS_T_CANCELLED);
                 if(count > 0) {
@@ -205,12 +234,22 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	            if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
 
                 /*
-                 * Get an array of the existing tasks on the phone and create a hashmap indexed on the task id
+                 * Submit any completed forms
+                 */
+                Outcome submitOutcome = submitCompletedForms();
+                if(submitOutcome != null) {
+                    for (String key : submitOutcome.mResults.keySet()) {
+                        results.put(key, submitOutcome.mResults.get(key));
+                    }
+                }
+
+                /*
+                 * Get an array of the existing tasks on the phone and create a hashmap indexed on the assignment id
                  */
                 Utilities.getTasks(tasks, false);
                 for(TaskEntry t : tasks) {
-                    TaskStatus ts = new TaskStatus(t.id, t.taskStatus);
-                    taskMap.put(t.taskId, ts);
+                    TaskStatus ts = new TaskStatus(t.assId, t.taskStatus);
+                    taskMap.put(t.assId, ts);
                 }
 
                 /*
@@ -238,12 +277,20 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                 }
 
                 // De-serialise
-                gson = new GsonBuilder().setDateFormat("dd/MM/yyyy hh:mm").create();
+                GsonBuilder gb = new GsonBuilder().registerTypeAdapter(Date.class, new DateDeserializer());
+                gson = gb.create();
                 Reader isReader = new InputStreamReader(is);
                 tr = gson.fromJson(isReader, TaskResponse.class);
                 Log.i(getClass().getSimpleName(), "Message:" + tr.message);
 
                 if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
+
+                if(tr.settings !=null ) {
+                    SharedPreferences.Editor editor = settings.edit();
+                    editor.putBoolean(PreferencesActivity.KEY_STORE_USER_TRAIL, tr.settings.ft_send_trail);
+                    editor.putBoolean(PreferencesActivity.KEY_STORE_LOCATION_TRIGGER, tr.settings.ft_location_trigger);
+                    editor.commit();
+                }
 
                 /*
                  * Synchronise forms
@@ -281,7 +328,8 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
                 if(count > 0) {
                     results.put("Rejected Tasks", count + " deleted");
                 }
-                if(tr.settings.ft_delete_submitted) {
+
+                if(tr.settings !=null && tr.settings.ft_delete_submitted) {
                     count = Utilities.deleteTasksWithStatus(Utilities.STATUS_T_SUBMITTED);
                     if(count > 0) {
                         results.put("Submitted Tasks", count + " deleted");
@@ -373,6 +421,8 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 
         DefaultHttpClient client = new DefaultHttpClient();
         HttpResponse getResponse = null;
+        TaskResponse updateResponse = new TaskResponse();
+        updateResponse.forms = tr.forms;
         
         // Add credentials
         if(username != null && password != null) {
@@ -382,7 +432,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         }
         
         // Add device id to response
-        tr.deviceId = new PropertyManager(Collect.getInstance().getApplicationContext())
+        updateResponse.deviceId = new PropertyManager(Collect.getInstance().getApplicationContext())
 				.getSingularProperty(PropertyManager.DEVICE_ID_PROPERTY);
 
         // Get tasks that have not been synchronised
@@ -392,37 +442,43 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         /*
          * Set updates to task status
          */
-        tr.taskAssignments = new ArrayList<TaskAssignment> ();          // Updates to task status
+        updateResponse.taskAssignments = new ArrayList<TaskAssignment> ();          // Updates to task status
 
         for(TaskEntry t : nonSynchTasks) {
   	  		if(t.taskStatus != null && t.isSynced.equals(Utilities.STATUS_SYNC_NO)) {
   	  			TaskAssignment ta = new TaskAssignment();
   	  			ta.assignment = new Assignment();
-  	  			ta.assignment.assignment_id = (int) t.taskId;
+  	  			ta.assignment.assignment_id = (int) t.assId;
   	  			ta.assignment.dbId = (int) t.id;
   	  			ta.assignment.assignment_status = t.taskStatus;
 
-	            tr.taskAssignments.add(ta);
+	            updateResponse.taskAssignments.add(ta);
   	  		}
         }
 
         /*
          * Set details on submitted tasks
          */
-        tr.taskCompletionInfo = new ArrayList<TaskCompletionInfo> ();   // Details on completed tasks
+        if(tr.settings != null && tr.settings.ft_send_trail) {
+            updateResponse.taskCompletionInfo = new ArrayList<TaskCompletionInfo>();   // Details on completed tasks
 
-        for(TaskEntry t : nonSynchTasks) {
-            if((t.taskStatus.equals(Utilities.STATUS_T_SUBMITTED) || t.taskStatus.equals(Utilities.STATUS_T_CLOSED))
-                    && t.isSynced.equals(Utilities.STATUS_SYNC_NO)) {
-                TaskCompletionInfo tci = new TaskCompletionInfo();
-                tci.actFinish = t.actFinish;
-                tci.lat = t.actLat;
-                tci.lon = t.actLon;
-                tci.ident = t.ident;
-                tci.uuid = t.uuid;
+            for (TaskEntry t : nonSynchTasks) {
+                if ((t.taskStatus.equals(Utilities.STATUS_T_SUBMITTED) || t.taskStatus.equals(Utilities.STATUS_T_CLOSED))
+                        && t.isSynced.equals(Utilities.STATUS_SYNC_NO)) {
+                    TaskCompletionInfo tci = new TaskCompletionInfo();
+                    tci.actFinish = t.actFinish;
+                    tci.lat = t.actLat;
+                    tci.lon = t.actLon;
+                    tci.ident = t.ident;
+                    tci.uuid = t.uuid;
 
-                tr.taskCompletionInfo.add(tci);
+                    updateResponse.taskCompletionInfo.add(tci);
+                }
             }
+
+            // Get Points
+            updateResponse.userTrail = new ArrayList<PointEntry>(100);
+            TraceUtilities.getPoints(updateResponse.userTrail);
         }
 
         // Call the service
@@ -431,7 +487,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         ArrayList<NameValuePair> postParameters = new ArrayList<NameValuePair>();
         
         Gson gson=  new GsonBuilder().disableHtmlEscaping().setDateFormat("yyyy-MM-dd").create();
-		String resp = gson.toJson(tr);
+		String resp = gson.toJson(updateResponse);
 		
         postParameters.add(new BasicNameValuePair("assignInput", resp));
         
@@ -444,10 +500,10 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
     		Log.w(getClass().getSimpleName(), "Error:" + statusCode + " for URL " + taskURL);
     	} else {
     		Log.w("updateTaskStatusToServer", "Status updated");
-    		for(TaskAssignment ta : tr.taskAssignments) {
+    		for(TaskAssignment ta : updateResponse.taskAssignments) {
     			Utilities.setTaskSynchronized((long) ta.assignment.dbId);		// Mark the task status as synchronised
     		}
-        	
+            TraceUtilities.deleteSource();
     	}
 		
 	}
@@ -460,6 +516,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	private void addAndUpdateEntries() throws Exception {
 
     	if(tr.taskAssignments != null) {
+            int count = 1;
         	for(TaskAssignment ta : tr.taskAssignments) {
 
                 if(isCancelled()) { throw new CancelException("cancelled"); };		// Return if the user cancels
@@ -469,7 +526,8 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         			
     				Log.i(getClass().getSimpleName(), "Task: " + assignment.assignment_id + " Status:" +
     						assignment.assignment_status + " Mode:" + ta.task.assignment_mode +
-    						" Address: " + ta.task.address + 
+    						" Address: " + ta.task.address +
+                            " NFC: " + ta.task.location_trigger +
     						" Form: " + ta.task.form_id + " version: " + ta.task.form_version + 
     						" Type: " + ta.task.type + "Assignee: " + assignment.assignee + "Username: " + username);
             		
@@ -481,18 +539,34 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	          	  		// New task
 	          	  		if(assignment.assignment_status.equals(Utilities.STATUS_T_ACCEPTED)) {
 
-	          	  			// Ensure the form and instance data are available on the phone
-	          	  			// First make sure the initial_data url is sensible (ie null or a URL)
-	          	  			if(ta.task.initial_data != null && !ta.task.initial_data.startsWith("http")) {
-	          	  				ta.task.initial_data = null;	
-	          	  			}
+                            // Ensure the instance data is available on the phone
+                            // Use update_id in preference to initial_data url
+                            if(ta.task.update_id != null) {
+                                if(tr.version < 1) {
+                                    ta.task.initial_data = serverUrl + "/instanceXML/" +
+                                            ta.task.form_id + "/0?key=instanceid&keyval=" + ta.task.update_id;
+                                } else {
+                                    ta.task.initial_data = serverUrl + "/webForm/instance/" +
+                                            ta.task.form_id + "/" + ta.task.update_id;
+                                }
+                                Log.i(getClass().getSimpleName(), "Instance url: " + ta.task.initial_data);
+                            } else {
+                                // Make sure the initial_data url is sensible (ie null or a URL
+                                if (ta.task.initial_data != null && !ta.task.initial_data.startsWith("http")) {
+                                    ta.task.initial_data = null;
+                                }
+                            }
 	                		
 	          	  			// Add instance data
 	          	  			ManageForm mf = new ManageForm();
-	          	  			ManageFormResponse mfr = mf.insertInstance(ta, assignment.assignment_id);
+	          	  			ManageFormResponse mfr = mf.insertInstance(ta, assignment.assignment_id, source, serverUrl, tr.version);
 	          	  			if(!mfr.isError) {
 	          	  				results.put(ta.task.title, "Created");
+                                publishProgress(ta.task.title, Integer.valueOf(count).toString(), Integer.valueOf(tr.taskAssignments.size())
+                                        .toString());
 	          	  			} else {
+                                publishProgress(ta.task.title + " : Failed", Integer.valueOf(count).toString(), Integer.valueOf(tr.taskAssignments.size())
+                                        .toString());
 	          	  				results.put(ta.task.title, "Creation failed: " + mfr.statusMsg );
 	          	  			}
 
@@ -501,9 +575,10 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
 	          	  		Log.i(getClass().getSimpleName(), "Existing Task: " + assignment.assignment_id + " : " + assignment.assignment_status);
 
 	          	  		if(assignment.assignment_status.equals(Utilities.STATUS_T_CANCELLED) && !ts.status.equals(Utilities.STATUS_T_CANCELLED)) {
-                            Utilities.setStatusForTask(assignment.assignment_id, assignment.assignment_status);
+                            Utilities.setStatusForAssignment(assignment.assignment_id, assignment.assignment_status);
                             results.put(ta.task.title, assignment.assignment_status);
 	          	  		}
+                        Utilities.updateParametersForAssignment(assignment.assignment_id, ta);
 	          	  	}
 
         			
@@ -536,8 +611,10 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
     		// Create an array of ODK form details
         	for(FormLocator form : forms) {
         		String formVersionString = String.valueOf(form.version);
-        		ManageFormDetails mfd = mf.getFormDetails(form.ident, formVersionString);    // Get the form details
+        		ManageFormDetails mfd = mf.getFormDetails(form.ident, formVersionString, source);    // Get the form details
+                Log.i("DownloadTasksTask", "+++ Form: " + form.ident + ":" + formVersionString);
         		if(!mfd.exists) {
+                    Log.i("DownloadTasksTask", "+++ Form does not exist: " + form.ident + ":" + formVersionString);
         			form.url = serverUrl + "/formXML?key=" + form.ident;	// Set the form url from the server address and form ident
         			if(form.hasManifest) {
         				form.manifestUrl = serverUrl + "/xformsManifest?key=" + form.ident;
@@ -546,7 +623,7 @@ public class DownloadTasksTask extends AsyncTask<Void, String, HashMap<String, S
         			FormDetails fd = new FormDetails(form.name, form.url, form.manifestUrl, form.ident, formVersionString);
         			toDownload.add(fd);
         		}
-        		
+
         		// Store a hashmap of new forms so we can delete existing forms not in the list
         		String entryHash = form.ident + "_v_" + form.version;
         		formMap.put(entryHash, entryHash);

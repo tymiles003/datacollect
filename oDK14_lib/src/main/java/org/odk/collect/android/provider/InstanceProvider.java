@@ -46,7 +46,7 @@ public class InstanceProvider extends ContentProvider {
     private static final String t = "InstancesProvider";
 
     private static final String DATABASE_NAME = "instances.db";
-    private static final int DATABASE_VERSION = 5;		// smap
+    private static final int DATABASE_VERSION = 8;		// smap
     private static final String INSTANCES_TABLE_NAME = "instances";
 
     private static HashMap<String, String> sInstancesProjectionMap;
@@ -90,8 +90,12 @@ public class InstanceProvider extends ContentProvider {
                + InstanceColumns.T_GEOM + " text, "		        // smap
                + InstanceColumns.T_GEOM_TYPE + " text, "		// smap
                + InstanceColumns.T_IS_SYNC + " text, "		    // smap
-               + InstanceColumns.T_TASK_ID + " long, "		    // smap
+               + InstanceColumns.T_ASS_ID + " long, "		    // smap
                + InstanceColumns.T_TASK_STATUS + " text, "		// smap
+               + InstanceColumns.T_REPEAT + " integer, "		// smap
+               + InstanceColumns.T_UPDATEID + " text, "		    // smap
+               + InstanceColumns.T_LOCATION_TRIGGER + " text, " // smap
+               + InstanceColumns.T_SURVEY_NOTES + " text, "     // smap
                + InstanceColumns.UUID + " text, "		        // smap
                + InstanceColumns.STATUS + " text not null, "
                + InstanceColumns.LAST_STATUS_CHANGE_DATE + " date not null, "
@@ -148,12 +152,45 @@ public class InstanceProvider extends ContentProvider {
                 db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
                         InstanceColumns.T_IS_SYNC + " text;");
                 db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
-                        InstanceColumns.T_TASK_ID + " long;");
+                        InstanceColumns.T_ASS_ID + " long;");
                 db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
                         InstanceColumns.T_TASK_STATUS + " text;");
                 db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
                         InstanceColumns.UUID + " text;");
             }
+            if ( oldVersion < 6 ) {
+                try {
+                    db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
+                            InstanceColumns.T_REPEAT + " integer;");
+                    db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
+                            InstanceColumns.T_UPDATEID + " text;");
+                }catch(Exception e) {
+                    // Catch errors, its possible the user upgraded then downgraded
+                    Log.w(t, "Error in upgrading to database version 6");
+                    e.printStackTrace();
+                }
+            }
+            if ( oldVersion < 7 ) {
+                try {
+                    db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
+                            InstanceColumns.T_LOCATION_TRIGGER + " text;");
+                }catch(Exception e) {
+                    // Catch errors, its possible the user upgraded then downgraded
+                    Log.w(t, "Error in upgrading to database version 7");
+                    e.printStackTrace();
+                }
+            }
+            if ( oldVersion < 8 ) {
+                try {
+                    db.execSQL("ALTER TABLE " + INSTANCES_TABLE_NAME + " ADD COLUMN " +
+                            InstanceColumns.T_SURVEY_NOTES + " text;");
+                }catch(Exception e) {
+                    // Catch errors, its possible the user upgraded then downgraded
+                    Log.w(t, "Error in upgrading to database version 8");
+                    e.printStackTrace();
+                }
+            }
+
             // Smap End
             Log.w(t, "Successfully upgraded database from version " + initialVersion + " to " + newVersion
                     + ", without destroying all the old data");
@@ -459,6 +496,10 @@ public class InstanceProvider extends ContentProvider {
         sInstancesProjectionMap.put(InstanceColumns.JR_FORM_ID, InstanceColumns.JR_FORM_ID);
         sInstancesProjectionMap.put(InstanceColumns.JR_VERSION, InstanceColumns.JR_VERSION);
         sInstancesProjectionMap.put(InstanceColumns.STATUS, InstanceColumns.STATUS);
+        sInstancesProjectionMap.put(InstanceColumns.T_REPEAT, InstanceColumns.T_REPEAT);
+        sInstancesProjectionMap.put(InstanceColumns.T_UPDATEID, InstanceColumns.T_UPDATEID);
+        sInstancesProjectionMap.put(InstanceColumns.T_LOCATION_TRIGGER, InstanceColumns.T_LOCATION_TRIGGER);
+        sInstancesProjectionMap.put(InstanceColumns.T_SURVEY_NOTES, InstanceColumns.T_SURVEY_NOTES);
         sInstancesProjectionMap.put(InstanceColumns.LAST_STATUS_CHANGE_DATE, InstanceColumns.LAST_STATUS_CHANGE_DATE);
         sInstancesProjectionMap.put(InstanceColumns.DISPLAY_SUBTEXT, InstanceColumns.DISPLAY_SUBTEXT);
         sInstancesProjectionMap.put(InstanceColumns.SOURCE, InstanceColumns.SOURCE);                // smap
@@ -474,7 +515,7 @@ public class InstanceProvider extends ContentProvider {
         sInstancesProjectionMap.put(InstanceColumns.T_GEOM, InstanceColumns.T_GEOM);                // smap
         sInstancesProjectionMap.put(InstanceColumns.T_GEOM_TYPE, InstanceColumns.T_GEOM_TYPE);      // smap
         sInstancesProjectionMap.put(InstanceColumns.T_IS_SYNC, InstanceColumns.T_IS_SYNC);          // smap
-        sInstancesProjectionMap.put(InstanceColumns.T_TASK_ID, InstanceColumns.T_TASK_ID);          // smap
+        sInstancesProjectionMap.put(InstanceColumns.T_ASS_ID, InstanceColumns.T_ASS_ID);          // smap
         sInstancesProjectionMap.put(InstanceColumns.T_TASK_STATUS, InstanceColumns.T_TASK_STATUS);  // smap
         sInstancesProjectionMap.put(InstanceColumns.UUID, InstanceColumns.UUID);                    // smap
     }

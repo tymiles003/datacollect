@@ -7,7 +7,7 @@
 		android:summary="@string/click_to_web">
 		<intent
 			android:action="android.intent.action.VIEW"
-			android:data="http://code.google.com/p/smap-suite/" />
+			android:data="@string/app_url" />
 	</PreferenceScreen>
 	<PreferenceCategory android:title="@string/server_preferences">
 		<EditTextPreference
@@ -30,6 +30,16 @@
 			android:inputType="textPassword"
 			android:dialogTitle="@string/change_password" />
 		<!-- android:password="true" -->
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:key="data_collection"
+        android:title="@string/smap_data_collection" >
+        <CheckBoxPreference
+            android:id="@+id/smap_gps_trail"
+            android:defaultValue="false"
+            android:key="smap_gps_trail"
+            android:summary="@string/smap_gps_trail_summary"
+            android:title="@string/smap_gps_trail" />
 	</PreferenceCategory>
 	    <PreferenceCategory
         android:key="@string/autosend"

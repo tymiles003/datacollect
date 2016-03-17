@@ -14,10 +14,11 @@
 
 package org.smap.smapTask.android.activities;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import loaders.SmapTaskLoader;
-import loaders.TaskEntry;
+import org.smap.smapTask.android.loaders.TaskLoader;
+import org.smap.smapTask.android.loaders.TaskEntry;
 
 import org.smap.smapTask.android.adapters.TaskListArrayAdapter;
 import org.odk.collect.android.provider.FormsProviderAPI.FormsColumns;
@@ -26,9 +27,14 @@ import org.odk.collect.android.activities.FormEntryActivity;
 import org.odk.collect.android.application.Collect;
 
 import android.app.AlertDialog;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ContentUris;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -36,7 +42,6 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -44,8 +49,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.smap.smapTask.android.R;
+import org.smap.smapTask.android.receivers.LocationChangedReceiver;
+import org.smap.smapTask.android.utilities.Constants;
+import org.smap.smapTask.android.utilities.ManageForm;
 import org.smap.smapTask.android.utilities.Utilities;
 
 /**
@@ -58,8 +67,11 @@ public class MainListActivity extends FragmentActivity  {
 	
 	private LoaderManager.LoaderCallbacks<List<TaskEntry>> mCallbacks;
 	private AlertDialog mAlertDialog;
-	
-	
+
+    private LocationManager locationManager;
+    protected PendingIntent locationListenerPendingIntent;
+    private static MainTabsActivity tabsActivity;
+
 	 @Override
 	  public void onCreate(Bundle savedInstanceState) {
          super.onCreate(savedInstanceState);
@@ -70,59 +82,15 @@ public class MainListActivity extends FragmentActivity  {
              TaskListFragment list = new TaskListFragment();
              fm.beginTransaction().add(android.R.id.content, list).commit();
          }
+
+         // Setup the location update Pending Intents
+         locationManager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
+         Intent activeIntent = new Intent(this, LocationChangedReceiver.class);
+         locationListenerPendingIntent = PendingIntent.getBroadcast(this, 1000, activeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+         tabsActivity = (MainTabsActivity) getParent();
      }
-	    
 
-	 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see android.app.Activity#onPause()
-	 */
-	@Override
-	public void onPause() {
-		dismissDialogs();
-
-	    super.onPause();
-	}
-	
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-	}
-	
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see android.app.Activity#onResume()
-	 */
-	@Override
-	public void onResume() {
-	    super.onResume();
-
-		Intent intent = new Intent("refresh");
-	    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-		
-	}
-	
-	@Override
-	protected void onStop() {
-		 try {
-		      super.onStop();
-		      
-		    } catch (Exception e) {
-		     
-		    }
-	}
-	
-	/**
-	 * Dismiss any dialogs that we manage.
-	 */
-	private void dismissDialogs() {
-		if (mAlertDialog != null && mAlertDialog.isShowing()) {
-			mAlertDialog.dismiss();
-		}
-	}	  
 	
 	/*
 	 * Fragment to display list of tasks
@@ -164,12 +132,13 @@ public class MainListActivity extends FragmentActivity  {
 	    
 	    @Override
 	    public Loader<List<TaskEntry>> onCreateLoader(int id, Bundle args) {
-	    	return new SmapTaskLoader(getActivity());
+	    	return new TaskLoader(getActivity());
 	    }
 	
 	    @Override
 	    public void onLoadFinished(Loader<List<TaskEntry>> loader, List<TaskEntry> data) {
 	    	mAdapter.setData(data);
+            tabsActivity.setLocationTriggers(data, false);      // NFC and geofence triggers
 
 	    	if (isResumed()) {
 	    		setListShown(true);
@@ -182,9 +151,7 @@ public class MainListActivity extends FragmentActivity  {
 	    public void onLoaderReset(Loader<List<TaskEntry>> loader) {
 	      mAdapter.setData(null);
 	    }
-	    
-	    
-	    
+
 	    
 	    @Override
 	    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -209,11 +176,6 @@ public class MainListActivity extends FragmentActivity  {
 	    	if(task.type.equals("task")) {
 		    	Intent i = new Intent(getActivity(), org.smap.smapTask.android.activities.TaskAddressActivity.class);
 		        i.putExtra("id", task.id);
-		       
-		        //if(mActivity != null && mActivity.userLocation != null) {
-		        //	i.putExtra("lon", String.valueOf(mActivity.userLocation.getLon()));
-		        //	i.putExtra("lat", String.valueOf(mActivity.userLocation.getLat()));
-		        //}
 		        
 		    	startActivity(i);
 	    	}
@@ -228,71 +190,105 @@ public class MainListActivity extends FragmentActivity  {
 	    public void onListItemClick(ListView listView, View view, int position, long id) {
 	 	       
 	    	TaskEntry entry = (TaskEntry) getListAdapter().getItem(position);
-	
-	    	
+
 	    	if(entry.type.equals("task")) {
-	    		String formPath = Collect.FORMS_PATH + entry.taskForm;
-	    		completeTask(entry.instancePath, formPath, entry.id, entry.taskStatus);
+                if(entry.locationTrigger != null) {
+                    Toast.makeText(
+                            tabsActivity,
+                            getString(R.string.smap_must_start_from_nfc),
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    tabsActivity.completeTask(entry);
+                }
 	    	} else {
 	    		Uri formUri = ContentUris.withAppendedId(FormsColumns.CONTENT_URI, entry.id);
 	    		startActivity(new Intent(Intent.ACTION_EDIT, formUri));
 	    	}
 
 	    }
-	 
-		/*
-		 * The user has selected an option to edit / complete a task
-		 */
-		public void completeTask(String instancePath, String formPath, long taskId, String status) {
-		
-			// set the adhoc location
-			boolean canComplete = false;
-			try {
-				canComplete = Utilities.canComplete(status);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			
-			// Return if the user is not allowed to update this task
-			if(!canComplete) {
-				return;
-			}
-			
-			// Get the provider URI of the instance 
-	        String where = InstanceColumns.INSTANCE_FILE_PATH + "=?";
-	        String[] whereArgs = {
-	            instancePath
-	        };
-	       
-			Cursor cInstanceProvider = Collect.getInstance().getContentResolver().query(InstanceColumns.CONTENT_URI, 
-					null, where, whereArgs, null);
-			
-			if(cInstanceProvider.getCount() != 1) {
-				Log.e("MainListActivity:completeTask", "Unique instance not found: count is:" + 
-						cInstanceProvider.getCount());
-			} else {
-				cInstanceProvider.moveToFirst();
-				Uri instanceUri = ContentUris.withAppendedId(InstanceColumns.CONTENT_URI,
-		                cInstanceProvider.getLong(
-		                cInstanceProvider.getColumnIndex(InstanceColumns._ID)));
-				// Start activity to complete form
-				Intent i = new Intent(Intent.ACTION_EDIT, instanceUri);
-	
-				i.putExtra(FormEntryActivity.KEY_FORMPATH, formPath);	// TODO Don't think this is needed
-				i.putExtra(FormEntryActivity.KEY_TASK, taskId);			
-				if(instancePath != null) {	// TODO Don't think this is needed
-					i.putExtra(FormEntryActivity.KEY_INSTANCEPATH, instancePath);           
-				}
-				startActivity(i);
-			} 
-			cInstanceProvider.close();
-			
-		}
-		
 
-	    
 
 	 }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.i("MainListActivity", "onStart============================");
+        requestLocationUpdates();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.i("MainListActivity", "onStop============================");
+    }
+
+    @Override
+    protected void onResume() {
+
+        super.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        dismissDialogs();
+        super.onPause();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.i("MainListActivity", "onDestroy============================");
+        disableLocationUpdates();
+    }
+
+
+    /**
+     * Dismiss any dialogs that we manage.
+     */
+    private void dismissDialogs() {
+        if (mAlertDialog != null && mAlertDialog.isShowing()) {
+            mAlertDialog.dismiss();
+        }
+    }
+
+    /**
+     * Start listening for location updates.
+     */
+    protected void requestLocationUpdates() {
+        // Normal updates while activity is visible.
+        // TODO manage multiple providers
+        // TODO Manage provder being enabled / disabled
+
+        /*
+         * Only use GPS to get locations for tracking the user
+         *  Using less accurate sources is not feasible to collect a gpx trail
+         *  However it may be useful if we were just recording location of survey
+         */
+        if (locationManager.getAllProviders().contains(LocationManager.GPS_PROVIDER)) {     // Fix issue with errors on devices without GPS
+            try {
+				locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Constants.GPS_INTERVAL, Constants.GPS_DISTANCE, locationListenerPendingIntent);
+			} catch (SecurityException e) {
+				// Permission not granted
+			}
+        }
+    }
+
+    /**
+     * Stop listening for location updates
+     */
+    protected void disableLocationUpdates() {
+
+
+    try {
+            locationManager.removeUpdates(locationListenerPendingIntent);
+    } catch (Exception e) {
+            // Ignore failures, we are exiting after all
+    }
+
+
+    }
+
 
 }
 

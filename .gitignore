@@ -1,8 +1,13 @@
 bin/
 gen/
 build/
+fieldTask-release/
+fieldTask/fieldTask-release/
 local.properties
 import-summary.txt
+fieldTask/src/kontrolid
+
+*.apk
 
 gradlew
 gradlew.bat

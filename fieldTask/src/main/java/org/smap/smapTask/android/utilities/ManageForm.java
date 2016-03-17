@@ -46,7 +46,7 @@ public class ManageForm {
 	     public boolean exists = false;
 	}
 	
-	public ManageFormDetails getFormDetails(String formId, String formVersionString) {
+	public ManageFormDetails getFormDetails(String formId, String formVersionString, String source) {
 	
 		ManageFormDetails fd = new ManageFormDetails();
    	 	Cursor c = null;
@@ -54,9 +54,10 @@ public class ManageForm {
 		try {
         	
         	String selectionClause = FormsColumns.JR_FORM_ID + "=? AND "
-					+ FormsColumns.JR_VERSION + "=?";
+					+ FormsColumns.JR_VERSION + "=? AND "
+                    + FormsColumns.SOURCE + "=?";
         	
-        	String [] selectionArgs = new String[] { formId, formVersionString };
+        	String [] selectionArgs = new String[] { formId, formVersionString, source };
         	//String [] selectionArgs = new String [1];
         	//selectionArgs[0] = formId;
         	String [] proj = {FormsColumns._ID, FormsColumns.DISPLAY_NAME, FormsColumns.JR_FORM_ID,
@@ -96,12 +97,12 @@ public class ManageForm {
 			// get all complete or failed submission instances
 			String selection = null;
 			String selectionArgs1 [] = { InstanceProviderAPI.STATUS_INCOMPLETE, 
-					formId,
-					version
+					formId
 					};
 			
 			String selectionArgs2 [] = 	{ InstanceProviderAPI.STATUS_INCOMPLETE, 
-					formId
+					formId,
+                    version
 					};
 			
 			if(version == null) {
@@ -122,9 +123,9 @@ public class ManageForm {
         	
         	final ContentResolver resolver = Collect.getInstance().getContentResolver();
         	if(version == null) {
-        		c = resolver.query(InstanceColumns.CONTENT_URI, proj, selection, selectionArgs2, null);
-        	} else {
         		c = resolver.query(InstanceColumns.CONTENT_URI, proj, selection, selectionArgs1, null);
+        	} else {
+        		c = resolver.query(InstanceColumns.CONTENT_URI, proj, selection, selectionArgs2, null);
         	}
             
         	if(c.getCount() > 0) {
@@ -139,82 +140,6 @@ public class ManageForm {
 		
 		return isIncomplete;
 	}
-        	
-	     
-	/*
-	 * Parameters
-	 *   formId:  	Stored as jrFormId in the forms database.
-	 *   			Extracted by odk from the id attribute on top level data element in the downloaded xml
-	 *   formURL:	URL to download the form
-	 *   			Not stored
-	 *   instanceDataURL:
-	 *   			URL to download the data.
-	 *   			Not stored
-	 *   
-	 *   Because odk uniquely identifies forms based on the id extracted from the down loaded xml file
-	 *    the formId must be sourced from the task management system along with the URL so we can check
-	 *    if the form has already been downloaded.  
-	 */
-    public ManageFormResponse insertForm(FormLocator form) {
-
-        String formVersionString = String.valueOf(form.version);	
-        
-        ManageFormResponse mfResponse = new ManageFormResponse();
-        
-    	ManageFormDetails fd = getFormDetails(form.ident, formVersionString);    // Get the form details
-		
-    	if(!fd.exists) {	
-        	 // Form was not found try downloading it
-        	 FileResult dl = null;
-        	 
-        	 try {
-        		 mfResponse.statusMsg = "Downloading form: " + form.name;
-        		 DownloadFormsTask dft = new DownloadFormsTask();
-        		 dl = dft.downloadXform(form.ident, form.url);
-        	 } catch (Exception e) {
-        		 mfResponse.isError = true;
-        		 mfResponse.statusMsg = "Unable to download form from " + form.url;
-        		 return mfResponse;
-        	 }
-        	 
-
-        	 try {
-        		 ContentValues v = new ContentValues();
-        		 v.put(FormsColumns.FORM_FILE_PATH, dl.getFile().getAbsolutePath());
-
-                 HashMap<String, String> formInfo = FileUtils.parseXML(dl.getFile());
-                 v.put(FormsColumns.DISPLAY_NAME, formInfo.get(FileUtils.TITLE));
-                 v.put(FormsColumns.JR_VERSION, formInfo.get(FileUtils.VERSION));
-                 v.put(FormsColumns.JR_FORM_ID, formInfo.get(FileUtils.FORMID));
-                 v.put(FormsColumns.PROJECT, formInfo.get(FileUtils.PROJECT));
-                 v.put(FormsColumns.SUBMISSION_URI, formInfo.get(FileUtils.SUBMISSIONURI));
-                 v.put(FormsColumns.BASE64_RSA_PUBLIC_KEY, formInfo.get(FileUtils.BASE64_RSA_PUBLIC_KEY));
-        		
-        		 
-                 fd.formName = formInfo.get(FileUtils.TITLE);
-                 fd.submissionUri = formInfo.get(FileUtils.SUBMISSIONURI);
-                 fd.formPath = dl.getFile().getAbsolutePath();
-                 //form.id = formInfo.get(FileUtils.FORMID);	// Update the formID with the actual value in the form (should be the same)
-                 
-                Collect.getInstance().getContentResolver().insert(FormsColumns.CONTENT_URI, v);
-               
-                 
-        	 } catch (Throwable e) {
-           		 mfResponse.isError = true;
-           		 Log.e("ManageForm", e.getMessage());
-        		 mfResponse.statusMsg = "Unable to insert form "  + form.url + " into form database.";
-      
-        		 return mfResponse;
-        	 }
-            	 
-    	} else {
-    		mfResponse.statusMsg = "Form: " + form.name + " already downloaded";
-    	}
-         
-         mfResponse.isError = false;
-         mfResponse.formPath = fd.formPath;
-         return mfResponse;
-    }
     
     /*
      * Delete any forms not in the passed in HashMap unless there is an incomplete instance
@@ -229,7 +154,7 @@ public class ManageForm {
         	String [] proj = {FormsColumns._ID, FormsColumns.JR_FORM_ID, FormsColumns.JR_VERSION}; 
         	
 			String selectClause = FormsColumns.SOURCE + "='" + Utilities.getSource() + "' or " + 
-					FormsColumns.SOURCE + "=null";
+					FormsColumns.SOURCE + " is null";
         	
         	final ContentResolver resolver = Collect.getInstance().getContentResolver();
         	c = resolver.query(FormsColumns.CONTENT_URI, proj, selectClause, null, null);
@@ -296,7 +221,7 @@ public class ManageForm {
 	 *   			Not stored
 	 *    
 	 */
-    public ManageFormResponse insertInstance(TaskAssignment ta, long assignmentId) {
+    public ManageFormResponse insertInstance(TaskAssignment ta, long assignmentId, String source, String serverUrl, int version) {
 
         String formId = ta.task.form_id;
         int formVersion = ta.task.form_version;
@@ -307,25 +232,24 @@ public class ManageForm {
         
         ManageFormResponse mfResponse = new ManageFormResponse();
         
-    	ManageFormDetails fd = getFormDetails(formId, formVersionString);    // Get the form details
+    	ManageFormDetails fd = getFormDetails(formId, formVersionString, source);    // Get the form details
 		
     	if(fd.exists) {
          
 	  		 // Get the instance path
 	         instancePath = getInstancePath(fd.formPath, assignmentId);
 	         if(instancePath != null && initialDataURL != null) {
-	        	 File f = null;
-	
-	             f = new File(instancePath);
-	             DownloadFormsTask dft = new DownloadFormsTask();
-	             try {
-	             dft.downloadFile(f, initialDataURL);
-	             } catch (Exception e) {
-	            	 e.printStackTrace();
-	         		 mfResponse.isError = true;
-	            	 mfResponse.statusMsg = "Unable to download initial data from " + initialDataURL + " into file: " + instancePath;
-	         		 return mfResponse;
-	             }
+	        	 File f = new File(instancePath);
+                 try {
+                     Utilities.downloadInstanceFile(f, initialDataURL, serverUrl, formId, version);
+                 } catch (Exception e) {
+                     e.printStackTrace();
+                     mfResponse.isError = true;
+                     mfResponse.statusMsg = "Unable to download initial data from " + initialDataURL + " into file: "
+                             + instancePath + " " + e.getMessage();
+                     return mfResponse;
+                 }
+
 	         }
 
             if(ta.task.title == null) {
@@ -368,8 +292,11 @@ public class ManageForm {
         values.put(InstanceColumns.ACT_LON, 0.0);
         values.put(InstanceColumns.ACT_LAT, 0.0);
         values.put(InstanceColumns.T_TITLE, ta.task.title);
-        values.put(InstanceColumns.T_TASK_ID, ta.assignment.assignment_id);
+        values.put(InstanceColumns.T_ASS_ID, ta.assignment.assignment_id);
         values.put(InstanceColumns.T_TASK_STATUS, ta.assignment.assignment_status);
+		values.put(InstanceColumns.T_REPEAT, ta.task.repeat ? 1 : 0);
+		values.put(InstanceColumns.T_UPDATEID, ta.task.update_id);
+		values.put(InstanceColumns.T_LOCATION_TRIGGER, ta.task.location_trigger);
         if(ta.task.scheduled_at != null) {
             values.put(InstanceColumns.T_SCHED_START, ta.task.scheduled_at.getTime());
         }
@@ -408,7 +335,7 @@ public class ManageForm {
      *  formPath:   Used to obtain the filename
      *  assignment_id:	    Used to guarantee uniqueness when multiple tasks for the same form are assigned
      */
-    private String getInstancePath(String formPath, long assignmentId) {
+    public String getInstancePath(String formPath, long assignmentId) {
         String instancePath = null;
         
         if(formPath != null) {

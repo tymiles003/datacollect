@@ -67,7 +67,8 @@ public class Collect extends Application {
     private FormController mFormController = null;
     private ExternalDataManager externalDataManager;
 
-    private Location location = null;   // smap
+    private Location location = null;       // smap
+    private boolean recordLocation = false; // smap
 
     private static Collect singleton = null;
 
@@ -227,6 +228,8 @@ public class Collect extends Application {
         PropertyManager mgr = new PropertyManager(this);
         mActivityLogger = new ActivityLogger(
                 mgr.getSingularProperty(PropertyManager.DEVICE_ID_PROPERTY));
+
+
     }
 
     // Begin Smap
@@ -235,10 +238,10 @@ public class Collect extends Application {
         location = l;
     }
 
-    // Smap start, set and get location
     public Location getLocation() {
         return location;
     }
     // End Smap
+
 
 }

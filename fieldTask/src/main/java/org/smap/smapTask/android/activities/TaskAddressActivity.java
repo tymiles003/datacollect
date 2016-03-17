@@ -31,6 +31,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -42,7 +43,7 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import loaders.TaskEntry;
+import org.smap.smapTask.android.loaders.TaskEntry;
 
 public class TaskAddressActivity extends Activity implements OnClickListener {
 
@@ -50,8 +51,7 @@ public class TaskAddressActivity extends Activity implements OnClickListener {
 		String name;
 		String value;
 	}
-	
-	long taskId = -1;
+
     TaskEntry taskEntry = null;
 	
     /** Called when the activity is first created. */
@@ -63,11 +63,8 @@ public class TaskAddressActivity extends Activity implements OnClickListener {
         
         // Get the id of the selected list item
         Bundle bundle = getIntent().getExtras();
-        taskId = bundle.getLong("id");
 
-        taskEntry = Utilities.getTaskForTaskId(taskId);
-        
-        Log.i("TaskAddressActivity", "Task Id: " + taskId);
+        taskEntry = Utilities.getTaskWithIdOrPath(bundle.getLong("id"), null);
 
     	try {
 
@@ -146,14 +143,7 @@ public class TaskAddressActivity extends Activity implements OnClickListener {
     	        b.setOnClickListener(this);
     	        buttons.addView(b);
     		}
-    		if(Utilities.canAccept(taskEntry.taskStatus)) {
-    	        Button b = new Button(this);
-    	        b.setText("Accept Task");
-    	        b.setId(R.id.accept_button);
-    	        b.setOnClickListener(this);
-    	        buttons.addView(b);
-    		}
-			//menu.add(0,R.id.cancel_task,0,R.string.cancel);
+
     	} catch (Exception e) {
   			e.printStackTrace();
   	  	}
@@ -168,20 +158,6 @@ public class TaskAddressActivity extends Activity implements OnClickListener {
 	public void onClick(View v) {
       	
         switch (v.getId()) {
-        case R.id.accept_button:
-        	try {
-
-        		if(Utilities.canAccept(taskEntry.taskStatus)) {
-                    Utilities.setStatusForTask(taskId,Utilities.STATUS_T_ACCEPTED);
-        		} else {
-        			Toast.makeText(getApplicationContext(), getString(R.string.smap_cannot_accept),
-    		                Toast.LENGTH_SHORT).show();
-        		}
-        	} catch (Exception e) {
-        		e.printStackTrace();
-        	}
-        	finish();
-            break;
 
         case R.id.complete_button:
     		try {   				
@@ -194,7 +170,7 @@ public class TaskAddressActivity extends Activity implements OnClickListener {
     			String instancePath = taskEntry.instancePath;
     			
     			if(canComplete) {
-    				completeTask(instancePath, formPath, taskId);
+    				completeTask(instancePath, formPath, taskEntry.id);
     			} else {
         			Toast.makeText(getApplicationContext(), getString(R.string.smap_cannot_complete),
     		                Toast.LENGTH_SHORT).show();
@@ -208,8 +184,12 @@ public class TaskAddressActivity extends Activity implements OnClickListener {
         case R.id.reject_button:
         	try {
 
+                Log.i("Reject Button", "");
+
 	    		if(Utilities.canReject(taskEntry.taskStatus)) {
-                    Utilities.setStatusForTask(taskId,Utilities.STATUS_T_REJECTED);
+                    Utilities.setStatusForTask(taskEntry.id, Utilities.STATUS_T_REJECTED);
+                    Intent intent = new Intent("refresh");      // Notify map and task list of change
+                    LocalBroadcastManager.getInstance(getApplication()).sendBroadcast(intent);
 	    		} else {
 	    			Toast.makeText(getApplicationContext(), getString(R.string.smap_cannot_reject),
 			                Toast.LENGTH_SHORT).show();

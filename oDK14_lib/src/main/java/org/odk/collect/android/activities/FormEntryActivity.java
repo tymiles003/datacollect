@@ -29,6 +29,7 @@ import org.javarosa.form.api.FormEntryPrompt;
 import org.javarosa.model.xform.XFormsModule;
 import org.odk.collect.android.R;
 import org.odk.collect.android.application.Collect;
+import org.odk.collect.android.database.TraceUtilities;
 import org.odk.collect.android.exception.JavaRosaException;
 import org.odk.collect.android.listeners.AdvanceToNextListener;
 import org.odk.collect.android.listeners.FormLoaderListener;
@@ -65,6 +66,9 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -153,7 +157,11 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 	public static final String KEY_SUCCESS = "success";
 	public static final String KEY_ERROR = "error";
     public static final String KEY_TASK = "task";		// SMAP
+    public static final String KEY_SURVEY_NOTES = "surveyNotes";		// SMAP
+    public static final String KEY_CAN_UPDATE = "canUpdate";		// SMAP
     private long mTaskId;								// SMAP
+    private String mSurveyNotes = null;                 // SMAP
+    private boolean mCanUpdate = true;                 // SMAP
 
 	// Identifies the gp of the form used to launch form entry
 	public static final String KEY_FORMPATH = "formpath";
@@ -172,6 +180,7 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 	private static final int MENU_HIERARCHY_VIEW = Menu.FIRST + 1;
 	private static final int MENU_SAVE = Menu.FIRST + 2;
 	private static final int MENU_PREFERENCES = Menu.FIRST + 3;
+    private static final int MENU_COMMENT = Menu.FIRST + 4;     // smap
 
 	private static final int PROGRESS_DIALOG = 1;
 	private static final int SAVING_DIALOG = 2;
@@ -508,7 +517,10 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 					return;
 				}
 
-                mTaskId = intent.getLongExtra(KEY_TASK, -1);	//-------- SMAP
+                mTaskId = intent.getLongExtra(KEY_TASK, -1);	         // smap
+                mSurveyNotes = intent.getStringExtra(KEY_SURVEY_NOTES);  // smap
+                mCanUpdate = intent.getBooleanExtra(KEY_CAN_UPDATE, true);  // smap
+                Log.i("FormEntryActivity", "Got survey notes: " + mSurveyNotes);
 				mFormLoaderTask = new FormLoaderTask(instancePath, null, null);
 				Collect.getInstance().getActivityLogger()
 						.logAction(this, "formLoaded", mFormPath);
@@ -763,9 +775,9 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 		super.onCreateOptionsMenu(menu);
 
 		CompatibilityUtils.setShowAsAction(
-				menu.add(0, MENU_SAVE, 0, R.string.save_all_answers).setIcon(
-						android.R.drawable.ic_menu_save),
-				MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                menu.add(0, MENU_SAVE, 0, R.string.save_all_answers).setIcon(
+                        android.R.drawable.ic_menu_save),
+                MenuItem.SHOW_AS_ACTION_IF_ROOM);
 
 		CompatibilityUtils.setShowAsAction(
 				menu.add(0, MENU_HIERARCHY_VIEW, 0, R.string.view_hierarchy)
@@ -781,6 +793,11 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 				menu.add(0, MENU_PREFERENCES, 0, R.string.general_preferences)
 						.setIcon(R.drawable.ic_menu_preferences),
 				MenuItem.SHOW_AS_ACTION_NEVER);
+
+        // smap add survey comments option
+        CompatibilityUtils.setShowAsAction(
+                menu.add(0, MENU_COMMENT, 0, R.string.smap_add_comment),
+                MenuItem.SHOW_AS_ACTION_NEVER);
 		return true;
 	}
 
@@ -859,7 +876,19 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 			Intent pref = new Intent(this, PreferencesActivity.class);
 			startActivity(pref);
 			return true;
-		}
+        case MENU_COMMENT:
+        Collect.getInstance()
+                .getActivityLogger()
+                .logInstanceAction(this, "onOptionsItemSelected",
+                        "MENU_COMMENT");
+        if (formController.currentPromptIsQuestion()) {
+            saveAnswersForCurrentScreen(DO_NOT_EVALUATE_CONSTRAINTS);
+        }
+        Log.i("debug instance: ", getIntent().getData().toString());
+        Intent comment = new Intent(this, SurveyNotesActivity.class);
+        startActivity(comment);
+        return true;
+    }
 		return super.onOptionsItemSelected(item);
 	}
 
@@ -1200,7 +1229,7 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 				FormEntryCaption[] groups = formController
 						.getGroupsForCurrentIndex();
 				odkv = new ODKView(this, formController.getQuestionPrompts(),
-						groups, advancingPage);
+						groups, advancingPage, formController.getCanUpdate());
 				Log.i(t,
 						"created view for group "
 								+ (groups.length > 0 ? groups[groups.length - 1]
@@ -1732,9 +1761,17 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 			return false;
 		}
 
+        // Smap start
+        String surveyNotes = null;
+        FormController formController = Collect.getInstance().getFormController();
+        if(formController != null) {
+            surveyNotes = formController.getSurveyNotes();
+        }
+        // Smap end
+
         synchronized (saveDialogLock) {
 		    mSaveToDiskTask = new SaveToDiskTask(getIntent().getData(), exit,
-					complete, updatedSaveName, mTaskId, mFormPath); 	// SMAP added mTaskId, mFormPath
+					complete, updatedSaveName, mTaskId, mFormPath, surveyNotes, mCanUpdate); 	// SMAP added mTaskId, mFormPath, surveyNotes
 	    	mSaveToDiskTask.setFormSavedListener(this);
 		    showDialog(SAVING_DIALOG);
             // show dialog before we execute...
@@ -2216,6 +2253,7 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 			mBackButton.setVisibility(View.GONE);
 			mNextButton.setVisibility(View.GONE);
 		}
+
 	}
 
 	@Override
@@ -2359,7 +2397,10 @@ public class FormEntryActivity extends Activity implements AnimationListener,
 
         Collect.getInstance().setExternalDataManager(task.getExternalDataManager());
 
-		// Set the language if one has already been set in the past
+        formController.setSurveyNotes(mSurveyNotes);        // Smap
+        formController.setCanUpdate(mCanUpdate);
+
+        // Set the language if one has already been set in the past
 		String[] languageTest = formController.getLanguages();
 		if (languageTest != null) {
 			String defaultLanguage = formController.getLanguage();

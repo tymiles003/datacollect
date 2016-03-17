@@ -10,10 +10,11 @@ public class Task {
 	public String form_id;
 	public int form_version;
 	public String initial_data;
+    public String update_id;
 	public String assignment_mode;
-	public boolean gps;
-	public boolean barcode;
 	public Date scheduled_at;
+	public String location_trigger;
+	public boolean repeat;			// Task can be completed multiple times
 	public String address;			// Key value pairs representing an unstructured address
 	public String status;
 }

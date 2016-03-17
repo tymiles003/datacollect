@@ -21,6 +21,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
@@ -204,7 +205,10 @@ public class DownloadFormsTask extends
             FileUtils.deleteAndReport(fileOnCancel);
         }
 
-        FileUtils.purgeMediaPath(tempMediaPath);
+        Log.w(t, "Purging media path: " + tempMediaPath);
+        if(tempMediaPath != null) {
+            FileUtils.purgeMediaPath(tempMediaPath);
+        }
     }
 
     /**
@@ -404,10 +408,9 @@ public class DownloadFormsTask extends
 	        
 	        String server =
 	                settings.getString(PreferencesActivity.KEY_SERVER_URL, null);
-	        final String url =
-	                server + settings.getString(PreferencesActivity.KEY_FORMLIST_URL, "/formList");
+
 	        if(username != null && password != null) {
-	        	Uri u = Uri.parse(url);
+	        	Uri u = Uri.parse(downloadUrl);
 	        	WebUtils.addCredentials(username, password, u.getHost());
 	        }
 	        // Smap End
